@@ -1,0 +1,22 @@
+# ---------------------------------------------------------------------------
+# BEISPIEL: Programm, das AUF DER DISKETTE liegt, ausfuehren
+# ---------------------------------------------------------------------------
+# Als  game.txt  ins Wurzelverzeichnis der Diskette kopieren.
+#
+# "run=" erwartet einen Pfad RELATIV zur Diskette. Die Datei muss also
+# wirklich mit auf der Diskette sein. Startet OHNE Rueckfrage - du hast
+# die Datei ja selbst draufgelegt.
+#
+# Erlaubte Endungen (Standard): .exe .bat .cmd
+# Alias: exe= / program= / path=
+
+run=spiel\game.exe
+
+# Optional:
+# args=-fullscreen
+
+# ---------------------------------------------------------------------------
+# NICHT erlaubt und wird abgelehnt:
+#   run=C:\Spiele\game.exe          (absoluter Pfad -> dafuer ist pcrun= da)
+#   run=..\..\Windows\notepad.exe   (zeigt aus der Diskette heraus)
+#   run=skript.ps1                  (Endung nicht in der Erlaubnisliste)

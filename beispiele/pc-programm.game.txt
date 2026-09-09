@@ -1,0 +1,22 @@
+# ---------------------------------------------------------------------------
+# BEISPIEL: Programm, das AUF DEM PC installiert ist, ausfuehren
+# ---------------------------------------------------------------------------
+# Als  game.txt  ins Wurzelverzeichnis der Diskette kopieren.
+#
+# "pcrun=" braucht einen ABSOLUTEN Pfad. Der Launcher oeffnet beim Einlegen
+# ein zweites Terminal (Retro-Fenster) und fragt J/N, BEVOR gestartet wird.
+# Alias: localrun= / pcexe=
+
+pcrun=C:\Program Files\qFlipper\qFlipper.exe
+
+# Optional:
+# args=--minimized
+
+# ---------------------------------------------------------------------------
+# Sicherheitsregeln fuer pcrun= :
+#   * Pfade unter C:\Windows (System32, SysWOW64, ...) werden IMMER abgelehnt.
+#   * Mit [security] allowed_roots in FloppyLauncher.ini kann man es zusaetzlich
+#     auf bestimmte Ordner einschraenken.
+#   * Ein relativer Pfad (pcrun=game.exe) wird abgelehnt - nimm dann run=.
+#   * Ohne Terminal (z. B. im versteckten Autostart) wird pcrun= NICHT
+#     gestartet, nur protokolliert - es sei denn, jemand kann im Fenster J druecken.

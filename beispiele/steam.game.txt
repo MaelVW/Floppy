@@ -1,0 +1,16 @@
+# ---------------------------------------------------------------------------
+# BEISPIEL: Steam-Spiel per AppID starten
+# ---------------------------------------------------------------------------
+# Diese Datei als  game.txt  ins Wurzelverzeichnis der Diskette kopieren.
+# Der Launcher startet dann  steam://rungameid/220
+#
+# Die AppID steht in der Steam-Store-URL:
+#   https://store.steampowered.com/app/220/HalfLife_2/   ->   220
+#
+# Statt "id=" gehen auch:  steam= / steamid= / gameid=
+# Oder einfach nur die nackte Zahl in einer eigenen Zeile.
+
+id=220
+
+# Optional: Startargumente an das Spiel
+# args=-console -novid

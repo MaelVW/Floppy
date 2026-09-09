@@ -1,0 +1,13 @@
+# ---------------------------------------------------------------------------
+# BEISPIEL: HUB-Diskette  -  oeffnet beim Einlegen das Floppy Hub Menue
+# ---------------------------------------------------------------------------
+# Als  game.txt  ins Wurzelverzeichnis der Diskette kopieren.
+#
+# Beim Einlegen startet der Launcher FloppyHub.ps1 (das Retro-Menue) -
+# genau wie er sonst ein Steam-Spiel oder eine EXE starten wuerde.
+# Das Menue laeuft nur, solange du es benutzt, und belegt danach nichts.
+#
+# Aliasse (falls "hub" mal belegt ist): hubmenu / menu / floppyhub
+# Ein-/Ausschalten in FloppyLauncher.ini unter [hub].
+
+hub=1
