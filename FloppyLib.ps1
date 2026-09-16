@@ -36,12 +36,42 @@ function Get-FloppyHome {
     return (Get-Location).Path
 }
 
+function ConvertFrom-FloppyQuoted {
+    <#
+        Entfernt umschliessende Anfuehrungszeichen und Leerraum.
+        WICHTIG: Windows-Pfade duerfen kein " enthalten. Kopiert man einen Pfad
+        aus dem Explorer ("Als Pfad kopieren"), sind Anfuehrungszeichen dabei -
+        die haben frueher .NET-Pfadfunktionen zum Absturz gebracht
+        ("Illegales Zeichen im Pfad").
+    #>
+    param([string] $Value)
+    if ($null -eq $Value) { return $null }
+    $v = "$Value".Trim()
+    while ($v.Length -ge 2 -and
+           (($v[0] -eq '"' -and $v[-1] -eq '"') -or ($v[0] -eq "'" -and $v[-1] -eq "'"))) {
+        $v = $v.Substring(1, $v.Length - 2).Trim()
+    }
+    return ($v -replace '"', '').Trim()
+}
+
+function Test-FloppyPathRooted {
+    # [System.IO.Path]::IsPathRooted wirft bei unerlaubten Zeichen - hier nicht.
+    param([string] $Path)
+    try { return [System.IO.Path]::IsPathRooted($Path) } catch { return $false }
+}
+
+function Get-FloppyExtension {
+    # [System.IO.Path]::GetExtension wirft bei unerlaubten Zeichen - hier nicht.
+    param([string] $Path)
+    try { return [System.IO.Path]::GetExtension($Path) } catch { return '' }
+}
+
 function Expand-FloppyPath {
     # Loest %ENV%-Variablen und relative Pfade (relativ zu Get-FloppyHome) auf.
     param([string] $Path)
     if ([string]::IsNullOrWhiteSpace($Path)) { return $null }
-    $p = [Environment]::ExpandEnvironmentVariables($Path.Trim())
-    if (-not [System.IO.Path]::IsPathRooted($p)) {
+    $p = [Environment]::ExpandEnvironmentVariables((ConvertFrom-FloppyQuoted $Path))
+    if (-not (Test-FloppyPathRooted $p)) {
         $p = Join-Path (Get-FloppyHome) $p
     }
     try { return [System.IO.Path]::GetFullPath($p) } catch { return $p }
@@ -92,6 +122,7 @@ function Get-FloppyIniValue {
         [Parameter(Mandatory)][string] $Key,
         $Default = $null
     )
+    if ($null -eq $Ini -or -not ($Ini -is [System.Collections.IDictionary])) { return $Default }
     $s = $Section.ToLowerInvariant()
     $k = $Key.ToLowerInvariant()
     if ($Ini.ContainsKey($s) -and $Ini[$s].ContainsKey($k) -and $Ini[$s][$k] -ne '') {
@@ -206,7 +237,10 @@ function Show-FloppyBanner {
 
 function Get-FloppyDriveInfo {
     param([string] $Letter = 'A')
-    $l = $Letter.TrimEnd(':', '\').Substring(0, 1).ToUpper()
+    $l = "$Letter".Trim().TrimEnd(':', '\')
+    if ([string]::IsNullOrWhiteSpace($l)) { return $null }
+    $l = $l.Substring(0, 1).ToUpper()
+    if ($l -notmatch '^[A-Z]$') { return $null }
     try   { return [System.IO.DriveInfo]::new($l) }
     catch { return $null }
 }
@@ -229,7 +263,9 @@ function Read-FloppyReference {
         $line = $raw.Trim()
         if (-not $line -or $line[0] -eq '#' -or $line[0] -eq ';') { continue }
         if ($line -match '^\s*([A-Za-z_]+)\s*[:=]\s*(.+?)\s*$') {
-            $map[$Matches[1].ToLowerInvariant()] = $Matches[2]
+            # Anfuehrungszeichen entfernen - sonst scheitert spaeter jede
+            # Pfadpruefung mit "Illegales Zeichen im Pfad".
+            $map[$Matches[1].ToLowerInvariant()] = (ConvertFrom-FloppyQuoted $Matches[2])
         }
         elseif ($line -match '^\s*(\d{3,})\s*$') {
             $map['id'] = $Matches[1]
@@ -316,6 +352,44 @@ function Write-FloppyReference {
         return $null
     }
 
+    # Eingaben saeubern: Anfuehrungszeichen (z. B. aus "Als Pfad kopieren")
+    # wuerden den Launcher sonst mit "Illegales Zeichen im Pfad" abwuergen.
+    $Value     = ConvertFrom-FloppyQuoted $Value
+    $Arguments = ConvertFrom-FloppyQuoted $Arguments
+
+    # Plausibilitaet pruefen, BEVOR etwas auf die Diskette geschrieben wird.
+    switch ($Kind) {
+        'steam' {
+            if ($Value -notmatch '^\d+$') { Write-Warning "Steam-ID muss aus Ziffern bestehen: '$Value'"; return $null }
+        }
+        'run' {
+            if ([string]::IsNullOrWhiteSpace($Value)) { Write-Warning 'run= braucht einen Pfad.'; return $null }
+            if (Test-FloppyPathRooted $Value) {
+                Write-Warning "run= erwartet einen Pfad RELATIV zur Diskette. Fuer PC-Pfade -PcRun verwenden: $Value"
+                return $null
+            }
+        }
+        'pcrun' {
+            if ([string]::IsNullOrWhiteSpace($Value)) { Write-Warning 'pcrun= braucht einen Pfad.'; return $null }
+            if (-not (Test-FloppyPathRooted $Value)) {
+                Write-Warning "pcrun= braucht einen ABSOLUTEN Pfad (z. B. D:\Spiele\x.exe): $Value"
+                return $null
+            }
+            if (-not (Test-Path -LiteralPath $Value -PathType Leaf)) {
+                Write-Warning "Achtung: '$Value' existiert derzeit nicht - der Launcher wird es spaeter ablehnen."
+            }
+            # Der Launcher sperrt C:\Windows grundsaetzlich - hier schon sagen.
+            $blocked = ConvertTo-FloppyList (Get-FloppyIniValue (Import-FloppyIni (Get-FloppyConfigPath)) 'security' 'blocked_roots' '%SystemRoot%')
+            foreach ($b in $blocked) {
+                $bf = Expand-FloppyPath $b
+                if ($bf -and $Value.StartsWith($bf, [StringComparison]::OrdinalIgnoreCase)) {
+                    Write-Warning "Achtung: '$Value' liegt in einem gesperrten Systemordner ($bf). Der Launcher wird den Start ABLEHNEN."
+                    break
+                }
+            }
+        }
+    }
+
     $lines = @('# von FloppyDisc/FloppyHub geschrieben  ' + (Get-Date -Format 'yyyy-MM-dd HH:mm'))
     if ($Title) { $lines += "# $Title" }
     switch ($Kind) {
@@ -336,8 +410,33 @@ function Write-FloppyReference {
     }
 }
 
+function Get-FloppyDataHome {
+    <#
+        Ordner fuer schreibbare Daten (library.csv, Log).
+        Normalerweise der Programmordner - ist der schreibgeschuetzt (weil nach
+        C:\Program Files installiert wurde), wird auf %LOCALAPPDATA%\FloppyHub
+        ausgewichen.
+    #>
+    $home1 = Get-FloppyHome
+    try {
+        $probe = Join-Path $home1 (".floppy-write-test-" + [guid]::NewGuid().ToString('N'))
+        [System.IO.File]::WriteAllText($probe, 'x')
+        Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue
+        return $home1
+    }
+    catch {
+        $fallback = Join-Path $env:LOCALAPPDATA 'FloppyHub'
+        try { if (-not (Test-Path -LiteralPath $fallback)) { New-Item -ItemType Directory -Path $fallback -Force | Out-Null } } catch { }
+        return $fallback
+    }
+}
+
 function Get-FloppyLibraryPath {
-    return (Join-Path (Get-FloppyHome) 'library.csv')
+    # Vorhandene library.csv im Programmordner gewinnt (Bestandsdaten), sonst
+    # der schreibbare Datenordner.
+    $inHome = Join-Path (Get-FloppyHome) 'library.csv'
+    if (Test-Path -LiteralPath $inHome -PathType Leaf) { return $inHome }
+    return (Join-Path (Get-FloppyDataHome) 'library.csv')
 }
 
 function Get-FloppyLibrary {
@@ -379,6 +478,78 @@ function Add-FloppyLibraryEntry {
         Write-Warning "library.csv konnte nicht geschrieben werden: $($_.Exception.Message)"
         return $false
     }
+}
+
+# ===========================================================================
+#  Logdatei
+# ===========================================================================
+
+function Get-FloppyLogPath {
+    <#
+        Pfad der Launcher-Logdatei laut FloppyLauncher.ini (sonst Standard).
+        Relative Angaben werden gegen den SCHREIBBAREN Datenordner aufgeloest -
+        genau wie der Launcher es tut, damit Hub und Launcher dieselbe Datei
+        meinen, auch wenn nach C:\Program Files installiert wurde.
+    #>
+    param($Ini)
+    if ($null -eq $Ini) { $Ini = Import-FloppyIni (Get-FloppyConfigPath) }
+    $raw = Get-FloppyIniValue $Ini 'log' 'file' 'FloppyLauncher.log'
+    if ([string]::IsNullOrWhiteSpace($raw)) { return $null }   # "" = kein Log
+
+    $clean = ConvertFrom-FloppyQuoted ([Environment]::ExpandEnvironmentVariables("$raw"))
+    if (Test-FloppyPathRooted $clean) {
+        try { return [System.IO.Path]::GetFullPath($clean) } catch { return $clean }
+    }
+    # Bestandsdatei im Programmordner gewinnt, sonst Datenordner.
+    $inHome = Join-Path (Get-FloppyHome) $clean
+    if (Test-Path -LiteralPath $inHome -PathType Leaf) { return $inHome }
+    return (Join-Path (Get-FloppyDataHome) $clean)
+}
+
+function Clear-FloppyLog {
+    <#
+        Leert die Launcher-Logdatei. Der bisherige Inhalt wandert einmalig nach
+        <name>.old, damit nichts unwiederbringlich weg ist - beim naechsten Mal
+        wird diese .old-Datei ueberschrieben. So bleiben es hoechstens zwei
+        Dateien, statt endlos zu wachsen.
+
+        Funktioniert auch, waehrend der Launcher laeuft: der schreibt mit
+        Add-Content (oeffnet/schliesst pro Zeile), also stoert das Leeren nicht.
+
+        Rueckgabe: Objekt mit Cleared / Bytes / Path / Backup / Message
+    #>
+    param(
+        [string] $Path,
+        [switch] $NoBackup
+    )
+    if (-not $Path) { $Path = Get-FloppyLogPath }
+    $res = [pscustomobject]@{ Cleared = $false; Bytes = 0; Path = $Path; Backup = $null; Message = '' }
+
+    if (-not $Path) { $res.Message = 'Logging ist in der INI abgeschaltet.'; return $res }
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        $res.Message = 'Keine Logdatei vorhanden.'
+        return $res
+    }
+
+    try {
+        $res.Bytes = (Get-Item -LiteralPath $Path).Length
+        if (-not $NoBackup -and $res.Bytes -gt 0) {
+            $old = "$Path.old"
+            Copy-Item -LiteralPath $Path -Destination $old -Force -ErrorAction Stop
+            $res.Backup = $old
+        }
+        # Leeren statt Loeschen: ein laufender Launcher behaelt seinen Pfad.
+        Set-Content -LiteralPath $Path -Value @() -Encoding UTF8 -Force -ErrorAction Stop
+        $stamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+        Add-Content -LiteralPath $Path -Encoding UTF8 -ErrorAction SilentlyContinue `
+            -Value "$stamp [INFO ] Log geleert (vorher $([math]::Round($res.Bytes/1KB,1)) KB)."
+        $res.Cleared = $true
+        $res.Message = 'Log geleert.'
+    }
+    catch {
+        $res.Message = "Log konnte nicht geleert werden: $($_.Exception.Message)"
+    }
+    return $res
 }
 
 # ===========================================================================
@@ -501,19 +672,20 @@ function Get-FloppySeasonalTheme {
 }
 
 function Get-FloppyDiskArt {
-    # ASCII-3.5"-Diskette (alle Zeilen 33 Zeichen breit). $Wink = zwinkert.
+    # ASCII-3.5"-Diskette - ALLE Zeilen exakt 33 Zeichen breit, sonst franst
+    # der Rahmen im Hub-Menue aus. Test: Get-FloppyDiskArt | % { $_.Length }
     param([switch] $Wink)
     $eye = if ($Wink) { 'o  -' } else { 'o  o' }
     return @(
         '     ___________________________ '
         '    |  _______________________  |'
         '    | |                       | |'
-        '    | |      F L O P P Y       | |'
-        '    | |        H U B           | |'
-        "    | |    $eye   1.44 MB     | |"
+        '    | |     F L O P P Y       | |'
+        '    | |       H U B           | |'
+        "    | |   $eye   1.44 MB      | |"
         '    | |_______________________| |'
-        '    |    ___________________   []|'
-        '    |___|___________________|____|'
+        '    |   ___________________  [] |'
+        '    |__|___________________|____|'
     )
 }
 

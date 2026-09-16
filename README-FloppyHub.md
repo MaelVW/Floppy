@@ -1,8 +1,33 @@
 # Floppy Hub
 
-Erweiterungen rund um **FloppyLauncher.ps1** (Disketten → physische Steam-Library).
+Aus Disketten wird eine physische Steam-Library.
 Der Launcher selbst bleibt eine eigenständige Datei — der Autostart hängt an
 **nichts** von hier.
+
+## Installation
+
+**Fertiges Setup:** [Releases](https://github.com/MaelVW/Floppy/releases/latest) →
+`FloppyHubSetup-x.y.z.exe` herunterladen und ausführen. Der Assistent fragt nach
+dem Zielordner und richtet auf Wunsch den versteckten Autostart ein.
+
+> Windows/SmartScreen meldet bei unsignierten Setups „Der Computer wurde geschützt" —
+> über *Weitere Informationen* → *Trotzdem ausführen*.
+
+**Selbst bauen** (braucht [Inno Setup](https://jrsoftware.org/isdl.php)):
+
+```bash
+powershell -ExecutionPolicy Bypass -File .\build\Build-Installer.ps1
+```
+
+**Release veröffentlichen** — Tag pushen, GitHub Actions baut und hängt das Setup an:
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+**Ohne Installation:** Repo klonen und `FloppyHub.ps1` direkt starten — alle
+Skripte finden ihren eigenen Ordner über `$PSScriptRoot`, es muss nichts
+angepasst werden.
 
 ## Dateien
 
@@ -16,6 +41,16 @@ Der Launcher selbst bleibt eine eigenständige Datei — der Autostart hängt an
 | `FloppyLib.ps1` | gemeinsame Funktionen für Hub + Disc-Tool (**nicht** vom Launcher genutzt) | dot-sourced |
 | `library.csv` | Katalog bekannter Disketten | von Hub/Disc-Tool |
 | `beispiele\` | fertige `game.txt`-Vorlagen + Regeln (erlaubt/verboten) | zum Kopieren |
+| `StartLauncherHidden.vbs` | startet den Launcher **ohne** aufblitzendes Fenster | Autostart |
+| `installer\FloppyHub.iss` | Inno-Setup-Skript für `FloppyHubSetup.exe` | beim Bauen |
+| `build\Build-Installer.ps1` | baut das Setup lokal | manuell |
+| `.github\workflows\release.yml` | baut + veröffentlicht das Setup auf GitHub | bei Tag `v*` |
+
+### Wohin geschrieben wird
+
+Log und `library.csv` liegen normalerweise im Programmordner. Ist der
+schreibgeschützt (Installation nach `C:\Program Files`), weichen Launcher **und**
+Hub automatisch auf `%LOCALAPPDATA%\FloppyHub` aus — beide auf denselben Pfad.
 
 ## Der Twist: den Hub per Diskette öffnen
 

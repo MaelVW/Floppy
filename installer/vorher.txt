@@ -1,0 +1,44 @@
+FLOPPY HUB
+==========
+
+Aus Disketten wird eine physische Steam-Library.
+
+Legst du eine vorbereitete Diskette ein, startet der Floppy Launcher
+automatisch das, was darauf hinterlegt ist:
+
+  * ein Steam-Spiel          (id=220)
+  * ein Programm von der Diskette   (run=spiel.exe)
+  * ein Programm auf dem PC  (pcrun=D:\Spiele\x.exe)  -> mit Sicherheitsabfrage
+  * das Floppy Hub Menue     (hub=1)
+
+
+WAS INSTALLIERT WIRD
+--------------------
+  FloppyLauncher.ps1       ueberwacht das Laufwerk (laeuft im Hintergrund)
+  FloppyInterface.ps1      Retro-Fenster fuer die Sicherheitsabfrage
+  FloppyHub.ps1            Menue: Disketten bespielen, Bibliothek, Log
+  FloppyDisc.ps1           dasselbe fuer die Kommandozeile
+  FloppyLib.ps1            gemeinsame Funktionen
+  FloppyLauncher.ini       Konfiguration (wird bei Updates NICHT ueberschrieben)
+  beispiele\               fertige game.txt-Vorlagen zum Kopieren
+
+
+VORAUSSETZUNGEN
+---------------
+  * Windows 10 oder 11
+  * Windows PowerShell 5.1 (ist bei Windows dabei)
+  * ein Diskettenlaufwerk als A: (USB-Floppy genuegt)
+
+
+SICHERHEIT
+----------
+Programme auf dem PC (pcrun=) startet der Launcher NIE ohne Rueckfrage.
+Pfade unterhalb von C:\Windows werden grundsaetzlich abgelehnt.
+Steam-IDs und Programme, die auf der Diskette selbst liegen, starten direkt.
+
+
+HINWEIS ZUM AUTOSTART
+---------------------
+Das Setup kann den Launcher beim Anmelden versteckt starten. Hattest du das
+vorher schon von Hand eingerichtet, wird der alte Eintrag ersetzt - es laeuft
+also weiterhin nur ein Launcher.

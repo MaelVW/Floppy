@@ -39,6 +39,10 @@ $eggsOn   = ConvertTo-FloppyBool (Get-FloppyIniValue $ini 'ui' 'easter_eggs' 'tr
 $refNames = ConvertTo-FloppyList (Get-FloppyIniValue $ini 'reference' 'file_names' 'game.txt, floppy.txt, launch.txt')
 if ($refNames.Count -eq 0) { $refNames = @('game.txt', 'floppy.txt', 'launch.txt') }
 
+# Beim Schliessen des Hubs das Launcher-Log leeren, damit es nicht endlos
+# waechst. Abschaltbar in FloppyLauncher.ini:  [log] clear_on_hub_exit = false
+$clearLogOnExit = ConvertTo-FloppyBool (Get-FloppyIniValue $ini 'log' 'clear_on_hub_exit' 'true') $true
+
 $theme  = Get-FloppyTheme $themeNm
 $season = if ($eggsOn) { Get-FloppySeasonalTheme } else { $null }
 if ($season) { $theme = $season.Theme }
@@ -184,15 +188,19 @@ function Do-Prepare {
             Write-Host ("   -> id=$id" + $(if ($title) { "   ($title)" } else { '' })) -ForegroundColor $theme.Good
         }
         '2' {
-            $value = Read-Host '   Pfad RELATIV zur Diskette (z. B. spiel\game.exe)'
+            $value = ConvertFrom-FloppyQuoted (Read-Host '   Pfad RELATIV zur Diskette (z. B. spiel\game.exe)')
             $kind = 'run'
             $gameArgs = Read-Host '   Startargumente (optional)'
         }
         '3' {
-            $value = Read-Host '   ABSOLUTER Pfad auf dem PC (z. B. D:\Spiele\x.exe)'
+            Write-Host '   Tipp: Anfuehrungszeichen duerfen mit rein - die werden entfernt.' -ForegroundColor $theme.Dim
+            $value = ConvertFrom-FloppyQuoted (Read-Host '   ABSOLUTER Pfad auf dem PC (z. B. D:\Spiele\x.exe)')
             $kind = 'pcrun'
             $gameArgs = Read-Host '   Startargumente (optional)'
             Write-Host ''
+            if ($value -and -not (Test-Path -LiteralPath $value -PathType Leaf)) {
+                Write-Host "   ACHTUNG: '$value' existiert gerade nicht." -ForegroundColor $theme.Bad
+            }
             Write-Host '   Hinweis: der Launcher fragt beim Einlegen im Interface-Fenster nach,' -ForegroundColor $theme.Dim
             Write-Host '            und C:\Windows-Pfade werden grundsaetzlich abgelehnt.'        -ForegroundColor $theme.Dim
         }
@@ -245,23 +253,47 @@ function Do-Remember {
 
 function Do-Log {
     Show-Header
-    $logPath = Expand-FloppyPath (Get-FloppyIniValue $ini 'log' 'file' 'FloppyLauncher.log')
-    if (-not (Test-Path -LiteralPath $logPath)) { Write-Host "   kein Log gefunden ($logPath)" -ForegroundColor $theme.Warn; Pause; return }
-    Write-Host "   $logPath   (letzte 25 Zeilen)" -ForegroundColor $theme.Dim
+    $logPath = Get-FloppyLogPath -Ini $ini
+    if (-not $logPath -or -not (Test-Path -LiteralPath $logPath)) {
+        Write-Host "   kein Log gefunden ($logPath)" -ForegroundColor $theme.Warn; Pause; return
+    }
+    $kb = [math]::Round((Get-Item -LiteralPath $logPath).Length / 1KB, 1)
+    Write-Host "   $logPath   ($kb KB, letzte 25 Zeilen)" -ForegroundColor $theme.Dim
     Write-Host ''
     Get-Content -LiteralPath $logPath -Tail 25 | ForEach-Object {
         $col = switch -Regex ($_) { '\[ERROR' { 'Red' } '\[WARN' { 'Yellow' } '\[OK' { $theme.Good } '\[ASK' { 'Magenta' } default { $theme.Dim } }
         Write-Host "   $_" -ForegroundColor $col
     }
-    Pause
+    Write-Host ''
+    Write-Host "   Beim Beenden des Hubs wird das Log automatisch geleert: $(if ($clearLogOnExit) { 'JA' } else { 'nein' })" -ForegroundColor $theme.Dim
+    Write-Host '   [L] jetzt sofort leeren     [Enter] zurueck' -ForegroundColor $theme.Dim
+    $a = Read-Host '   '
+    if ("$a".Trim().ToLowerInvariant() -eq 'l') {
+        $r = Clear-FloppyLog -Path $logPath
+        Write-Host ("   " + $r.Message + $(if ($r.Backup) { "  (Sicherung: $($r.Backup))" } else { '' })) `
+            -ForegroundColor $(if ($r.Cleared) { $theme.Good } else { $theme.Warn })
+        Start-Sleep -Milliseconds 900
+    }
 }
 
 function Do-Config {
     $cfg = Get-FloppyConfigPath
     if (-not (Test-Path -LiteralPath $cfg)) {
-        Write-Host "   $cfg existiert nicht - lege eine Vorlage an? (J/N)" -ForegroundColor $theme.Warn
-        if ((Read-Host) -notmatch '^(j|ja|y)$') { return }
-        Set-Content -LiteralPath $cfg -Value "[drive]`nletter = A:`n`n[ui]`ntheme = green`neaster_eggs = true" -Encoding UTF8
+        Write-Host "   $cfg existiert nicht." -ForegroundColor $theme.Warn
+        if ((Read-Host '   Vorlage anlegen? (J/N)') -notmatch '^(j|ja|y)$') { return }
+        Set-Content -LiteralPath $cfg -Encoding UTF8 -Value @(
+            '[drive]'
+            'letter = A:'
+            'poll_seconds = 3'
+            ''
+            '[log]'
+            'file = FloppyLauncher.log'
+            'clear_on_hub_exit = true'
+            ''
+            '[ui]'
+            'theme = green'
+            'easter_eggs = true'
+        )
     }
     Write-Host "   oeffne $cfg ..." -ForegroundColor $theme.Dim
     try { Start-Process notepad.exe $cfg } catch { Write-Host "   konnte Editor nicht oeffnen: $($_.Exception.Message)" -ForegroundColor $theme.Bad }
@@ -315,10 +347,24 @@ while ($true) {
         '^(q|quit|exit|ende)$' {
             Set-FloppyConsole -Theme $theme -Width ($W + 6) -Height 36 -Title 'FLOPPY HUB'
             Write-Host ''
+
+            # Launcher-Log beim Schliessen einmal leeren (haelt es klein).
+            if ($clearLogOnExit) {
+                $r = Clear-FloppyLog
+                if ($r.Cleared) {
+                    Write-Host ("   log geleert - $([math]::Round($r.Bytes/1KB,1)) KB freigegeben" +
+                                $(if ($r.Backup) { ', Sicherung in *.log.old' } else { '' })) -ForegroundColor $theme.Dim
+                }
+                elseif ($r.Message -and $r.Message -notmatch 'Keine Logdatei|abgeschaltet') {
+                    Write-Host ("   " + $r.Message) -ForegroundColor $theme.Warn
+                }
+            }
+
+            Write-Host ''
             Write-Host '   ' -NoNewline
             Write-Host ' bis zur naechsten diskette. ' -ForegroundColor Black -BackgroundColor $theme.Good
             Write-Host ''
-            Start-Sleep -Milliseconds 700
+            Start-Sleep -Milliseconds 900
             return
         }
         default {

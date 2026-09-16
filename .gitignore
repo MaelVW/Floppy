@@ -1,1 +1,12 @@
+# Laufzeitdateien
 FloppyLauncher.log
+FloppyLauncher.log.old
+*.log.old
+
+# Build-Ergebnisse
+dist/
+Output/
+
+# Windows
+Thumbs.db
+desktop.ini

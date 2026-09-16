@@ -63,9 +63,12 @@ param(
     [ValidateRange(5, 3600)]
     [int]      $ConfirmTimeout       = 90,
     [string]   $LogFile,
+    [ValidateRange(0, 1048576)]
+    [int]      $LogMaxKB             = 512,
     [switch]   $NonInteractive,
     [switch]   $DryRun,
-    [switch]   $RunOnce
+    [switch]   $RunOnce,
+    [switch]   $AllowMultiple
 )
 
 Set-StrictMode -Version Latest
@@ -106,25 +109,50 @@ trap {
 
 # Standard-Logpfad erst hier bestimmen (verhindert Fehler, wenn $PSScriptRoot
 # leer ist, z. B. beim Einfuegen des Skripts in die Konsole).
+# Ist der Programmordner schreibgeschuetzt (Installation nach C:\Program Files),
+# wird automatisch auf %LOCALAPPDATA%\FloppyHub ausgewichen.
+function Get-WritableDir {
+    param([string] $Preferred)
+    try {
+        $probe = Join-Path $Preferred (".floppy-write-test-" + [guid]::NewGuid().ToString('N'))
+        [System.IO.File]::WriteAllText($probe, 'x')
+        Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue
+        return $Preferred
+    }
+    catch {
+        $fallback = Join-Path $env:LOCALAPPDATA 'FloppyHub'
+        try { if (-not (Test-Path -LiteralPath $fallback)) { New-Item -ItemType Directory -Path $fallback -Force | Out-Null } } catch { }
+        return $fallback
+    }
+}
+
 if (-not $PSBoundParameters.ContainsKey('LogFile')) {
     $baseDir =
         if     ($PSScriptRoot)  { $PSScriptRoot }
         elseif ($PSCommandPath) { Split-Path -Parent $PSCommandPath }
         else                    { (Get-Location).Path }
-    $LogFile = Join-Path $baseDir 'FloppyLauncher.log'
+    $LogFile = Join-Path (Get-WritableDir $baseDir) 'FloppyLauncher.log'
 }
 
 $DriveLetter = $FloppyDrive.Substring(0, 1).ToUpper()   # "A"
 $DriveRoot   = "$DriveLetter`:\"                          # "A:\"
 
-$BlockedRootsFull = @(
-    $BlockedRoots | Where-Object { $_ } |
-        ForEach-Object { [System.IO.Path]::GetFullPath($_).TrimEnd('\') }
-)
-$AllowedRootsFull = @(
-    $AllowedRoots | Where-Object { $_ } |
-        ForEach-Object { [System.IO.Path]::GetFullPath($_).TrimEnd('\') }
-)
+# Sperr-/Positivlisten aufloesen. Ein kaputter Eintrag darf den Start NICHT
+# abbrechen - er wird uebersprungen (und spaeter im Log gemeldet).
+$script:RootListProblems = @()
+function Resolve-RootList {
+    param([string[]] $List, [string] $Label)
+    $out = [System.Collections.Generic.List[string]]::new()
+    foreach ($entry in $List) {
+        if ([string]::IsNullOrWhiteSpace($entry)) { continue }
+        $e = [Environment]::ExpandEnvironmentVariables("$entry".Trim().Trim('"'))
+        try   { $out.Add(([System.IO.Path]::GetFullPath($e)).TrimEnd('\')) }
+        catch { $script:RootListProblems += "$Label-Eintrag ungueltig und ignoriert: '$entry'" }
+    }
+    return , $out.ToArray()
+}
+$BlockedRootsFull = Resolve-RootList -List $BlockedRoots -Label 'BlockedRoots'
+$AllowedRootsFull = Resolve-RootList -List $AllowedRoots -Label 'AllowedRoots'
 
 # Echte PowerShell-EXE fuer das zweite Terminal ermitteln.
 # WICHTIG: NICHT den aktuellen Host nehmen. Unter VS Code / ISE ist das nicht
@@ -163,6 +191,25 @@ $HubKeys    = @('hub', 'hubmenu', 'menu', 'floppyhub')
 # Hilfsfunktionen
 # ---------------------------------------------------------------------------
 
+$script:LogWriteCount = 0
+
+function Limit-LogSize {
+    # Notbremse gegen endlos wachsende Logs: ab $LogMaxKB wird einmalig nach
+    # <name>.old rotiert. (Der Floppy Hub leert das Log zusaetzlich beim
+    # Schliessen - das hier greift auch ohne Hub.)
+    if (-not $LogFile -or $LogMaxKB -le 0) { return }
+    try {
+        $item = Get-Item -LiteralPath $LogFile -ErrorAction Stop
+        if ($item.Length -lt ($LogMaxKB * 1KB)) { return }
+        Copy-Item -LiteralPath $LogFile -Destination "$LogFile.old" -Force -ErrorAction Stop
+        Set-Content -LiteralPath $LogFile -Value @() -Encoding UTF8 -Force -ErrorAction Stop
+        Add-Content -LiteralPath $LogFile -Encoding UTF8 -ErrorAction SilentlyContinue -Value (
+            '{0} [INFO ] Log rotiert (war {1} KB), alte Zeilen in {2}.old' -f `
+                (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), [math]::Round($item.Length / 1KB, 1), (Split-Path -Leaf $LogFile))
+    }
+    catch { }
+}
+
 function Write-Log {
     param(
         [Parameter(Mandatory)][string] $Message,
@@ -179,6 +226,9 @@ function Write-Log {
     try { Write-Host $line -ForegroundColor $color } catch { }
     if ($LogFile) {
         try { Add-Content -LiteralPath $LogFile -Value $line -Encoding UTF8 } catch { }
+        # Groesse nur alle 50 Zeilen pruefen (spart Datei-I/O).
+        $script:LogWriteCount++
+        if ($script:LogWriteCount % 50 -eq 0) { Limit-LogSize }
     }
 }
 
@@ -411,9 +461,30 @@ function Test-PathUnder {
     return $p.StartsWith($r + [System.IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
 }
 
+function ConvertFrom-QuotedValue {
+    # Entfernt umschliessende Anfuehrungszeichen. Ein aus dem Explorer
+    # kopierter Pfad ("Als Pfad kopieren") bringt " mit - und JEDE
+    # .NET-Pfadfunktion wirft dann "Illegales Zeichen im Pfad".
+    param([string] $Value)
+    if ($null -eq $Value) { return $null }
+    $v = "$Value".Trim()
+    while ($v.Length -ge 2 -and
+           (($v[0] -eq '"' -and $v[-1] -eq '"') -or ($v[0] -eq "'" -and $v[-1] -eq "'"))) {
+        $v = $v.Substring(1, $v.Length - 2).Trim()
+    }
+    return ($v -replace '"', '').Trim()
+}
+
+function Test-PathRootedSafe {
+    # IsPathRooted wirft bei unerlaubten Zeichen - hier nie.
+    param([string] $Path)
+    try { return [System.IO.Path]::IsPathRooted($Path) } catch { return $false }
+}
+
 function Test-ExecutableExtension {
     param([Parameter(Mandatory)][string] $Path)
-    return ($ExecutableExtensions -contains [System.IO.Path]::GetExtension($Path))
+    $ext = try { [System.IO.Path]::GetExtension($Path) } catch { '' }
+    return ($ExecutableExtensions -contains $ext)
 }
 
 function Resolve-OnDrive {
@@ -423,7 +494,12 @@ function Resolve-OnDrive {
         [Parameter(Mandatory)][string] $Root,
         [Parameter(Mandatory)][string] $RelativeOrAbsolute
     )
-    if ([System.IO.Path]::IsPathRooted($RelativeOrAbsolute)) {
+    $RelativeOrAbsolute = ConvertFrom-QuotedValue $RelativeOrAbsolute
+    if ([string]::IsNullOrWhiteSpace($RelativeOrAbsolute)) {
+        Write-Log "run= ist leer." 'ERROR'
+        return $null
+    }
+    if (Test-PathRootedSafe $RelativeOrAbsolute) {
         Write-Log "run= erwartet einen Pfad relativ zur Diskette. Fuer PC-Pfade bitte pcrun= verwenden: $RelativeOrAbsolute" 'ERROR'
         return $null
     }
@@ -448,11 +524,20 @@ function Resolve-PcPath {
     # Prueft einen absoluten PC-Pfad fuer pcrun= gegen Sperr-/Positivliste.
     param([Parameter(Mandatory)][string] $InputPath)
 
-    if (-not [System.IO.Path]::IsPathRooted($InputPath)) {
+    $InputPath = ConvertFrom-QuotedValue $InputPath
+    if ([string]::IsNullOrWhiteSpace($InputPath)) {
+        Write-Log "pcrun= ist leer." 'ERROR'
+        return $null
+    }
+    if (-not (Test-PathRootedSafe $InputPath)) {
         Write-Log "pcrun= benoetigt einen absoluten Pfad (z. B. C:\Spiele\x.exe): $InputPath" 'ERROR'
         return $null
     }
-    try { $full = [System.IO.Path]::GetFullPath($InputPath) } catch { return $null }
+    try { $full = [System.IO.Path]::GetFullPath($InputPath) }
+    catch {
+        Write-Log "pcrun= ist kein gueltiger Pfad ($($_.Exception.Message)): $InputPath" 'ERROR'
+        return $null
+    }
 
     if (-not (Test-Path -LiteralPath $full -PathType Leaf)) {
         Write-Log "pcrun=-Datei nicht gefunden: $full" 'ERROR'
@@ -488,7 +573,8 @@ function Read-ReferenceFile {
         $line = $raw.Trim()
         if (-not $line -or $line.StartsWith('#') -or $line.StartsWith(';')) { continue }
         if ($line -match '^\s*([A-Za-z_]+)\s*[:=]\s*(.+?)\s*$') {
-            $map[$Matches[1].ToLowerInvariant()] = $Matches[2]
+            # Anfuehrungszeichen wegnehmen - sonst scheitert jede Pfadpruefung.
+            $map[$Matches[1].ToLowerInvariant()] = (ConvertFrom-QuotedValue $Matches[2])
         }
         elseif ($line -match '^\s*(\d{3,})\s*$') {
             $map['id'] = $Matches[1]
@@ -629,9 +715,10 @@ function Start-Target {
     )
     if ($DryRun) { Write-Log "[DRYRUN] wuerde starten: $Path $Arguments" 'OK'; return }
     Write-Log "Starte Programm: $Path $Arguments" 'OK'
-    $startParams = @{
-        FilePath         = $Path
-        WorkingDirectory = [System.IO.Path]::GetDirectoryName($Path)
+    $startParams = @{ FilePath = $Path }
+    $workDir = try { [System.IO.Path]::GetDirectoryName($Path) } catch { $null }
+    if ($workDir -and (Test-Path -LiteralPath $workDir -PathType Container)) {
+        $startParams['WorkingDirectory'] = $workDir
     }
     if ($Arguments) { $startParams['ArgumentList'] = $Arguments }
     Start-Process @startParams
@@ -837,6 +924,23 @@ $modeText = if ($mode) { ' [' + ($mode -join ', ') + ']' } else { '' }
 
 Write-Log "Floppy Launcher gestartet. Warte auf Diskette in $DriveRoot ...$modeText" 'INFO'
 Write-Log "Host: $($Host.Name) | PS $($PSVersionTable.PSVersion) | Interface-EXE: $SelfExe" 'INFO'
+foreach ($problem in $script:RootListProblems) { Write-Log $problem 'WARN' }
+
+# Nur EINE Instanz. Sonst pollen nach einer Installation zwei Launcher
+# dasselbe Laufwerk (z. B. alter Autostart von Hand + neuer vom Setup) und
+# jede Diskette wuerde doppelt starten.  -AllowMultiple hebt das auf.
+$script:InstanceMutex = $null
+if (-not $AllowMultiple -and -not $RunOnce) {
+    try {
+        $isNew = $false
+        $script:InstanceMutex = New-Object System.Threading.Mutex($true, 'Local\FloppyLauncherSingleInstance', [ref]$isNew)
+        if (-not $isNew) {
+            Write-Log "Es laeuft bereits ein Floppy Launcher. Dieser Start wird beendet (-AllowMultiple erzwingt Mehrfachstart)." 'WARN'
+            return
+        }
+    }
+    catch { Write-Log "Einmalstart-Pruefung nicht moeglich: $($_.Exception.Message)" 'WARN' }
+}
 if ($Host.Name -notmatch 'ConsoleHost') {
     Write-Log "Hinweis: Kein klassisches Konsolenfenster ($($Host.Name)). Das Bestaetigungsfenster wird trotzdem als eigener powershell-Prozess geoeffnet." 'WARN'
 }
