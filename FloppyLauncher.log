@@ -1,1 +1,103 @@
-﻿
+﻿2026-09-09 15:10:05 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-09 15:10:05 [INFO ] Host: Visual Studio Code Host | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-09-09 15:10:05 [WARN ] Hinweis: Kein klassisches Konsolenfenster (Visual Studio Code Host). Das Bestaetigungsfenster wird trotzdem als eigener powershell-Prozess geoeffnet.
+2026-09-09 15:10:36 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-09 15:10:36 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-09 15:18:27 [OK   ] Steam-ID 3892270 gefunden. Starte Steam...
+2026-09-09 15:19:05 [WARN ] Referenzdatei A:\game.txt enthaelt keine verwertbare Angabe (id= / run= / pcrun=).
+2026-09-09 15:19:53 [OK   ] Steam-ID 220200 gefunden. Starte Steam...
+2026-09-09 15:20:24 [OK   ] Steam-ID 220200 gefunden. Starte Steam...
+2026-09-09 15:53:57 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-09 15:53:57 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-09 15:57:42 [ASK  ] Confirm-Execution aufgerufen: C:\Program Files\qFlipper\qFlipper.exe
+2026-09-09 15:57:42 [ASK  ] Interface-Fenster wird geoeffnet (1 Kandidat[en]).
+2026-09-09 15:57:54 [OK   ] Interface: bestaetigt -> C:\Program Files\qFlipper\qFlipper.exe
+2026-09-09 15:57:54 [OK   ] Confirm-Execution: JA -> C:\Program Files\qFlipper\qFlipper.exe
+2026-09-09 15:57:54 [OK   ] Starte Programm: C:\Program Files\qFlipper\qFlipper.exe 
+2026-09-09 15:59:09 [OK   ] Steam-ID 220200 gefunden. Starte Steam...
+2026-09-09 16:00:37 [OK   ] Steam-ID 220200 gefunden. Starte Steam...
+2026-09-09 16:02:18 [WARN ] Referenzdatei A:\game.txt enthaelt keine verwertbare Angabe (id= / run= / pcrun=).
+2026-09-09 16:03:12 [OK   ] Steam-ID 3892270 gefunden. Starte Steam...
+2026-09-09 16:04:49 [OK   ] Steam-ID 3892270 gefunden. Starte Steam...
+2026-09-09 16:08:26 [OK   ] Steam-ID 3892270 gefunden. Starte Steam...
+2026-09-09 16:09:29 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-09 16:09:29 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-09 16:09:54 [WARN ] Referenzdatei A:\game.txt enthaelt keine verwertbare Angabe (id= / run= / pcrun=).
+2026-09-09 16:11:30 [OK   ] Steam-ID 3772810 gefunden. Starte Steam...
+2026-09-09 16:24:32 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-09 16:24:32 [INFO ] Host: ConsoleHost | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-09-09 16:25:18 [OK   ] Steam-ID 3772810 gefunden. Starte Steam...
+2026-09-09 18:47:55 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-09 18:47:55 [INFO ] Host: ConsoleHost | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-09-09 18:51:55 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-09 18:51:55 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-09 18:51:59 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-09 18:51:59 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-09 18:54:34 [OK   ] Steam-ID 220200 gefunden. Starte Steam...
+2026-09-09 20:01:09 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-09 20:01:09 [INFO ] Host: ConsoleHost | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-09-09 20:02:20 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-09 20:02:20 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-09 20:41:58 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-09 20:41:58 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-09 20:55:21 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-09 20:55:21 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-10 07:14:51 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-10 07:14:51 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-11 09:56:19 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-11 09:56:19 [INFO ] Host: ConsoleHost | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-09-11 14:43:42 [OK   ] Steam-ID 3892270 gefunden. Starte Steam...
+2026-09-11 14:44:07 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-11 14:44:07 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-11 14:44:20 [OK   ] Steam-ID 220200 gefunden. Starte Steam...
+2026-09-11 14:46:19 [ERROR] Fehler beim Auswerten der Diskette: Ausnahme beim Aufrufen von "IsPathRooted" mit 1 Argument(en):  "Illegales Zeichen im Pfad."
+2026-09-11 14:46:23 [ERROR] Fehler beim Auswerten der Diskette: Ausnahme beim Aufrufen von "IsPathRooted" mit 1 Argument(en):  "Illegales Zeichen im Pfad."
+2026-09-11 14:48:12 [ERROR] Fehler beim Auswerten der Diskette: Ausnahme beim Aufrufen von "IsPathRooted" mit 1 Argument(en):  "Illegales Zeichen im Pfad."
+2026-09-11 14:48:57 [ERROR] Fehler beim Auswerten der Diskette: Ausnahme beim Aufrufen von "IsPathRooted" mit 1 Argument(en):  "Illegales Zeichen im Pfad."
+2026-09-11 14:51:40 [ERROR] Fehler beim Auswerten der Diskette: Ausnahme beim Aufrufen von "IsPathRooted" mit 1 Argument(en):  "Illegales Zeichen im Pfad."
+2026-09-11 14:51:58 [ASK  ] Confirm-Execution aufgerufen: C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe
+2026-09-11 14:51:58 [ASK  ] Interface-Fenster wird geoeffnet (1 Kandidat[en]).
+2026-09-11 14:52:04 [OK   ] Interface: bestaetigt -> C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe
+2026-09-11 14:52:04 [OK   ] Confirm-Execution: JA -> C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe
+2026-09-11 14:52:04 [OK   ] Starte Programm: C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe 
+2026-09-11 14:52:46 [ASK  ] Confirm-Execution aufgerufen: C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe
+2026-09-11 14:52:46 [ASK  ] Interface-Fenster wird geoeffnet (1 Kandidat[en]).
+2026-09-11 14:53:00 [OK   ] Interface: bestaetigt -> C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe
+2026-09-11 14:53:00 [OK   ] Confirm-Execution: JA -> C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe
+2026-09-11 14:53:00 [OK   ] Starte Programm: C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe 
+2026-09-11 15:01:03 [OK   ] Steam-ID 220200 gefunden. Starte Steam...
+2026-09-11 17:21:11 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-11 17:21:11 [INFO ] Host: ConsoleHost | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-09-14 10:39:20 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-14 10:39:20 [INFO ] Host: ConsoleHost | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-09-14 15:51:29 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-14 15:51:29 [INFO ] Host: ConsoleHost | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-09-15 07:57:29 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-15 07:57:29 [INFO ] Host: ConsoleHost | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-09-15 08:20:44 [ASK  ] Confirm-Execution aufgerufen: C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe
+2026-09-15 08:20:44 [ASK  ] Interface-Fenster wird geoeffnet (1 Kandidat[en]).
+2026-09-15 08:20:49 [OK   ] Interface: bestaetigt -> C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe
+2026-09-15 08:20:49 [OK   ] Confirm-Execution: JA -> C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe
+2026-09-15 08:20:49 [OK   ] Starte Programm: C:\Users\mael\AppData\Local\Modrinth App\Modrinth App.exe 
+2026-09-15 08:43:28 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-15 08:43:28 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-15 09:24:43 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-15 09:24:43 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-15 09:54:51 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-15 09:54:51 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-15 12:35:28 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-15 12:35:28 [INFO ] Host: ConsoleHost | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-09-15 12:35:29 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-15 12:35:29 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-15 14:24:14 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-15 14:24:14 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-15 14:26:23 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-15 14:26:23 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-15 14:26:38 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-15 14:26:38 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-15 14:26:50 [OK   ] Hub-Diskette erkannt - oeffne Floppy Hub Menue.
+2026-09-15 14:26:50 [OK   ] Starte Programm: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Floppy\FloppyHub.ps1"
+2026-09-15 15:19:23 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-15 15:19:23 [INFO ] Host: ConsoleHost | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-09-16 07:57:15 [INFO ] Floppy Launcher gestartet. Warte auf Diskette in A:\ ...
+2026-09-16 07:57:15 [INFO ] Host: ConsoleHost | PS 5.1.26100.9444 | Interface-EXE: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
