@@ -10,3 +10,4 @@ Output/
 # Windows
 Thumbs.db
 desktop.ini
+*.log
