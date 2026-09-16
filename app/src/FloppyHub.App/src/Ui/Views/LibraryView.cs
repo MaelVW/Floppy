@@ -27,7 +27,11 @@ public partial class LibraryView : ViewBase
     protected override void Build()
     {
         _search = new LineEdit { PlaceholderText = Loc.T("LIB_SEARCH"), ClearButtonEnabled = true }.Expand();
-        _search.TextChanged += _ => Fill();
+        _search.TextChanged += text =>
+        {
+            Fill();
+            if (Fun.EasterEggs.SearchWord(text) is { } egg) Host.SetStatusMessage(egg, "info");
+        };
         _count = Ui.Dim("");
         var reload = Ui.Button(Loc.T("BTN_REFRESH"), "refresh", () => { Host.ReloadLibrary(); Fill(); });
 
@@ -74,9 +78,10 @@ public partial class LibraryView : ViewBase
         _value = Ui.Dim("", wrap: true);
         _notes = Ui.Label("", wrap: true);
         _start = Ui.Button(Loc.T("BTN_START"), "start", Start);
-        _write = Ui.Button(Loc.T("BTN_WRITE_DISC"), "write");
-        _write.Disabled = true;
-        _write.TooltipText = Loc.T("SOON_STAGE", 3);
+        _write = Ui.Button(Loc.T("BTN_WRITE_DISC"), "write", () =>
+        {
+            if (_selected is not null) Host.OpenWrite(_selected);
+        });
 
         var details = new GroupBox(Loc.T("LIB_DETAILS"), Ui.VBox(8,
             coverFrame, _title, _kind, _value, _notes, Ui.Spacer(false),
@@ -134,6 +139,7 @@ public partial class LibraryView : ViewBase
         _cover.Texture = null;
         _coverPlaceholder.Visible = true;
         _start.Disabled = e is null || e.Kind.Equals("run", StringComparison.OrdinalIgnoreCase) || e.Kind.Equals("hub", StringComparison.OrdinalIgnoreCase);
+        _write.Disabled = e is null;
 
         if (e is null)
         {

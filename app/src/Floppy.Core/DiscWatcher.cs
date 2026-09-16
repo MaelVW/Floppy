@@ -45,6 +45,9 @@ public sealed class DiscWatcher
     /// Aktuellen Inhalt als "schon behandelt" merken, z. B. nachdem die App selbst
     /// auf die Diskette geschrieben hat.
     /// </summary>
+    /// <summary>Aktuellen Zustand vergessen: der naechste <see cref="Poll"/> behandelt ihn erneut.</summary>
+    public void Forget() => LastSignature = null;
+
     public void MarkHandled()
     {
         try { LastSignature = _isReady(Root) ? _signature(Root) : null; }

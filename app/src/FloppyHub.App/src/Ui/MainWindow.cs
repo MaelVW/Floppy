@@ -1,6 +1,7 @@
 using Floppy.Core;
 using FloppyHub.App.Art;
 using FloppyHub.App.Core;
+using FloppyHub.App.Fun;
 using FloppyHub.App.Services;
 using FloppyHub.App.Ui.Views;
 using Godot;
@@ -52,7 +53,20 @@ public partial class MainWindow : PanelContainer, IAppHost
         var tick = new Timer { WaitTime = Math.Max(2, services.Options.PollSeconds), Autostart = true };
         tick.Timeout += OnTick;
         AddChild(tick);
+
+        // Easter Eggs: Konami-Code + manchmal "Wusstest du?"
+        var konami = new KonamiListener();
+        konami.Activated += () =>
+        {
+            _dialogs.AddChild(new CrtOverlay(10));
+            SetStatusMessage(Loc.T("EGG_KONAMI"), "game");
+        };
+        AddChild(konami);
+        if (EasterEggs.StartupFact(new Random()) is { } fact) SetStatusMessage(fact, "info");
     }
+
+    /// <summary>Nur fuer Bildschirmfotos der Easter Eggs.</summary>
+    public void TriggerCrt() => _dialogs.AddChild(new CrtOverlay(10));
 
     // ------------------------------------------------------------------
     // Aufbau
@@ -95,7 +109,7 @@ public partial class MainWindow : PanelContainer, IAppHost
 
         AddView(new DiscView());
         AddView(new LibraryView());
-        AddView(new ComingSoonView("write", "write", 3));
+        AddView(new WriteView());
         AddView(new DrivesView());
         AddView(new ComingSoonView("chat", "chat", 6));
         AddView(new ComingSoonView("game", "game", 5));
@@ -131,8 +145,17 @@ public partial class MainWindow : PanelContainer, IAppHost
         Tool("settings", "settings");
         row.AddChild(Ui.Spacer());
 
-        var brand = Ui.VBox(0, Ui.Label("FLOPPY HUB", "BoldLabel"), Ui.Dim(Loc.T("BRAND_TAGLINE")));
+        var brandName = Ui.Label("FLOPPY HUB", "BoldLabel");
+        var brand = Ui.VBox(0, brandName, Ui.Dim(EasterEggs.Tagline()));
         brand.Alignment = BoxContainer.AlignmentMode.Center;
+        brand.MouseFilter = MouseFilterEnum.Stop;
+        brand.GuiInput += e =>
+        {
+            if (!EasterEggs.Enabled || e is not InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) return;
+            var (name, comment) = EasterEggs.NextEdition();
+            brandName.Text = name;
+            if (comment is not null) SetStatusMessage(comment, "warn");
+        };
         row.AddChild(Ui.HBox(8, Icons.Rect("app"), brand).With(h => h.Alignment = BoxContainer.AlignmentMode.Center));
         row.AddChild(Ui.Margin(new Control(), 0, 0, 6, 0));
 
@@ -165,12 +188,11 @@ public partial class MainWindow : PanelContainer, IAppHost
             (0, null, null, Key.None),
             (199, "MENU_QUIT", null, Key.None));
 
-        var disc = Menu("MENU_DISC",
+        Menu("MENU_DISC",
             (201, "MENU_START", "start", Key.None),
             (202, "MENU_WRITE", "write", Key.None),
             (0, null, null, Key.None),
             (203, "MENU_EXAMPLES", "folder", Key.None));
-        disc.SetItemDisabled(disc.GetItemIndex(202), true);
 
         _viewMenu = Menu("MENU_VIEW");
         var views = new[] { "disc", "library", "write", "drives", "chat", "game", "log", "settings" };
@@ -206,6 +228,7 @@ public partial class MainWindow : PanelContainer, IAppHost
                 break;
             case 199: GetTree().Root.PropagateNotification((int)NotificationWMCloseRequest); break;
             case 201: LaunchDisc(); break;
+            case 202: ShowView("write"); break;
             case 203:
                 var examples = System.IO.Path.Combine(Services.Paths.Home, "beispiele");
                 OS.ShellOpen(Directory.Exists(examples) ? examples : Services.Paths.Home);
@@ -348,6 +371,12 @@ public partial class MainWindow : PanelContainer, IAppHost
         dialog.Open(_dialogs);
     }
 
+    public void OpenWrite(LibraryEntry entry)
+    {
+        ShowView("write");
+        ((WriteView)_views["write"]).Prefill(entry);
+    }
+
     public void ApplyTheme(string theme) => _applyTheme(theme);
     public void ApplyScale(float scale) => _applyScale(scale);
 
@@ -411,7 +440,7 @@ public partial class MainWindow : PanelContainer, IAppHost
         logo.MouseFilter = MouseFilterEnum.Stop;
         logo.GuiInput += e =>
         {
-            if (e is InputEventMouseButton { Pressed: true } && ++clicks == 3) egg.Text = Loc.T("ABOUT_EGG");
+            if (EasterEggs.Enabled && e is InputEventMouseButton { Pressed: true } && ++clicks == 3) egg.Text = Loc.T("ABOUT_EGG");
         };
         var version = (string)ProjectSettings.GetSetting("application/config/version");
         d.Body.AddChild(Ui.HBox(16, logo, Ui.VBox(4,

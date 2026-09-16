@@ -1,6 +1,7 @@
 using Floppy.Core;
 using FloppyHub.App.Art;
 using FloppyHub.App.Core;
+using FloppyHub.App.Fun;
 using FloppyHub.App.Services;
 using Godot;
 
@@ -41,6 +42,8 @@ public partial class DiscView : ViewBase
         // ---- links: das Laufwerk ----
         _media = Icons.Rect("media_empty", 3f);
         _media.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        _media.MouseFilter = MouseFilterEnum.Stop;
+        _media.GuiInput += OnMediaClicked;
         _driveName = Ui.Label(root.Length <= 3 ? root : Loc.T("DISC_TESTFOLDER"), "TitleLabel");
         _driveName.HorizontalAlignment = HorizontalAlignment.Center;
         _driveStatus = Ui.Dim("", wrap: true);
@@ -134,8 +137,33 @@ public partial class DiscView : ViewBase
         }
         var label = string.IsNullOrWhiteSpace(d?.Label) ? Loc.T("DISC_NO_LABEL") : d!.Label;
         _driveStatus.Text = Loc.T("DISC_STATUS_READY", label, d?.FileSystem ?? "?");
+        if (EasterEggs.IsOfficialDisc(d?.Label))
+        {
+            _media.Texture = Icons.Get("app", 3f);
+            _driveStatus.Text = Loc.T("EGG_OFFICIAL_DISC");
+        }
         _usage.Value = d?.UsedRatio ?? 0;
         _usageText.Text = d is null ? "" : Loc.T("DISC_USAGE", Ui.Bytes(d.UsedBytes), Ui.Bytes(d.TotalBytes));
+    }
+
+    // Easter Egg: fuenfmal schnell auf die grosse Diskette klicken
+    private int _mediaClicks;
+    private ulong _lastMediaClick;
+
+    private void OnMediaClicked(InputEvent e)
+    {
+        if (!EasterEggs.Enabled || e is not InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) return;
+        var now = Time.GetTicksMsec();
+        _mediaClicks = now - _lastMediaClick < 1500 ? _mediaClicks + 1 : 1;
+        _lastMediaClick = now;
+        if (_mediaClicks < 5) return;
+
+        _mediaClicks = 0;
+        var y = _media.Position.Y;
+        var tween = CreateTween();
+        tween.TweenProperty(_media, "position:y", y - 22, 0.12).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+        tween.TweenProperty(_media, "position:y", y, 0.5).SetTrans(Tween.TransitionType.Bounce).SetEase(Tween.EaseType.Out);
+        Host.SetStatusMessage(Loc.T("EGG_EJECT"), "floppy_small");
     }
 
     private void ShowPlan(DiscState st)

@@ -1,6 +1,7 @@
 using Floppy.Core;
 using FloppyHub.App.Art;
 using FloppyHub.App.Core;
+using FloppyHub.App.Fun;
 using FloppyHub.App.Services;
 using FloppyHub.App.Skin;
 using FloppyHub.App.Ui;
@@ -41,6 +42,8 @@ public partial class Main : Control
         if (!_s.ReadOnlyMode && !TakeSingleInstance(args)) return;
 
         Loc.Load(_s.Settings.Language);
+        EasterEggs.Enabled = _s.Options.EasterEggs;
+        if (args.EggDate is { } eggDate) EasterEggs.Today = eggDate;
         GetTree().AutoAcceptQuit = false;
         UiScale.Apply(GetWindow(), args.Scale ?? _s.Settings.Scale);
         _compact = args.Confirm;
@@ -297,6 +300,8 @@ public partial class Main : Control
         {
             case "confirm": _main?.ConfirmDisc(); break;
             case "about": _main?.ShowAbout(); break;
+            case "crt": _main?.TriggerCrt(); break;
+            case "write-demo" when _main is { Library.Count: > 0 }: _main.OpenWrite(_main.Library[^1]); break;
         }
 
         await ToSignal(GetTree().CreateTimer(1.6), SceneTreeTimer.SignalName.Timeout);

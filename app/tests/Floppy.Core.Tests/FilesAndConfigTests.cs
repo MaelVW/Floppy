@@ -126,6 +126,44 @@ public class ReferenceWriterTests
         Assert.Contains(r.Messages, m => m.Level == MessageLevel.Warn && m.Text.Contains("gesperrten Systemordner"));
     }
 
+    [Theory]
+    [InlineData(ReferenceKind.Run, @"..\..\Windows\notepad.exe", "aus der Diskette heraus")]
+    [InlineData(ReferenceKind.Run, "start.ps1", "nicht ausfuehrbar")]
+    [InlineData(ReferenceKind.PcRun, @"C:\Spiele\liesmich.txt", "nicht ausfuehrbar")]
+    public void Prepare_lehnt_ab_was_der_Launcher_ohnehin_ablehnen_wuerde(ReferenceKind kind, string value, string fragment)
+    {
+        var p = ReferenceWriter.Prepare(kind, value);
+        Assert.False(p.IsValid);
+        Assert.Equal(string.Empty, p.Text);
+        Assert.Contains(p.Messages, m => m.Level == MessageLevel.Error && m.Text.Contains(fragment));
+    }
+
+    [Fact]
+    public void Vorschau_entspricht_genau_der_geschriebenen_Datei()
+    {
+        using var d = new TempDisk();
+        var now = new DateTime(2026, 9, 16, 18, 5, 0);
+        var preview = ReferenceWriter.Prepare(ReferenceKind.Steam, "https://store.steampowered.com/app/620/Portal_2/", "-novid", "Portal 2", now: now);
+        Assert.True(preview.IsValid);
+        Assert.Equal("620", preview.Value);
+        Assert.Equal("# geschrieben von Floppy Hub  2026-09-16 18:05\r\n# Portal 2\r\nid=620\r\nargs=-novid\r\n", preview.Text);
+
+        var written = ReferenceWriter.Write(d.Root, ReferenceKind.Steam, "620", "-novid", "Portal 2", now: now);
+        Assert.Equal(preview.Text, File.ReadAllText(written.Path!));
+    }
+
+    [Fact]
+    public void Run_Datei_fehlt_auf_der_Diskette_nur_Warnung()
+    {
+        using var d = new TempDisk();
+        var p = ReferenceWriter.Prepare(ReferenceKind.Run, @"spiele\doom.exe", root: d.Root);
+        Assert.True(p.IsValid);
+        Assert.Contains(p.Messages, m => m.Level == MessageLevel.Warn && m.Text.Contains("nicht auf der Diskette"));
+
+        d.Write(@"spiele\doom.exe");
+        Assert.Empty(ReferenceWriter.Prepare(ReferenceKind.Run, @"spiele\doom.exe", root: d.Root).Messages);
+    }
+
     [Fact]
     public void Bestehende_Datei_nur_mit_force()
     {

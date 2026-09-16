@@ -24,6 +24,10 @@ internal sealed record MotorArgs
     public string? Drive { get; init; }
 
     public string? Home { get; init; }
+
+    /// <summary>Benutzerordner (Vertrauensliste). Standard: %LOCALAPPDATA%\FloppyHub.</summary>
+    public string? UserData { get; init; }
+
     public string? LogFile { get; init; }
 
     /// <summary>Andere App-EXE (Entwicklung: Godot-Editor).</summary>
@@ -58,6 +62,7 @@ internal sealed record MotorArgs
                 case "--console": result = result with { Console = true }; break;
                 case "--drive": result = result with { Drive = Value() }; break;
                 case "--home": result = result with { Home = Value() }; break;
+                case "--user-data": result = result with { UserData = Value() }; break;
                 case "--log": result = result with { LogFile = Value() }; break;
                 case "--app": result = result with { AppExe = Value() }; break;
                 case "--app-args": result = result with { AppArgs = Value() }; break;

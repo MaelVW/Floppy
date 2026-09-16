@@ -26,6 +26,9 @@ public interface IAppHost
     /// <summary>Ein Programm (z. B. aus der Bibliothek) starten - mit Rueckfrage, wenn nicht freigegeben.</summary>
     void LaunchProgram(string path, string? arguments, string label);
 
+    /// <summary>"Bespielen" oeffnen, vorausgefuellt mit einem Bibliothekseintrag.</summary>
+    void OpenWrite(LibraryEntry entry);
+
     void ApplyTheme(string theme);
     void ApplyScale(float scale);
 }

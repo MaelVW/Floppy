@@ -176,10 +176,31 @@ public class MotorEngineTests
         Assert.Equal(["steam:1"], r.Actions.Calls);
         Assert.False(File.Exists(Path.Combine(r.Data.Root, WriteGuard.FileName)));
 
-        // Diskette raus und wieder rein: startet wieder normal
+        // Inhalt aendert sich danach erneut: startet wieder normal
         r.Disk.GameTxt("id=2", "# neu eingelegt");
         engine.Tick();
         Assert.Equal(["steam:1", "steam:2"], r.Actions.Calls);
+    }
+
+    [Fact]
+    public void Waehrend_die_App_schreibt_wird_gewartet()
+    {
+        using var r = new Rig();
+        var engine = new MotorEngine(FloppyOptions.Default, new LogFile(null) { Echo = r.LogLines.Add }, r.Trust, r.Actions,
+            r.Disk.Root, guardDir: r.Data.Root);
+
+        // App beginnt zu schreiben, der Motor sieht schon den halben Zustand
+        WriteGuard.Begin(r.Data.Root);
+        r.Disk.GameTxt("id=7");
+        Assert.Equal("App schreibt gerade", engine.Tick()!.Reason);
+        Assert.Equal("App schreibt gerade", engine.Tick()!.Reason);   // vergessen -> erneut angesehen
+        Assert.Empty(r.Actions.Calls);
+
+        // App ist fertig
+        WriteGuard.Note(r.Data.Root, DiskSignature.Compute(r.Disk.Root));
+        Assert.Equal("von der App beschrieben", engine.Tick()!.Reason);
+        Assert.Null(engine.Tick());   // danach Ruhe
+        Assert.Empty(r.Actions.Calls);
     }
 
     [Fact]
@@ -187,12 +208,16 @@ public class MotorEngineTests
     {
         using var data = new TempDisk();
         WriteGuard.Note(data.Root, "sig", now: DateTime.UtcNow.AddMinutes(-10));
-        Assert.False(WriteGuard.Consume(data.Root, "sig"));
+        Assert.Equal(GuardState.None, WriteGuard.Check(data.Root, "sig"));
         Assert.False(File.Exists(Path.Combine(data.Root, WriteGuard.FileName)));
 
         WriteGuard.Note(data.Root, "sig-a");
-        Assert.False(WriteGuard.Consume(data.Root, "sig-b"));
-        Assert.True(WriteGuard.Consume(data.Root, "sig-a"));
+        Assert.Equal(GuardState.None, WriteGuard.Check(data.Root, "sig-b"));
+        Assert.Equal(GuardState.Written, WriteGuard.Check(data.Root, "sig-a"));
+
+        // Abgestuerzte App: "schreibe gerade" verfaellt
+        WriteGuard.Begin(data.Root, now: DateTime.UtcNow.AddMinutes(-5));
+        Assert.Equal(GuardState.None, WriteGuard.Check(data.Root, "sig"));
     }
 
     private sealed class ThrowingActions : IMotorActions

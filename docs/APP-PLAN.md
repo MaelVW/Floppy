@@ -86,12 +86,24 @@ Dazu: **Hell- und Dunkelmodus**.
 > Der **Motor** überwacht weiterhin **ausschließlich `A:`**. Laufwerke-Ansicht und
 > Schlüssel-Suche lesen andere Datenträger nur, wenn man sie in der App öffnet.
 
+### 6. Chat-Verbindung (entschieden 2026-09-16)
+
+- **Schlüssel-Diskette:** zufälliger Schlüssel, wer eine Kopie hat, ist im selben Raum.
+  Nachrichten sind damit Ende-zu-Ende verschlüsselt. Nichts wird gespeichert.
+- **Start immer über einen fertigen Gratis-Dienst** (z. B. ntfy.sh, Open Source). Er sieht
+  nur verschlüsselten Datensalat. Limits und Nutzungsbedingungen vor dem Bau prüfen.
+- **Jederzeit ins gleiche Netzwerk wechseln** (direkt von PC zu PC, ohne Dienst), z. B.
+  für längere Gespräche. Das Schulnetz blockiert das nicht. Windows-Firewall fragt beim
+  ersten Mal, das ist okay.
+- Weg austauschbar bauen: später evtl. derselbe Dienst auf eigenem Server.
+- **Später:** Kontakte, denen man Kanalnummern zuteilen kann (Details, wenn es so weit ist).
+
+### 7. Easter Eggs
+Fünf bis zehn kleine Easter Eggs in der App (Freundeskreis hat Spaß daran). Abschaltbar
+über `[ui] easter_eggs` in der INI. **Nie** in Sicherheits-Rückfragen.
+
 ### Vorschläge für später (noch nicht entschieden)
 
-- **Chat:** Die Schlüssel-Diskette enthält einen zufälligen Schlüssel. Wer eine Kopie
-  hat, ist im selben Raum, Nachrichten sind damit Ende-zu-Ende verschlüsselt. Stufe 1:
-  im **gleichen Netzwerk** (Schule/Zuhause, kein Server nötig). Stufe 2: übers
-  **Internet**, braucht einen kleinen Relay-Server. *Frage an Mael, wenn es so weit ist.*
 - **Minispiel:** Das Spiel selbst ist in die App eingebaut, die Diskette bringt nur
   **Daten** (Level, Highscores) und keinen Programmcode mit. So kann eine fremde
   Diskette nichts Schädliches in der App ausführen.
@@ -129,7 +141,7 @@ app/
 - [x] **1a Floppy.Core** – V1-Regeln nach C# portiert, Tests inkl. Gegenprobe
 - [x] **1b Motor** – `FloppyLauncher.exe`: nur `A:`, Einzelinstanz (gemeinsam mit V1), Log wie V1, Vertrauensliste, Steam/Bekanntes sofort, App wecken, `--stop`. Native EXE: 3 MB, ~4 MB RAM
 - [x] **2 App-Grundgerüst** – Fenster im Zielstil, Hell/Dunkel, Skalierung, Sprachdatei (DE), Platzhalter-Icons, Bestätigungsdialog (im Fenster + kleines Extra-Fenster), Willkommensdialog
-- [ ] **3 Funktionen** – ✓ Bibliothek mit Covern, ✓ Optionen + Vertrauensliste, ✓ Log-Ansicht · offen: **Diskette bespielen**
+- [x] **3 Funktionen** – Bibliothek mit Covern, Optionen + Vertrauensliste, Log-Ansicht, **Diskette bespielen** (Vorschau, Prüfung, Vorlage aus Bibliothek, automatische Freigabe, Motor startet Geschriebenes nicht sofort), 9 Easter Eggs
 - [ ] **4 Laufwerke-Ansicht** – ✓ Grundversion (Kacheln + Daten) · offen: schönere Grafik
 - [ ] **5 Minispiel** – von Diskette, in der App
 - [ ] **6 Chat** – Schlüssel-Diskette, nichts gespeichert

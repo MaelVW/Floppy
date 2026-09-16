@@ -34,6 +34,9 @@ public sealed record AppArgs
     /// <summary>Test: Willkommensdialog erzwingen.</summary>
     public bool FirstRun { get; init; }
 
+    /// <summary>Test: anderes Datum fuer die Easter Eggs (yyyy-MM-dd).</summary>
+    public DateTime? EggDate { get; init; }
+
     public static AppArgs Parse(IReadOnlyList<string> args)
     {
         var r = new AppArgs();
@@ -57,6 +60,11 @@ public sealed record AppArgs
                     break;
                 case "--forge-icons": r = r with { ForgeIcons = true }; break;
                 case "--first-run": r = r with { FirstRun = true }; break;
+                case "--egg-date":
+                    if (DateTime.TryParseExact(Next(), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+                            System.Globalization.DateTimeStyles.None, out var d))
+                        r = r with { EggDate = d };
+                    break;
             }
         }
         return r;

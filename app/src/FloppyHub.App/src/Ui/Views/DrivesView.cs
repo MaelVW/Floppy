@@ -92,11 +92,31 @@ public partial class DrivesView : ViewBase
         {
             if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left })
             {
+                CountCupholderClicks(d);
                 _selectedRoot = d.Root;
                 Refresh(force: true);
             }
         };
         return tile;
+    }
+
+    // Easter Egg: dreimal auf ein CD-Laufwerk klicken
+    private int _cdClicks;
+    private ulong _lastCdClick;
+
+    private void CountCupholderClicks(DriveSnapshot d)
+    {
+        if (!Fun.EasterEggs.Enabled || d.Kind != MediaKind.Optical)
+        {
+            _cdClicks = 0;
+            return;
+        }
+        var now = Time.GetTicksMsec();
+        _cdClicks = now - _lastCdClick < 1500 ? _cdClicks + 1 : 1;
+        _lastCdClick = now;
+        if (_cdClicks < 3) return;
+        _cdClicks = 0;
+        RetroDialog.Message(Host.DialogLayer, Loc.T("EGG_CUPHOLDER_TITLE"), Loc.T("EGG_CUPHOLDER_TEXT"), "warn");
     }
 
     private void ShowDetails(DriveSnapshot? d)

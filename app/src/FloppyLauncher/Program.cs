@@ -25,7 +25,7 @@ internal static class Program
 
         Starter.SuppressDriveErrorDialogs();
 
-        var paths = new FloppyPaths(args.Home ?? AppContext.BaseDirectory);
+        var paths = new FloppyPaths(args.Home ?? AppContext.BaseDirectory, args.UserData);
         var options = paths.LoadOptions(out var iniProblem);
         var log = new LogFile(args.LogFile ?? paths.ResolveLogFile(options), options.LogMaxKb);
         if (args.Console) log.Echo = System.Console.Out.WriteLine;

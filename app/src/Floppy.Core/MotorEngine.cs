@@ -72,10 +72,14 @@ public sealed class MotorEngine
 
     public GateDecision HandleDisc()
     {
-        if (_guardDir is not null && WriteGuard.Consume(_guardDir, Watcher.LastSignature))
+        switch (_guardDir is null ? GuardState.None : WriteGuard.Check(_guardDir, Watcher.LastSignature))
         {
-            _log.Write(LogLevel.Info, "Diskette wurde gerade von der Floppy Hub App beschrieben - wird nicht gestartet.");
-            return new GateDecision(GateAction.None, null, null, TrustState.Unknown, "von der App beschrieben");
+            case GuardState.Pending:
+                Watcher.Forget();   // App schreibt noch - beim naechsten Durchgang erneut ansehen
+                return new GateDecision(GateAction.None, null, null, TrustState.Unknown, "App schreibt gerade");
+            case GuardState.Written:
+                _log.Write(LogLevel.Info, "Diskette wurde gerade von der Floppy Hub App beschrieben - wird nicht gestartet.");
+                return new GateDecision(GateAction.None, null, null, TrustState.Unknown, "von der App beschrieben");
         }
 
         PlanResult result;
