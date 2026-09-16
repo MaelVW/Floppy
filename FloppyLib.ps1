@@ -222,7 +222,7 @@ function Show-FloppyBanner {
     $bb = [char]0x00BB
     $art = @(
         '   __________________ '
-        '  |  ______________  |   F L O P P Y   H U B'
+        '  |  ______________  |   T H E  F L O P P Y   H U B'
         "  | |              | |   $Subtitle"
         '  | |   //  //     | |'
         "  | |______________| |   $bb insert disk to begin"
