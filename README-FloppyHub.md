@@ -19,6 +19,9 @@ dem Zielordner und richtet auf Wunsch den versteckten Autostart ein.
 powershell -ExecutionPolicy Bypass -File .\build\Build-Installer.ps1
 ```
 
+**Signieren:** siehe [docs/SIGNIERUNG.md](docs/SIGNIERUNG.md). Mit hinterlegtem Zertifikat
+signiert der Build automatisch; `-Sign` erzwingt es.
+
 **Release veröffentlichen** — Tag pushen, GitHub Actions baut und hängt das Setup an:
 
 ```bash
@@ -43,7 +46,10 @@ angepasst werden.
 | `beispiele\` | fertige `game.txt`-Vorlagen + Regeln (erlaubt/verboten) | zum Kopieren |
 | `StartLauncherHidden.vbs` | startet den Launcher **ohne** aufblitzendes Fenster | Autostart |
 | `installer\FloppyHub.iss` | Inno-Setup-Skript für `FloppyHubSetup.exe` | beim Bauen |
-| `build\Build-Installer.ps1` | baut das Setup lokal | manuell |
+| `build\Build-Installer.ps1` | baut das Setup lokal, signiert automatisch, wenn ein Zertifikat da ist | manuell |
+| `build\Sign-FloppyFiles.ps1` | signiert Setup, Deinstaller und Skripte | vom Build |
+| `build\New-FloppyTestCertificate.ps1` | Test-Zertifikat, um die Signierung ohne Kauf auszuprobieren | manuell |
+| `docs\SIGNIERUNG.md` | Zertifikat besorgen und eintragen | Doku |
 | `.github\workflows\release.yml` | baut + veröffentlicht das Setup auf GitHub | bei Tag `v*` |
 
 ### Wohin geschrieben wird

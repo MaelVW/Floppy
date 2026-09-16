@@ -11,3 +11,15 @@ Output/
 Thumbs.db
 desktop.ini
 *.log
+
+# Signierung (niemals ins Repo!)
+build/stage/
+build/certs/
+*.pfx
+signing.local.psd1
+
+# App (.NET / Godot)
+app/**/bin/
+app/**/obj/
+.godot/
+*.user

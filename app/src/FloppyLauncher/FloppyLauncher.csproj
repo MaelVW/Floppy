@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- WinExe = kein Konsolenfenster. Laeuft unsichtbar im Autostart. -->
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- Der Name bleibt "FloppyLauncher" - wie in V1. -->
+    <AssemblyName>FloppyLauncher</AssemblyName>
+    <RootNamespace>FloppyLauncher</RootNamespace>
+    <Product>Floppy Hub</Product>
+    <Description>Floppy Launcher (Motor): ueberwacht Laufwerk A: und startet Disketten.</Description>
+    <Company>MaelVW</Company>
+    <Copyright>Copyright (c) 2026 MaelVW</Copyright>
+    <Version>2.0.0</Version>
+    <InformationalVersion>2.0.0-dev</InformationalVersion>
+
+    <!-- Sparsam: keine ICU-Sprachdaten, keine Hintergrund-GC-Threads. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <SatelliteResourceLanguages>de</SatelliteResourceLanguages>
+
+    <!-- "dotnet publish -r win-x64" erzeugt eine native EXE (kein .NET noetig, wenig RAM). -->
+    <PublishAot>true</PublishAot>
+    <OptimizationPreference>Size</OptimizationPreference>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Floppy.Core\Floppy.Core.csproj" />
+  </ItemGroup>
+
+</Project>

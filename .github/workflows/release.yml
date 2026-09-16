@@ -77,16 +77,39 @@ jobs:
         shell: pwsh
         run: choco install innosetup --no-progress -y
 
-      - name: Setup bauen
-        shell: pwsh
+      - name: Signier-Zertifikat bereitstellen (falls Secrets gesetzt)
+        # Secrets (Settings -> Secrets and variables -> Actions):
+        #   FLOPPY_SIGN_PFX_BASE64   PFX-Datei als Base64
+        #   FLOPPY_SIGN_PFX_PASSWORD Passwort der PFX
+        # Ohne Secrets wird unsigniert gebaut. Siehe docs/SIGNIERUNG.md.
+        shell: powershell
+        env:
+          PFX_B64: ${{ secrets.FLOPPY_SIGN_PFX_BASE64 }}
+          PFX_PWD: ${{ secrets.FLOPPY_SIGN_PFX_PASSWORD }}
         run: |
-          New-Item -ItemType Directory -Path dist -Force | Out-Null
-          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path $iscc)) { $iscc = "$env:ProgramFiles\Inno Setup 6\ISCC.exe" }
-          Write-Host "ISCC: $iscc"
-          & $iscc /Qp "/DAppVersion=${{ steps.ver.outputs.version }}" "installer\FloppyHub.iss"
-          if ($LASTEXITCODE -ne 0) { throw "ISCC fehlgeschlagen ($LASTEXITCODE)" }
+          if ([string]::IsNullOrWhiteSpace($env:PFX_B64)) {
+            Write-Host "::notice::Kein Signier-Zertifikat hinterlegt - Setup wird UNSIGNIERT gebaut."
+            exit 0
+          }
+          $pfx = Join-Path $env:RUNNER_TEMP 'floppy-sign.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:PFX_B64))
+          "FLOPPY_SIGN_PFX=$pfx"                  | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "FLOPPY_SIGN_PFX_PASSWORD=$env:PFX_PWD" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Signier-Zertifikat bereitgestellt."
+
+      - name: Setup bauen (signiert, wenn Zertifikat vorhanden)
+        shell: powershell
+        run: |
+          .\build\Build-Installer.ps1 -Version "${{ steps.ver.outputs.version }}"
+          if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "Build fehlgeschlagen ($LASTEXITCODE)" }
           Get-ChildItem dist
+
+      - name: Zertifikat entfernen
+        if: always()
+        shell: powershell
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP 'floppy-sign.pfx'
+          if (Test-Path $pfx) { Remove-Item $pfx -Force }
 
       - name: Pruefsumme erzeugen
         shell: pwsh

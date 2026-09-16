@@ -401,12 +401,28 @@ function Request-LaunchChoice {
     # [Floppy Hub] externen Retro-Skin (FloppyInterface.ps1) bevorzugen,
     # sonst die eingebaute Version. Faellt der Skin aus -> Exitcode != 1..9
     # -> Launcher startet nichts (sichere Vorgabe).
-    $ifSource =
-        if (Test-Path -LiteralPath $SkinScript -PathType Leaf) {
-            try { Get-Content -LiteralPath $SkinScript -Raw -ErrorAction Stop } catch { Get-InterfaceScript }
+    #
+    # Der Skin wird per -File gestartet, NICHT als -EncodedCommand: kodiert
+    # lag er schon bei ~94 % des Windows-Kommandozeilen-Limits (32767 Zeichen),
+    # mit Signaturblock weit darueber - das Fenster waere nie aufgegangen.
+    # Nebeneffekt: $PSScriptRoot ist gesetzt, der Skin findet seine INI.
+    $ifArgs = $null
+    $tempScript = $null
+    if (Test-Path -LiteralPath $SkinScript -PathType Leaf) {
+        $ifArgs = '-NoProfile -ExecutionPolicy Bypass -File "' + $SkinScript + '"'
+    }
+    else {
+        $enc = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes((Get-InterfaceScript)))
+        if ($enc.Length -lt 30000) {
+            $ifArgs = '-NoProfile -ExecutionPolicy Bypass -EncodedCommand ' + $enc
         }
-        else { Get-InterfaceScript }
-    $enc = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($ifSource))
+        else {
+            # Zu lang fuer die Kommandozeile -> temporaere Datei.
+            $tempScript = Join-Path $env:TEMP ('FloppyInterface-' + [guid]::NewGuid().ToString('N') + '.ps1')
+            [System.IO.File]::WriteAllText($tempScript, (Get-InterfaceScript), [System.Text.Encoding]::UTF8)
+            $ifArgs = '-NoProfile -ExecutionPolicy Bypass -File "' + $tempScript + '"'
+        }
+    }
     $chosen = $null
     try {
         $env:FLOPPY_IF_LIST    = ($cands -join "`n")
@@ -420,7 +436,7 @@ function Request-LaunchChoice {
         # bricht selbst nach ConfirmTimeout ab; wir geben 30 s Puffer.
         $psi = New-Object System.Diagnostics.ProcessStartInfo
         $psi.FileName        = $SelfExe
-        $psi.Arguments       = '-NoProfile -ExecutionPolicy Bypass -EncodedCommand ' + $enc
+        $psi.Arguments       = $ifArgs
         $psi.UseShellExecute = $true          # -> eigenes Konsolenfenster, erbt die $env:FLOPPY_IF_*
         $proc = [System.Diagnostics.Process]::Start($psi)
 
@@ -444,6 +460,7 @@ function Request-LaunchChoice {
     finally {
         'FLOPPY_IF_LIST', 'FLOPPY_IF_ARGS', 'FLOPPY_IF_DRIVE', 'FLOPPY_IF_TIMEOUT' |
             ForEach-Object { Remove-Item "Env:\$_" -ErrorAction SilentlyContinue }
+        if ($tempScript) { Remove-Item -LiteralPath $tempScript -Force -ErrorAction SilentlyContinue }
     }
 
     if ($chosen) { Write-Log "Interface: bestaetigt -> $chosen" 'OK' }

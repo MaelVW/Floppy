@@ -27,7 +27,11 @@
 #define AppPublisher   "MaelVW"
 #define AppURL         "https://github.com/MaelVW/Floppy"
 #define AppExeName     "FloppyHub.ps1"
-#define SrcDir         ".."
+; Quellordner: normal das Repo; der Build legt beim Signieren eine
+; signierte Kopie an und uebergibt sie per /DSrcDir=...
+#ifndef SrcDir
+  #define SrcDir       ".."
+#endif
 
 [Setup]
 AppId={{8E2A6D31-4C57-4F9B-9E1C-FL0PPYHUB0001}
@@ -64,6 +68,16 @@ LicenseFile=..\LICENSE.txt
 InfoBeforeFile=..\installer\vorher.txt
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
+
+; --- Digitale Signatur -----------------------------------------------------
+; Aktiv nur, wenn der Build mit /DSign und /Sfloppysign=... aufgerufen wird
+; (build\Build-Installer.ps1 -Sign). Signiert Setup UND Deinstallationsprogramm.
+#ifdef Sign
+SignTool=floppysign
+SignedUninstaller=yes
+SignToolRetryCount=3
+SignToolRetryDelay=2000
+#endif
 
 [Languages]
 Name: "de"; MessagesFile: "compiler:Languages\German.isl"

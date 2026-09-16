@@ -1,0 +1,26 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>FloppyHub</AssemblyName>
+    <RootNamespace>FloppyHub.App</RootNamespace>
+    <Product>Floppy Hub</Product>
+    <Company>MaelVW</Company>
+    <Copyright>Copyright (c) 2026 MaelVW</Copyright>
+    <Version>2.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Godot hat eigene Timer/Mutex/HttpClient-Klassen: Namenskonflikte vermeiden. -->
+    <Using Remove="System.Threading" />
+    <Using Remove="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Floppy.Core\Floppy.Core.csproj" />
+  </ItemGroup>
+
+</Project>
