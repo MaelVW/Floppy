@@ -18,7 +18,12 @@
 ; ===========================================================================
 
 #define AppName        "Floppy Hub"
-#define AppVersion     "1.0.0"
+; Version: per Kommandozeile ueberschreibbar (ISCC /DAppVersion=1.2.3).
+; Ohne den #ifndef-Schutz wuerde der #define die /D-Angabe wieder ueberschreiben
+; und ein Release-Tag wie v1.2.0 trotzdem "1.0.0" bauen.
+#ifndef AppVersion
+  #define AppVersion   "1.0.0"
+#endif
 #define AppPublisher   "MaelVW"
 #define AppURL         "https://github.com/MaelVW/Floppy"
 #define AppExeName     "FloppyHub.ps1"
