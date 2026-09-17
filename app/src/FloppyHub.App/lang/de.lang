@@ -1,0 +1,675 @@
+# Floppy Hub - deutsche Texte
+# Format:  SCHLUESSEL = Text      {0}, {1} = Platzhalter      \n = neue Zeile
+# Eine neue Sprache = Kopie dieser Datei (z. B. en.lang) mit uebersetzten Texten.
+
+FMT_DECIMAL = ,
+YES = Ja
+NO = Nein
+
+# ---- Allgemein / Knöpfe ----
+BTN_OK = OK
+BTN_CANCEL = Abbrechen
+BTN_REFRESH = Aktualisieren
+BTN_START = Starten
+BTN_START_NOW = Jetzt starten
+BTN_RELEASE = Freigeben…
+BTN_WRITE_DISC = Auf Diskette…
+BTN_ONCE = Einmal starten
+BTN_ALWAYS = Immer erlauben
+BTN_CLEAR_LOG = Log leeren
+BTN_CLEAR_COVERS = Cover-Speicher leeren
+BTN_REMOVE_TRUST = Freigabe entfernen
+BTN_OPEN_CONFIG = Konfiguration öffnen
+BTN_OPEN_HOME = Programmordner
+BTN_OPEN_DATA = Benutzerdaten
+
+BRAND_TAGLINE = Disketten-Zentrale
+
+# ---- Menüs ----
+MENU_FILE = Datei
+MENU_REFRESH = Alles neu laden
+MENU_OPEN_HOME = Programmordner öffnen
+MENU_OPEN_DATA = Benutzerdaten öffnen
+MENU_QUIT = Beenden
+MENU_DISC = Diskette
+MENU_START = Diskette jetzt starten
+MENU_WRITE = Diskette bespielen…
+MENU_EXAMPLES = Beispiele für game.txt
+MENU_VIEW = Ansicht
+MENU_EXTRAS = Extras
+MENU_TRUST = Vertrauensliste…
+MENU_LOG = Log anzeigen
+MENU_CLEAR_LOG = Log leeren…
+MENU_HELP = Hilfe
+MENU_ABOUT = Über Floppy Hub
+
+# ---- Ansichten (Werkzeugleiste) ----
+VIEW_DISC = Diskette
+VIEW_LIBRARY = Bibliothek
+VIEW_WRITE = Bespielen
+VIEW_DRIVES = Laufwerke
+VIEW_CHAT = Chat
+VIEW_GAME = Minispiel
+VIEW_LOG = Log
+VIEW_SETTINGS = Optionen
+TIP_DISC = Was liegt im Laufwerk und was passiert beim Einlegen?
+TIP_LIBRARY = Deine gemerkten Spiele und Programme
+TIP_WRITE = Eine Diskette neu bespielen
+TIP_DRIVES = Disketten, USB-Sticks und CDs anzeigen
+TIP_CHAT = Mit anderen Floppy-Hub-Nutzern schreiben – verschlüsselt, nichts wird gespeichert
+TIP_GAME = Diskettenlager – das Minispiel von Diskette
+TIP_LOG = Protokoll des Floppy Launchers
+TIP_SETTINGS = Darstellung, Sprache, Vertrauensliste
+
+THEME_SYSTEM = Wie Windows
+THEME_LIGHT = Hell
+THEME_DARK = Dunkel
+SCALE_AUTO = Automatisch ({0} %)
+
+# ---- Spalten ----
+COL_NAME = Name
+COL_SIZE = Größe
+COL_CHANGED = Geändert
+COL_KIND = Art
+COL_VALUE = Ziel
+COL_ADDED = Hinzugefügt
+COL_PROGRAM = Programm
+COL_SOURCE = Quelle
+COL_SINCE = Seit
+
+# ---- Arten ----
+KIND_STEAM = Steam-Spiel
+KIND_STEAM_ID = Steam-Spiel {0}
+KIND_PCRUN = Programm auf dem PC
+KIND_RUN = Programm auf Diskette
+KIND_HUB = Hub-Diskette
+
+# ---- Ansicht Diskette ----
+DISC_DRIVE = Laufwerk
+DISC_TESTFOLDER = Testordner
+DISC_ON_INSERT = Beim Einlegen passiert
+DISC_CONTENT = Inhalt der Diskette
+DISC_STATUS_EMPTY = Keine Diskette eingelegt
+DISC_STATUS_READY = „{0}“ · {1}
+DISC_NO_LABEL = ohne Namen
+DISC_USAGE = {0} von {1} belegt
+DISC_NONE_TITLE = Keine Diskette
+DISC_NONE_TEXT = Lege eine Diskette in {0} ein.
+DISC_NONE_HINT = Der Floppy Launcher schaut alle paar Sekunden nach.
+DISC_NOTHING = Nichts zu starten
+DISC_NOTHING_TEXT = Keine game.txt und kein Programm auf der Diskette gefunden.
+DISC_NOTHING_HINT = Tipp: Unter „Diskette → Beispiele für game.txt“ steht, was möglich ist.
+DISC_REJECTED_TITLE = Diskette abgelehnt
+DISC_REJECTED_TEXT = Die Angaben auf der Diskette sind ungültig oder nicht erlaubt.
+DISC_MULTIPLE = {0} Programme
+DISC_EMPTY_FILES = (leer)
+
+PLAN_STEAM = Steam · AppID {0}
+PLAN_HUB = Öffnet diese App, wenn die Diskette eingelegt wird.
+PLAN_PCRUN = Programm auf dem PC:\n{0}
+PLAN_RUN = Programm auf der Diskette:\n{0}
+PLAN_ARGS = Argumente: {0}
+
+TRUST_STEAM = Startet sofort über Steam.
+TRUST_HUB = Öffnet Floppy Hub.
+TRUST_TRUSTED = Freigegeben – startet sofort beim Einlegen.
+TRUST_UNKNOWN = Noch nicht freigegeben – beim ersten Start wird gefragt.
+TRUST_CHANGED = Die Datei hat sich seit der Freigabe verändert – es wird erneut gefragt.
+TRUST_MULTIPLE = Mehrere Programme – beim Einlegen wird gefragt, welches starten soll.
+TRUST_EMPTY = (noch keine Freigaben)
+TRUST_SRC_CONFIRMED = bestätigt
+TRUST_SRC_WRITTEN = beim Bespielen
+TRUST_REMOVE_TITLE = Freigabe entfernen
+TRUST_REMOVE_TEXT = Soll die Freigabe für\n{0}\nentfernt werden? Beim nächsten Einlegen wird dann wieder gefragt.
+
+# ---- Rückfrage ----
+CONFIRM_WINDOW_TITLE = Floppy Hub – Rückfrage
+CONFIRM_TITLE_DISC = Programm von der Diskette starten?
+CONFIRM_TITLE_PC = Programm auf dem PC starten?
+CONFIRM_REASON_NEW = Dieses Programm wird zum ersten Mal gestartet und ist noch nicht freigegeben.
+CONFIRM_REASON_CHANGED = Achtung: Die Datei ist nicht mehr dieselbe wie bei der Freigabe (Update oder ausgetauscht?).
+CONFIRM_REASON_MULTIPLE = Auf der Diskette liegen mehrere Programme. Welches soll starten?
+CONFIRM_PROGRAM = Programm
+CONFIRM_NAME = Name
+CONFIRM_PATH = Datei
+CONFIRM_ARGS = Argumente
+CONFIRM_SOURCE = Angabe aus
+CONFIRM_SOURCE_SCAN = Programmsuche auf {0}
+CONFIRM_SOURCE_LIBRARY = Bibliothek
+CONFIRM_FILE = Größe
+CONFIRM_CHOOSE = Wähle das Programm aus, das gestartet werden soll:
+CONFIRM_HINT = Nur starten, wenn du der Diskette vertraust. „Immer erlauben“ merkt sich genau diese Datei mit diesen Argumenten – ändert sich etwas, wird wieder gefragt.
+CONFIRM_COUNTDOWN = Abbruch in {0} s
+CONFIRM_CANCELLED = abgebrochen
+CONFIRM_TIMEOUT = Zeit abgelaufen
+CONFIRM_DISC_REMOVED = Diskette entfernt
+CONFIRM_DISC_CHANGED = Die Diskette hat sich inzwischen verändert – es wird nichts gestartet.
+CONFIRM_MISSING = Die Datei gibt es nicht mehr: {0}
+CONFIRM_START_FAILED = Start fehlgeschlagen: {0}
+CONFIRM_NOTHING = Diese Diskette braucht keine Rückfrage mehr.
+
+# ---- Bibliothek ----
+LIB_SEARCH = Suchen…
+LIB_COUNT = {0} von {1} Einträgen
+LIB_DETAILS = Details
+LIB_NONE_SELECTED = Kein Eintrag gewählt
+LIB_EMPTY = Die Bibliothek ist noch leer.
+LIB_COVER_HINT = Cover werden einmal von Steam geladen und danach gespeichert.
+LIB_START_FAILED = Start nicht möglich
+
+# ---- Laufwerke ----
+DRIVES_HINT = Nur Anzeige: Der Floppy Launcher überwacht weiterhin ausschließlich Laufwerk A:.
+DRIVES_SHOW_INTERNAL = Interne Laufwerke zeigen
+DRIVES_DETAILS = Eigenschaften
+DRIVES_NO_MEDIA = Kein Datenträger eingelegt
+DRIVES_NOT_CONNECTED = Laufwerk nicht angeschlossen
+DRIVES_NONE = Kein Laufwerk gefunden
+DRIVES_FREE_OF = {0} frei von {1}
+DRIVES_WATCHED = ja, alle {0} s
+DRIVES_WATCHED_SHORT = {0} alle {1} s
+BTN_OPEN_EXPLORER = Im Explorer öffnen
+UNIT_BYTES = Bytes
+
+GROUP_FLOPPY = Disketten
+GROUP_USB = USB-Sticks
+GROUP_SD = Speicherkarten
+GROUP_EXTERNALDISK = Externe Festplatten
+GROUP_OPTICAL = CD, DVD & Blu-ray
+GROUP_FIXED = Interne Laufwerke
+GROUP_NETWORK = Netzlaufwerke
+GROUP_OTHER = Sonstige
+
+MEDIA_FLOPPY = Diskette
+MEDIA_USB = USB-Stick
+MEDIA_SD = Speicherkarte
+MEDIA_EXTERNALDISK = Externe Festplatte
+MEDIA_OPTICAL = CD/DVD-Laufwerk
+MEDIA_FIXED = Interne Festplatte
+MEDIA_NETWORK = Netzlaufwerk
+MEDIA_OTHER = Laufwerk
+
+FORMAT_FLOPPY35HD = 3,5″ HD · 1,44 MB
+FORMAT_FLOPPY35DD = 3,5″ DD · 720 KB
+FORMAT_FLOPPY35ED = 3,5″ ED · 2,88 MB
+FORMAT_FLOPPY525HD = 5,25″ HD · 1,2 MB
+FORMAT_FLOPPY525DD = 5,25″ DD · 360 KB
+FORMAT_CD = Daten-CD
+FORMAT_AUDIOCD = Audio-CD
+FORMAT_DVD = DVD
+FORMAT_BLURAY = Blu-ray
+
+BUS_UNKNOWN = unbekannt
+BUS_USB = USB
+BUS_SD = SD-Kartenleser
+BUS_ATAPI = ATAPI
+BUS_ATA = ATA
+BUS_SATA = SATA
+BUS_NVME = NVMe
+BUS_SCSI = SCSI/SAS
+BUS_FIREWIRE = FireWire
+BUS_RAID = RAID
+BUS_VIRTUAL = virtuell (z. B. ISO-Datei)
+BUS_OTHER = anderer
+
+SPEC_KIND = Art
+SPEC_FORMAT = Format
+SPEC_BUS = Anschluss
+SPEC_DEVICE = Gerät
+SPEC_FS = Dateisystem
+SPEC_CLUSTER = Clustergröße
+SPEC_SERIAL = Seriennummer
+SPEC_CAPACITY = Kapazität
+SPEC_USED = Belegt
+SPEC_FREE = Frei
+SPEC_WATCHED = Überwacht
+
+# ---- Log ----
+LOG_AUTO = Automatisch aktualisieren
+LOG_DISABLED = Logging ist in der Konfiguration abgeschaltet.
+LOG_MISSING = Noch keine Logdatei: {0}
+LOG_CLEAR_TITLE = Log leeren
+LOG_CLEAR_TEXT = Soll das Launcher-Log geleert werden?\nDer bisherige Inhalt wird einmalig als .old gesichert.
+
+# ---- Optionen ----
+SET_LOOK = Darstellung
+SET_THEME = Farbschema
+SET_SCALE = Größe der Oberfläche
+SET_LANGUAGE = Sprache
+SET_LANGUAGE_HINT = Die Oberfläche wird sofort umgestellt. Das Launcher-Log bleibt deutsch (wie bei der Konsolen-Variante).
+SET_LIBRARY = Bibliothek
+SET_COVERS = Cover-Bilder von Steam laden
+SET_COVERS_HINT = Braucht beim ersten Mal Internet. Danach liegen die Bilder auf deinem PC und funktionieren auch offline.
+SET_COVERS_SIZE = Gespeichert: {0}
+SET_TRUST = Vertrauensliste
+SET_TRUST_HINT = Diese Programme starten beim Einlegen ohne Rückfrage – solange Datei und Argumente gleich bleiben.
+SET_MOTOR = Floppy Launcher
+SET_WATCHED_DRIVE = Überwacht
+SET_HOME = Programmordner
+SET_USERDATA = Benutzerdaten
+SET_LOGFILE = Logdatei
+SET_VERSION = Version
+
+MOTOR_RUNNING = Der Floppy Launcher läuft und wartet auf Disketten.
+MOTOR_STOPPED = Der Floppy Launcher läuft gerade nicht – eingelegte Disketten starten nicht automatisch.
+MOTOR_RUNNING_SHORT = Launcher aktiv
+MOTOR_STOPPED_SHORT = Launcher aus
+
+# ---- Statusleiste ----
+STATUS_NO_DISC = {0}  keine Diskette
+STATUS_LIBRARY = Bibliothek: {0}
+STATUS_REFRESHED = Alles neu geladen.
+STATUS_STEAM_STARTED = Steam startet „{0}“ …
+STATUS_PROGRAM_STARTED = „{0}“ wird gestartet …
+STATUS_HUB_ALREADY = Hub-Diskette – du bist schon im Floppy Hub.
+STATUS_CONFIRM_STARTED = Programm gestartet.
+STATUS_CONFIRM_CANCELLED = Nichts gestartet.
+
+# ---- Bespielen ----
+BTN_WRITE = Auf Diskette schreiben
+BTN_BROWSE = Durchsuchen…
+BTN_REPLACE = Ersetzen
+WRITE_KIND = Was soll die Diskette tun?
+WRITE_KIND_STEAM = Steam-Spiel starten
+WRITE_KIND_STEAM_HINT = Startet sofort über Steam.
+WRITE_KIND_PCRUN = Programm auf dem PC starten
+WRITE_KIND_PCRUN_HINT = Z. B. einen Launcher. Wird automatisch freigegeben.
+WRITE_KIND_RUN = Programm auf der Diskette
+WRITE_KIND_RUN_HINT = Die Datei liegt selbst auf der Diskette.
+WRITE_KIND_HUB = Hub-Diskette
+WRITE_KIND_HUB_HINT = Öffnet diese App beim Einlegen.
+WRITE_TEMPLATE = Vorlage
+WRITE_TEMPLATE_NONE = Aus der Bibliothek übernehmen …
+WRITE_TEMPLATE_HINT = Füllt die Angaben mit einem gemerkten Spiel oder Programm aus.
+WRITE_DETAILS = Angaben
+WRITE_VALUE_STEAM = Steam-Spiel
+WRITE_VALUE_STEAM_PLACEHOLDER = AppID oder Link aus dem Steam-Shop
+WRITE_VALUE_PCRUN = Programm
+WRITE_VALUE_PCRUN_PLACEHOLDER = z. B. C:\Spiele\MeinSpiel\spiel.exe
+WRITE_VALUE_RUN = Datei auf Diskette
+WRITE_VALUE_RUN_PLACEHOLDER = z. B. spiele\doom.exe
+WRITE_ARGS = Argumente
+WRITE_ARGS_PLACEHOLDER = optional, z. B. -fullscreen
+WRITE_TITLE = Titel
+WRITE_TITLE_PLACEHOLDER = optional – so heißt die Diskette in der App
+WRITE_ADD_LIBRARY = Auch in die Bibliothek aufnehmen
+WRITE_PREVIEW = Vorschau – so sieht die game.txt aus
+WRITE_PREVIEW_INVALID = (so kann nichts geschrieben werden – siehe Hinweise)
+WRITE_HINT_EMPTY_STEAM = Trage die AppID ein oder kopiere den Link aus dem Steam-Shop hierher.
+WRITE_HINT_EMPTY_PCRUN = Wähle das Programm auf deinem PC aus.
+WRITE_HINT_EMPTY_RUN = Wähle die Datei auf der Diskette aus.
+WRITE_HINT_EMPTY_HUB = Keine weiteren Angaben nötig.
+WRITE_REC_STEAM = Erkannt: {0} · AppID {1}
+WRITE_REC_STEAM_ID = Steam-AppID {0}
+WRITE_REC_FILE = Programm gefunden ({0}).
+WRITE_REC_TRUSTED = Bereits freigegeben.
+WRITE_REC_MISSING = Die Datei gibt es auf diesem PC (noch) nicht.
+WRITE_REC_ON_DISC = Datei liegt auf der Diskette.
+WRITE_REC_NOT_ON_DISC = Datei liegt nicht auf der Diskette.
+WRITE_TARGET = Ziel: {0}
+WRITE_TARGET_FREE = {0} frei
+WRITE_TARGET_NONE = Keine Diskette in {0} – lege eine ein, um zu schreiben.
+WRITE_TARGET_REPLACE = Achtung: Die vorhandene game.txt wird ersetzt.
+WRITE_BROWSE_PCRUN = Programm auswählen
+WRITE_BROWSE_RUN = Datei auf der Diskette auswählen
+WRITE_FILTER_PROGRAMS = Programme
+WRITE_NOT_ON_DISC = Diese Datei liegt nicht auf der Diskette ({0}). Für Programme auf dem PC nimm „Programm auf dem PC starten“.
+WRITE_REPLACE_TITLE = game.txt ersetzen?
+WRITE_REPLACE_TEXT = Auf der Diskette gibt es schon eine game.txt.\nSoll sie durch die neue ersetzt werden?
+WRITE_FAILED_TITLE = Nicht geschrieben
+WRITE_DONE_TITLE = Diskette bespielt
+WRITE_DONE_TEXT = Fertig! Beim nächsten Einlegen startet „{0}“.
+WRITE_DONE_TRUSTED = Das Programm ist freigegeben und startet ohne Rückfrage.
+WRITE_DONE_LIBRARY = Außerdem in der Bibliothek gemerkt.
+WRITE_DONE_STATUS = Diskette bespielt: „{0}“
+
+WRITE_KIND_GAME = Minispiel-Diskette
+WRITE_KIND_GAME_HINT = Level für „Diskettenlager“, die Rekorde reisen mit.
+WRITE_VALUE_GAME = Levelpaket
+WRITE_VALUE_GAME_PLACEHOLDER = leer = eingebautes „Diskettenlager“, oder eigene Leveldatei
+WRITE_HINT_EMPTY_GAME = Keine weiteren Angaben nötig.
+WRITE_REC_GAME = Paket „{0}“ · {1} Level – wird als levels.txt auf die Diskette kopiert.
+WRITE_REC_GAME_INVALID = Dieses Levelpaket enthält keine spielbaren Level.
+WRITE_BROWSE_GAME = Levelpaket auswählen
+WRITE_FILTER_LEVELS = Levelpakete
+
+# ---- Minispiel ----
+KIND_GAME_TITLE = Minispiel: {0}
+PLAN_GAME = Minispiel „Diskettenlager“ · {0} Level
+TRUST_GAME = Öffnet das Minispiel in der App – reine Leveldaten, kein Programm.
+GAME_PACK = Levelpaket:
+GAME_PACK_BUILTIN = Eingebaut: Diskettenlager
+GAME_PACK_DISC = Diskette {0}  „{1}“
+GAME_PACK_NO_DISC = (keine Minispiel-Diskette eingelegt)
+GAME_RELOAD_DISC = Diskette lesen
+GAME_MAKE_DISC = Spiel-Diskette erstellen…
+GAME_LEVEL = LEVEL
+GAME_MOVES = ZÜGE
+GAME_PUSHES = SCHÜBE
+GAME_LEVELS = Level
+GAME_COL_LEVEL = Name
+GAME_COL_RECORD = Punkte
+GAME_BY = von {0}
+GAME_LEVEL_COUNT = {0} Level
+GAME_PROBLEMS = {0} kaputt (Tooltip)
+GAME_NO_LEVELS = Keine spielbaren Level
+GAME_LEVEL_TITLE = Level {0}: {1}
+GAME_NO_RECORD = Noch kein Rekord – leg los!
+GAME_RECORD = Rekord: {0} Punkte · {1} Züge · {2} Schübe · {3} · {4} ({5})
+GAME_PREV = Zurück
+GAME_NEXT = Weiter
+GAME_UNDO = Rückgängig
+GAME_RESTART = Neustart
+GAME_KEYS = Pfeiltasten/WASD · Z = zurück · R = neu
+GAME_CLICK_TO_PLAY = Zum Spielen klicken
+GAME_SOLVED_BANNER = GESCHAFFT!
+GAME_SOLVED_TITLE = Level geschafft
+GAME_SOLVED_HEADLINE = Alle Disketten eingelegt!
+GAME_SOLVED_RECORD = Neuer Rekord!
+GAME_SOLVED_TEXT = {0} Züge, {1} Schübe in {2}.
+GAME_NAME = Dein Name:
+GAME_NAME_PLACEHOLDER = für die Bestenliste
+GAME_AGAIN = Nochmal
+GAME_ALL_DONE = Alle Level geschafft – du bist Diskettenlager-Meister!
+GAME_SCORE_ON_DISC = Rekord auf der Diskette gespeichert.
+GAME_SCORE_READONLY = Diskette schreibgeschützt – Rekord nur auf diesem PC gespeichert.
+GAME_SCORE_DISC_GONE = Diskette entfernt – Rekord nur auf diesem PC gespeichert.
+GAME_TIME = ZEIT
+GAME_SOLVED_POINTS = {0} Punkte
+GAME_POINTS_RULE = Punkte = 1000 × Disketten − 5 × Züge − 5 × Schübe − 2 × Sekunden
+GAME_LEVEL_ID = Level-ID {0}
+GAME_LEVEL_ID_TIP = Aus dem Aufbau berechnet. Gleiche ID = gleiches Level – so vergleicht ihr euch in der Rangliste im Chat.
+GAME_PACK_CUSTOM = Eigene Level ({0})
+GAME_BTN_EDITOR = Level-Editor
+GAME_BTN_PLAY = Zurück zum Spiel
+GAME_PAUSED = Pause – zum Weiterspielen klicken
+
+# ---- Level-Editor ----
+EDITOR_TITLE = Level-Editor
+EDITOR_TOOLS = Werkzeug
+EDITOR_TOOL_WALL = Wand
+EDITOR_TOOL_FLOOR = Boden
+EDITOR_TOOL_GOAL = Laufwerk
+EDITOR_TOOL_BOX = Diskette
+EDITOR_TOOL_PLAYER = Spieler
+EDITOR_TOOL_ERASE = Radierer
+EDITOR_NAME = Name:
+EDITOR_NAME_DEFAULT = Mein Level
+EDITOR_SIZE = Größe:
+EDITOR_NEW = Neu
+EDITOR_TEST = Testen
+EDITOR_SAVE = Speichern
+EDITOR_DELETE = Löschen
+EDITOR_TO_DISC = Auf Diskette…
+EDITOR_MY_LEVELS = Eigene Level
+EDITOR_MY_LEVELS_EMPTY = (noch keine – bau eins!)
+EDITOR_HINT = Linksklick setzt das Werkzeug, Rechtsklick radiert. Mit gedrückter Maustaste malen.
+EDITOR_OK = Spielbar · Level-ID {0}
+EDITOR_PROBLEM = Noch nicht spielbar: {0}
+EDITOR_SAVED = „{0}“ gespeichert – zu finden unter „Eigene Level“.
+EDITOR_SAVE_FAILED = Nicht gespeichert: {0}
+EDITOR_DELETE_TITLE = Level löschen
+EDITOR_DELETE_TEXT = Soll „{0}“ aus deinen eigenen Leveln gelöscht werden?
+EDITOR_REPLACE_TITLE = Level ersetzen?
+EDITOR_REPLACE_TEXT = Es gibt schon ein eigenes Level „{0}“. Ersetzen?
+EDITOR_TESTING = Testlauf „{0}“
+EDITOR_BACK = Zurück zum Editor
+EDITOR_TEST_SOLVED = Lösbar – du hast es geschafft! Jetzt speichern?
+EDITOR_UNSAVED = Nicht gespeicherte Änderungen
+EDITOR_DISCARD_TEXT = Die Änderungen am aktuellen Level sind noch nicht gespeichert. Trotzdem verwerfen?
+EDITOR_DISCARD = Verwerfen
+
+# ---- Chat ----
+CHAT_OPEN_ROOM = Offener Chat
+CHAT_ROOM_CHECK = Raum {0}
+CHAT_YOU = Du
+CHAT_ID = ID {0}
+CHAT_APP = Floppy Hub
+CHAT_PROMPT = Bitte gib eine Verschlüsselung ein.
+CHAT_PROMPT_HINT = Wer dieselbe Verschlüsselung eingibt, landet im selben Raum. Am einfachsten gibst du sie auf einer Diskette oder einem USB-Stick weiter.
+CHAT_PLACEHOLDER_SECRET = Verschlüsselung …
+CHAT_PLACEHOLDER_MESSAGE = Nachricht …
+CHAT_SHOW_SECRET = Zeigen
+CHAT_BTN_CONNECT = Verbinden
+CHAT_BTN_SEND = Senden
+CHAT_BTN_LOAD_KEY = Von Datenträger laden…
+CHAT_BTN_NEW_KEY = Neue Verschlüsselung…
+CHAT_BTN_SAVE_KEY = Auf Datenträger speichern…
+CHAT_BTN_OPEN = Offener Chat
+CHAT_BTN_LOCAL = Ins lokale Netz
+CHAT_BTN_SCORES = Rangliste
+CHAT_BTN_LEAVE = Verlassen
+CHAT_BTN_OTHER_ROOM = Anderer Raum
+CHAT_BTN_SAVE_CONTACT = Als Kontakt speichern…
+CHAT_BTN_REMOVE_CONTACT = Löschen
+CHAT_BTN_CONNECT_CONTACT = Verbinden
+CHAT_BTN_COPY = Kopieren
+CHAT_OPEN_HINT = Standardraum ohne eigene Verschlüsselung, zum Reinschnuppern: offen für alle – jeder mit Floppy Hub kann mitlesen.
+CHAT_OPEN_BADGE = OFFEN · öffentlich
+CHAT_ROOM = Raum
+CHAT_MEMBERS = Im Raum ({0})
+CHAT_CONTACTS = Kontakte
+CHAT_CONTACTS_EMPTY = (noch keine Kontakte)
+CHAT_CONTACT_KEY_TIP = Verschlüsselung gespeichert – Doppelklick verbindet.
+CHAT_CONTACT_NO_KEY_TIP = Ohne gespeicherte Verschlüsselung – du erkennst die Person im Raum wieder.
+CHAT_CONTACT_IN_ROOM = im Raum
+CHAT_MY_ID = Deine ID
+CHAT_MY_ID_HINT = Daran erkennen dich andere wieder. Sie gehört zu dieser Installation und lässt sich nicht fälschen.
+CHAT_COPIED = In die Zwischenablage kopiert.
+CHAT_MODE_ONLINE = online
+CHAT_MODE_LOCAL = lokal
+CHAT_STATE_OFFLINE = Nicht verbunden
+CHAT_STATE_DERIVING = Verschlüsselung wird vorbereitet …
+CHAT_STATE_CONNECTING = Verbinde …
+CHAT_STATE_ONLINE = Online über {0}
+CHAT_STATE_RECONNECTING = Verbindung unterbrochen – verbinde neu …
+CHAT_STATE_LOCAL = Lokales Netzwerk · {0} verbunden
+CHAT_STATE_LOCAL_WAITING = Lokales Netzwerk · warte auf andere …
+CHAT_STATE_ENDED = Raum verlassen
+CHAT_CHECK = Prüfzahl {0}
+CHAT_CHECK_TIP = Stimmt die Prüfzahl bei allen überein, seid ihr im selben Raum.
+CHAT_ENCRYPTED_TIP = Ende-zu-Ende verschlüsselt und unterschrieben. Der Dienst sieht nur Datensalat, gespeichert wird nichts.
+CHAT_WEAK_KEY = Hinweis: Diese Verschlüsselung ist leicht zu erraten – Fremde könnten zufällig im selben Raum landen.
+CHAT_SECRET_EMPTY = Bitte gib eine Verschlüsselung ein.
+CHAT_SECRET_TOOSHORT = Die Verschlüsselung ist zu kurz (mindestens 6 Zeichen).
+CHAT_SECRET_TOOLONG = Die Verschlüsselung ist zu lang.
+CHAT_SECRET_INVALIDCHARACTERS = Die Verschlüsselung enthält ungültige Zeichen.
+CHAT_RESULT_TOOFAST = Langsam! Online sind höchstens {0} Nachrichten pro Minute möglich (Gratis-Dienst). Im lokalen Netz gibt es kein Limit.
+CHAT_RESULT_TOOLONG = Die Nachricht ist zu lang.
+CHAT_RESULT_ALONE = Du bist allein im Raum – niemand könnte mitkommen.
+CHAT_RESULT_NONETWORK = Kein lokales Netzwerk gefunden.
+CHAT_RESULT_BUSY = Es läuft schon ein Vorschlag.
+CHAT_RESULT_NOTCONNECTED = Nicht verbunden.
+CHAT_RESULT_SCORES_TOOFAST = Die Rangliste wurde gerade erst angefragt – kurz warten.
+STATUS_CHAT = Chat: {0} · {1}
+CHAT_NEW_MESSAGE = Neue Chat-Nachricht von {0}
+CHAT_NEW_PROPOSAL = Chat: {0} möchte ins lokale Netzwerk wechseln – schau in den Chat.
+
+CHAT_N_CONNECTING = Suche den Raum …
+CHAT_N_ONLINE = Verbunden über {1}. Ende-zu-Ende verschlüsselt, nichts wird gespeichert.
+CHAT_N_RECONNECTING = Verbindung zum Dienst unterbrochen – verbinde neu …
+CHAT_N_RECONNECTED = Wieder verbunden.
+CHAT_N_LIMITED = {1} nimmt gerade keine Nachrichten an (Limit für dein Netzwerk erreicht). Tipp: ins lokale Netz wechseln.
+CHAT_N_SEND_FAILED = Eine Nachricht konnte nicht gesendet werden.
+CHAT_N_FOUND_LOCAL = Der Raum ist im lokalen Netzwerk aktiv – verbinde direkt.
+CHAT_N_JOINED = {0} ist dem Raum beigetreten.
+CHAT_N_LEFT = {0} hat den Raum verlassen.
+CHAT_N_LOST = {0} ist nicht mehr erreichbar.
+CHAT_N_STAYED_ONLINE = {0} ist nicht mitgekommen.
+CHAT_N_PROPOSAL = {0} schlägt vor, ins lokale Netzwerk zu wechseln.
+CHAT_N_PROPOSAL_SENT = Du hast vorgeschlagen, ins lokale Netzwerk zu wechseln. Wer zustimmt, kommt mit.
+CHAT_N_VOTE_NO = {0} bleibt lieber online.
+CHAT_N_VOTE_UNREACHABLE = {0} erreicht dich im lokalen Netz nicht (anderes Netzwerk?).
+CHAT_N_PROPOSAL_REJECTED_MINE = Alle haben abgelehnt – ihr bleibt online.
+CHAT_N_PROPOSAL_TIMEOUT_MINE = Niemand hat zugestimmt – ihr bleibt online.
+CHAT_N_PROPOSAL_REJECTED = Der Wechsel wurde abgelehnt – ihr bleibt online.
+CHAT_N_PROPOSAL_TIMEOUT = Niemand hat zugestimmt – ihr bleibt online.
+CHAT_N_PROPOSAL_EXPIRED = Der Vorschlag ist abgelaufen.
+CHAT_N_PROPOSAL_GONE = {0} ist weg – der Vorschlag gilt nicht mehr.
+CHAT_N_YOU_DECLINED = Du bleibst online.
+CHAT_N_JOINING_LOCAL = Verbinde mit dem lokalen Raum …
+CHAT_N_LOCAL_UNREACHABLE = Der lokale Raum ist nicht erreichbar (anderes Netzwerk oder Firewall?).
+CHAT_N_LOCAL_JOINED = Du bist jetzt im lokalen Netzwerk – ohne Dienst und ohne Limit.
+CHAT_N_SWITCHED_YOU = Jemand kommt mit – der Raum wechselt ins lokale Netzwerk.
+CHAT_N_SWITCH_COUNTDOWN = {0} hat den Raum ins lokale Netzwerk verlegt. Wer nicht mitkommt, wird in 10 Sekunden getrennt.
+CHAT_N_LOCAL_ALONE = Niemand mehr im lokalen Raum – warte auf andere …
+CHAT_N_LOCAL_PEERS = Verbunden mit {1} PC im lokalen Netz.
+CHAT_N_EXCLUDED = Der Kanal ist ins lokale Netzwerk gewechselt – du wurdest getrennt.
+CHAT_N_SCORES_REQUESTED = Rangliste angefragt …
+
+CHAT_BANNER_WAITING = Warte auf Antworten: {0} kommen mit · {1} bleiben online · {2} gefragt · noch {3} s
+CHAT_BANNER_ASKING = {0} möchte ins lokale Netzwerk wechseln (gleiches Netzwerk nötig). Kommst du mit? Noch {1} s
+CHAT_BANNER_JOINING = Verbinde mit dem lokalen Raum …
+CHAT_BANNER_DECLINED = Du bleibst online. Wechselt der Raum trotzdem, wirst du danach getrennt.
+CHAT_BANNER_COUNTDOWN = Der Raum ist ins lokale Netzwerk gewechselt. Du wirst in {0} s getrennt.
+CHAT_BTN_APPROVE = Mitkommen
+CHAT_BTN_DECLINE = Online bleiben
+CHAT_BTN_FOLLOW = Doch mitkommen
+CHAT_BTN_LEAVE_NOW = Jetzt verlassen
+
+CHAT_CONTACT_TITLE = Als Kontakt speichern
+CHAT_CONTACT_TEXT = Unter welchem Namen soll {0} gespeichert werden?
+CHAT_CONTACT_NAME = Name:
+CHAT_CONTACT_WITH_KEY = Verschlüsselung dieses Raums mitspeichern (später reicht ein Doppelklick)
+CHAT_CONTACT_KEY_OPEN = Im offenen Chat wird keine Verschlüsselung gespeichert.
+CHAT_CONTACT_SAVED = Kontakt „{0}“ gespeichert.
+CHAT_CONTACT_REMOVE_TITLE = Kontakt löschen
+CHAT_CONTACT_REMOVE_TEXT = Soll „{0}“ aus den Kontakten gelöscht werden?
+CHAT_CONTACT_NO_KEY_TITLE = Keine Verschlüsselung gespeichert
+CHAT_CONTACT_NO_KEY_TEXT = Für „{0}“ ist keine Verschlüsselung gespeichert. Gib sie ein oder lade sie von einem Datenträger.
+BTN_SAVE = Speichern
+
+CHAT_NEWKEY_TITLE = Neue Verschlüsselung
+CHAT_NEWKEY_TEXT = Zufällig erzeugt und schwer zu erraten. Gib sie nur Leuten, die in den Raum sollen – am besten auf einer Diskette oder einem USB-Stick.
+CHAT_BTN_USE = Verwenden
+CHAT_LOADKEY_TITLE = Schlüssel laden
+CHAT_LOADKEY_NONE = Auf keiner Diskette und keinem USB-Stick liegt eine chat-key.txt.
+CHAT_LOADKEY_CHOOSE = Mehrere Schlüssel gefunden. Welcher Raum?
+CHAT_LOADKEY_FILE = Datei wählen…
+CHAT_LOADKEY_INVALID = In dieser Datei steht keine gültige Verschlüsselung.
+CHAT_LOADKEY_FILTER = Chat-Schlüssel
+CHAT_LOADKEY_ON = {0}  ·  Prüfzahl folgt nach dem Verbinden
+CHAT_SAVEKEY_TITLE = Schlüssel speichern
+CHAT_SAVEKEY_TEXT = Speichert die Verschlüsselung als chat-key.txt. Wer die Datei hat, kann mitlesen – gut aufpassen!
+CHAT_SAVEKEY_TARGET = Ziel:
+CHAT_SAVEKEY_NONE = Kein Datenträger gefunden. Lege eine Diskette ein oder stecke einen USB-Stick an.
+CHAT_SAVEKEY_REPLACE = Dort liegt schon eine chat-key.txt – sie wird ersetzt.
+CHAT_SAVEKEY_DONE = Schlüssel gespeichert: {0}
+CHAT_SAVEKEY_FAILED = Nicht gespeichert: {0}
+CHAT_SAVEKEY_NOTHING = Gib zuerst eine Verschlüsselung ein (oder erzeuge eine neue).
+
+CHAT_SCORES_TITLE = Rangliste im Raum
+CHAT_SCORES_TOTAL = Gesamt
+CHAT_SCORES_LEVELS = Pro Level
+CHAT_SCORES_SHARED_ONLY = Nur Level, die mehrere gespielt haben
+CHAT_SCORES_EMPTY = Noch keine Ergebnisse. Spielt „Diskettenlager“ – geschaffte Level zählen automatisch.
+CHAT_SCORES_WAITING = Frage die anderen … die Ergebnisse kommen gleich.
+CHAT_SCORES_COL_RANK = Platz
+CHAT_SCORES_COL_PLAYER = Spieler
+CHAT_SCORES_COL_POINTS = Punkte
+CHAT_SCORES_COL_LEVELS = Level
+CHAT_SCORES_COL_WINS = Siege
+CHAT_SCORES_COL_TIME = Zeit
+CHAT_SCORES_COL_MOVES = Züge
+CHAT_SCORES_LEVEL = {0}  ·  ID {1}
+CHAT_SCORES_RULE = Punkte = 1000 × Disketten − 5 × Züge − 5 × Schübe − 2 × Sekunden. Verglichen wird über die Level-ID – auch eigene Level aus dem Editor.
+CHAT_SCORES_REFRESH = Neu anfragen
+
+# ---- Meldungen aus dem Kern (Diskette prüfen, Bespielen) ----
+CORE_REF_UNREADABLE = Referenzdatei nicht lesbar: {0} ({1})
+CORE_STEAM_INVALID = Ungültige Steam-ID in {0}: „{1}“
+CORE_HUB_DISC = Hub-Diskette erkannt – öffne Floppy Hub.
+CORE_GAME_DISC = Minispiel-Diskette erkannt – öffne Floppy Hub.
+CORE_REF_NOTHING = {0} enthält keine verwertbare Angabe (id= / run= / pcrun=).
+CORE_EXE_DUPLICATES = Gleicher Dateiname mehrfach auf der Diskette – jede EXE wird einzeln abgefragt.
+CORE_EXE_MULTIPLE = Mehrere ausführbare Dateien auf der Diskette – jede wird einzeln abgefragt.
+CORE_KEY_EMPTY = {0}= ist leer.
+CORE_RUN_ROOTED = run= erwartet einen Pfad relativ zur Diskette. Für PC-Pfade bitte pcrun= verwenden: {0}
+CORE_KEY_ROOTED = {0}= erwartet einen Pfad relativ zur Diskette: {1}
+CORE_KEY_OUTSIDE = {0}= zeigt aus der Diskette heraus und wird ignoriert: {1}
+CORE_KEY_MISSING = {0}=-Datei fehlt auf der Diskette: {1}
+CORE_RUN_NOT_EXE = run=-Datei ist nicht ausführbar: {0}
+CORE_KEY_WRONG_EXT = {0}=-Datei hat die falsche Endung (erlaubt: {1}): {2}
+CORE_PCRUN_NOT_ABSOLUTE = pcrun= braucht einen absoluten Pfad (z. B. C:\Spiele\x.exe): {0}
+CORE_PCRUN_INVALID = pcrun= ist kein gültiger Pfad: {0}
+CORE_PCRUN_NOT_FOUND = pcrun=-Datei nicht gefunden: {0}
+CORE_PCRUN_NOT_EXE = pcrun=-Datei ist nicht ausführbar: {0}
+CORE_PCRUN_BLOCKED = pcrun= liegt in einem gesperrten Systemordner ({0}) und wird abgelehnt: {1}
+CORE_PCRUN_NOT_ALLOWED = pcrun= liegt außerhalb der erlaubten Ordner und wird abgelehnt: {0}
+CORE_WRITE_NO_TARGET = Ziel nicht erreichbar: {0} (Diskette eingelegt?)
+CORE_WRITE_EXISTS = {0} existiert bereits – zum Ersetzen bestätigen.
+CORE_WRITE_FAILED = Schreiben fehlgeschlagen: {0}
+CORE_WRITE_DONE = Geschrieben: {0}
+CORE_VALUE_NEWLINE = Die Angaben dürfen keine Zeilenumbrüche enthalten.
+CORE_STEAM_UNRECOGNIZED = Keine Steam-AppID erkennbar: „{0}“
+CORE_RUN_EMPTY = run= braucht einen Pfad.
+CORE_RUN_ABSOLUTE = run= erwartet einen Pfad RELATIV zur Diskette. Für PC-Pfade „Programm auf dem PC“ wählen: {0}
+CORE_RUN_OUTSIDE = run= darf nicht aus der Diskette heraus zeigen: {0}
+CORE_RUN_NOT_EXE_ALLOWED = Die Datei ist nicht ausführbar (erlaubt: {0}): {1}
+CORE_RUN_NOT_ON_DISC = „{0}“ liegt (noch) nicht auf der Diskette – der Launcher würde es sonst ablehnen.
+CORE_GAME_EMPTY = minigame= braucht eine Leveldatei.
+CORE_GAME_NOT_RELATIVE = minigame= erwartet eine Datei auf der Diskette (relativer Pfad): {0}
+CORE_GAME_NOT_TEXT = minigame= erwartet eine Textdatei ({0}): {1}
+CORE_GAME_NOT_ON_DISC = „{0}“ liegt (noch) nicht auf der Diskette.
+CORE_PCRUN_EMPTY = pcrun= braucht einen Pfad.
+CORE_PCRUN_NEEDS_ABSOLUTE = Das Programm braucht einen ABSOLUTEN Pfad (z. B. D:\Spiele\x.exe): {0}
+CORE_PCRUN_NOT_EXE_ALLOWED = Die Datei ist nicht ausführbar (erlaubt: {0}): {1}
+CORE_PCRUN_MISSING_NOW = „{0}“ existiert derzeit nicht – der Launcher wird es später ablehnen.
+CORE_PCRUN_BLOCKED_WARN = „{0}“ liegt in einem gesperrten Systemordner ({1}). Der Start wird ABGELEHNT.
+
+# ---- Warum ein Level nicht spielbar ist ----
+LEVEL_EMPTY = leer
+LEVEL_TOO_BIG = zu groß (höchstens {0} × {1})
+LEVEL_UNKNOWN_CHAR = unbekanntes Zeichen „{0}“
+LEVEL_NO_PLAYER = kein Spieler
+LEVEL_MANY_PLAYERS = mehr als ein Spieler
+LEVEL_NO_BOX = keine Diskette
+LEVEL_COUNT_MISMATCH = {0} Disketten, aber {1} Laufwerke
+LEVEL_SOLVED = ist schon gelöst
+
+# ---- Namen der eingebauten Level (nach Level-ID) ----
+LEVELNAME_18915287F6E8 = Erste Diskette
+LEVELNAME_E3D300CA4A97 = Zwei Laufwerke
+LEVELNAME_8F32137AF25A = Um die Ecke
+LEVELNAME_5FB1BE273BDF = Stapelware
+LEVELNAME_FE7AC6F9F248 = Schreibschutz
+LEVELNAME_A525F2B86D7B = Vier Ecken
+LEVELNAME_AE2CEE8CC385 = Kabelsalat
+LEVELNAME_5D962D843BD8 = Meisterprüfung
+
+# ---- Easter Eggs (psst) ----
+EGG_DAY_XMAS = Frohe Weihnachten!
+EGG_DAY_NEWYEAR = Frohes neues Jahr!
+EGG_DAY_APRIL = Jetzt mit 1,44 GB pro Diskette!
+EGG_DAY_STARWARS = Möge die Diskette mit dir sein.
+EGG_DAY_HALLOWEEN = Buuuh! Unformatiert …
+EGG_DAY_PI = Heute 3,14 statt 1,44 MB
+EGG_WORD_XYZZY = Nichts passiert.
+EGG_WORD_42 = 42 – die Antwort ist gefunden. Nur die Frage fehlt noch in der Bibliothek.
+EGG_WORD_SUDO = Netter Versuch. Hier bist du sowieso der Chef deiner Disketten.
+EGG_WORD_JOSHUA = Seltsames Spiel. Wie wär's mit einer netten Partie Schach?
+EGG_WORD_FLOPPY = Hier! Das bin ich.
+EGG_EDITION_ME = Floppy Hub ME? Lieber nicht …
+EGG_KONAMI = Cheat aktiviert: unendlich Disketten!
+EGG_OFFICIAL_DISC = Offizielle Floppy-Hub-Diskette!
+EGG_EJECT = *klack* – Diskette ausgeworfen. Nur Spaß, sie ist noch drin.
+EGG_CUPHOLDER_TITLE = Getränkehalter?
+EGG_CUPHOLDER_TEXT = Das CD-Laufwerk ist kein Getränkehalter.\nBitte keinen Kaffee hineinstellen.
+EGG_FACT_1 = Wusstest du? Eine 3,5-Zoll-Diskette fasst 1,44 MB – weniger als ein typisches Handyfoto.
+EGG_FACT_2 = Wusstest du? Das Speichern-Symbol vieler Programme ist bis heute eine Diskette.
+EGG_FACT_3 = Wusstest du? Ist das kleine Fenster in der Diskettenecke offen, ist sie schreibgeschützt.
+EGG_FACT_4 = Wusstest du? Disketten heißen A: und B:, darum beginnt die Festplatte bis heute bei C:.
+EGG_FACT_5 = Wusstest du? Die 3,5-Zoll-Diskette kam Anfang der 1980er-Jahre auf den Markt.
+EGG_FACT_6 = Wusstest du? Die Metallklappe schützt die Magnetscheibe – nicht anfassen, auch wenn's verlockt.
+
+# ---- Erster Start ----
+FIRST_TITLE = Willkommen
+FIRST_HEADLINE = Willkommen bei Floppy Hub!
+FIRST_TEXT = Lege eine Diskette ein – Bekanntes startet sofort, Neues wird einmal nachgefragt. Sprache und Aussehen kannst du jederzeit unter „Optionen“ ändern.
+FIRST_GO = Los geht's
+
+# ---- Über ----
+ABOUT_TITLE = Über Floppy Hub
+ABOUT_VERSION = Version {0}
+ABOUT_TEXT = Disketten starten, verwalten und bespielen.
+ABOUT_CREDITS = © 2026 MaelVW · MIT-Lizenz\nGebaut mit Godot Engine (MIT). Platzhalter-Grafiken selbst erzeugt.
+ABOUT_EGG = Bitte Diskette 2 von 7 einlegen …

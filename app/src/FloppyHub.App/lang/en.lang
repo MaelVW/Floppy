@@ -1,0 +1,675 @@
+# Floppy Hub - English texts
+# Format:  KEY = Text      {0}, {1} = placeholders      \n = new line
+# Every key from de.lang must exist here too (checked by a unit test).
+
+FMT_DECIMAL = .
+YES = Yes
+NO = No
+
+# ---- General / buttons ----
+BTN_OK = OK
+BTN_CANCEL = Cancel
+BTN_REFRESH = Refresh
+BTN_START = Start
+BTN_START_NOW = Start now
+BTN_RELEASE = Allow…
+BTN_WRITE_DISC = To floppy…
+BTN_ONCE = Start once
+BTN_ALWAYS = Always allow
+BTN_CLEAR_LOG = Clear log
+BTN_CLEAR_COVERS = Clear cover cache
+BTN_REMOVE_TRUST = Remove permission
+BTN_OPEN_CONFIG = Open configuration
+BTN_OPEN_HOME = Program folder
+BTN_OPEN_DATA = User data
+
+BRAND_TAGLINE = Floppy headquarters
+
+# ---- Menus ----
+MENU_FILE = File
+MENU_REFRESH = Reload everything
+MENU_OPEN_HOME = Open program folder
+MENU_OPEN_DATA = Open user data
+MENU_QUIT = Exit
+MENU_DISC = Floppy
+MENU_START = Start floppy now
+MENU_WRITE = Write floppy…
+MENU_EXAMPLES = game.txt examples
+MENU_VIEW = View
+MENU_EXTRAS = Extras
+MENU_TRUST = Trust list…
+MENU_LOG = Show log
+MENU_CLEAR_LOG = Clear log…
+MENU_HELP = Help
+MENU_ABOUT = About Floppy Hub
+
+# ---- Views (toolbar) ----
+VIEW_DISC = Floppy
+VIEW_LIBRARY = Library
+VIEW_WRITE = Write
+VIEW_DRIVES = Drives
+VIEW_CHAT = Chat
+VIEW_GAME = Mini-game
+VIEW_LOG = Log
+VIEW_SETTINGS = Options
+TIP_DISC = What's in the drive and what happens when it's inserted?
+TIP_LIBRARY = Your saved games and programs
+TIP_WRITE = Write a new floppy
+TIP_DRIVES = Show floppies, USB sticks and CDs
+TIP_CHAT = Chat with other Floppy Hub users – encrypted, nothing is stored
+TIP_GAME = Floppy Depot – the mini-game from a floppy
+TIP_LOG = Floppy Launcher log
+TIP_SETTINGS = Appearance, language, trust list
+
+THEME_SYSTEM = Like Windows
+THEME_LIGHT = Light
+THEME_DARK = Dark
+SCALE_AUTO = Automatic ({0} %)
+
+# ---- Columns ----
+COL_NAME = Name
+COL_SIZE = Size
+COL_CHANGED = Modified
+COL_KIND = Type
+COL_VALUE = Target
+COL_ADDED = Added
+COL_PROGRAM = Program
+COL_SOURCE = Source
+COL_SINCE = Since
+
+# ---- Kinds ----
+KIND_STEAM = Steam game
+KIND_STEAM_ID = Steam game {0}
+KIND_PCRUN = Program on this PC
+KIND_RUN = Program on the floppy
+KIND_HUB = Hub floppy
+
+# ---- Floppy view ----
+DISC_DRIVE = Drive
+DISC_TESTFOLDER = Test folder
+DISC_ON_INSERT = When inserted
+DISC_CONTENT = Floppy contents
+DISC_STATUS_EMPTY = No floppy inserted
+DISC_STATUS_READY = “{0}” · {1}
+DISC_NO_LABEL = unnamed
+DISC_USAGE = {0} of {1} used
+DISC_NONE_TITLE = No floppy
+DISC_NONE_TEXT = Insert a floppy into {0}.
+DISC_NONE_HINT = The Floppy Launcher checks every few seconds.
+DISC_NOTHING = Nothing to start
+DISC_NOTHING_TEXT = No game.txt and no program found on the floppy.
+DISC_NOTHING_HINT = Tip: “Floppy → game.txt examples” shows what's possible.
+DISC_REJECTED_TITLE = Floppy rejected
+DISC_REJECTED_TEXT = The information on the floppy is invalid or not allowed.
+DISC_MULTIPLE = {0} programs
+DISC_EMPTY_FILES = (empty)
+
+PLAN_STEAM = Steam · AppID {0}
+PLAN_HUB = Opens this app when the floppy is inserted.
+PLAN_PCRUN = Program on this PC:\n{0}
+PLAN_RUN = Program on the floppy:\n{0}
+PLAN_ARGS = Arguments: {0}
+
+TRUST_STEAM = Starts right away via Steam.
+TRUST_HUB = Opens Floppy Hub.
+TRUST_TRUSTED = Allowed – starts right away when inserted.
+TRUST_UNKNOWN = Not allowed yet – you'll be asked the first time.
+TRUST_CHANGED = The file has changed since it was allowed – you'll be asked again.
+TRUST_MULTIPLE = Several programs – you'll be asked which one to start.
+TRUST_EMPTY = (nothing allowed yet)
+TRUST_SRC_CONFIRMED = confirmed
+TRUST_SRC_WRITTEN = when writing
+TRUST_REMOVE_TITLE = Remove permission
+TRUST_REMOVE_TEXT = Remove the permission for\n{0}\n? You'll be asked again next time it's inserted.
+
+# ---- Confirmation ----
+CONFIRM_WINDOW_TITLE = Floppy Hub – Confirmation
+CONFIRM_TITLE_DISC = Start program from the floppy?
+CONFIRM_TITLE_PC = Start program on this PC?
+CONFIRM_REASON_NEW = This program is starting for the first time and hasn't been allowed yet.
+CONFIRM_REASON_CHANGED = Warning: the file is no longer the same as when it was allowed (update or replaced?).
+CONFIRM_REASON_MULTIPLE = There are several programs on the floppy. Which one should start?
+CONFIRM_PROGRAM = Program
+CONFIRM_NAME = Name
+CONFIRM_PATH = File
+CONFIRM_ARGS = Arguments
+CONFIRM_SOURCE = Taken from
+CONFIRM_SOURCE_SCAN = Program search on {0}
+CONFIRM_SOURCE_LIBRARY = Library
+CONFIRM_FILE = Size
+CONFIRM_CHOOSE = Choose the program to start:
+CONFIRM_HINT = Only start it if you trust the floppy. “Always allow” remembers exactly this file with these arguments – if anything changes, you'll be asked again.
+CONFIRM_COUNTDOWN = Cancelling in {0} s
+CONFIRM_CANCELLED = cancelled
+CONFIRM_TIMEOUT = time's up
+CONFIRM_DISC_REMOVED = floppy removed
+CONFIRM_DISC_CHANGED = The floppy has changed in the meantime – nothing will be started.
+CONFIRM_MISSING = The file no longer exists: {0}
+CONFIRM_START_FAILED = Start failed: {0}
+CONFIRM_NOTHING = This floppy doesn't need a confirmation anymore.
+
+# ---- Library ----
+LIB_SEARCH = Search…
+LIB_COUNT = {0} of {1} entries
+LIB_DETAILS = Details
+LIB_NONE_SELECTED = Nothing selected
+LIB_EMPTY = The library is still empty.
+LIB_COVER_HINT = Covers are downloaded from Steam once and then kept.
+LIB_START_FAILED = Can't start
+
+# ---- Drives ----
+DRIVES_HINT = Display only: the Floppy Launcher still watches drive A: exclusively.
+DRIVES_SHOW_INTERNAL = Show internal drives
+DRIVES_DETAILS = Properties
+DRIVES_NO_MEDIA = No media inserted
+DRIVES_NOT_CONNECTED = Drive not connected
+DRIVES_NONE = No drive found
+DRIVES_FREE_OF = {0} free of {1}
+DRIVES_WATCHED = yes, every {0} s
+DRIVES_WATCHED_SHORT = {0} every {1} s
+BTN_OPEN_EXPLORER = Open in Explorer
+UNIT_BYTES = bytes
+
+GROUP_FLOPPY = Floppies
+GROUP_USB = USB sticks
+GROUP_SD = Memory cards
+GROUP_EXTERNALDISK = External hard drives
+GROUP_OPTICAL = CD, DVD & Blu-ray
+GROUP_FIXED = Internal drives
+GROUP_NETWORK = Network drives
+GROUP_OTHER = Other
+
+MEDIA_FLOPPY = Floppy
+MEDIA_USB = USB stick
+MEDIA_SD = Memory card
+MEDIA_EXTERNALDISK = External hard drive
+MEDIA_OPTICAL = CD/DVD drive
+MEDIA_FIXED = Internal hard drive
+MEDIA_NETWORK = Network drive
+MEDIA_OTHER = Drive
+
+FORMAT_FLOPPY35HD = 3.5″ HD · 1.44 MB
+FORMAT_FLOPPY35DD = 3.5″ DD · 720 KB
+FORMAT_FLOPPY35ED = 3.5″ ED · 2.88 MB
+FORMAT_FLOPPY525HD = 5.25″ HD · 1.2 MB
+FORMAT_FLOPPY525DD = 5.25″ DD · 360 KB
+FORMAT_CD = Data CD
+FORMAT_AUDIOCD = Audio CD
+FORMAT_DVD = DVD
+FORMAT_BLURAY = Blu-ray
+
+BUS_UNKNOWN = unknown
+BUS_USB = USB
+BUS_SD = SD card reader
+BUS_ATAPI = ATAPI
+BUS_ATA = ATA
+BUS_SATA = SATA
+BUS_NVME = NVMe
+BUS_SCSI = SCSI/SAS
+BUS_FIREWIRE = FireWire
+BUS_RAID = RAID
+BUS_VIRTUAL = virtual (e.g. ISO file)
+BUS_OTHER = other
+
+SPEC_KIND = Type
+SPEC_FORMAT = Format
+SPEC_BUS = Connection
+SPEC_DEVICE = Device
+SPEC_FS = File system
+SPEC_CLUSTER = Cluster size
+SPEC_SERIAL = Serial number
+SPEC_CAPACITY = Capacity
+SPEC_USED = Used
+SPEC_FREE = Free
+SPEC_WATCHED = Watched
+
+# ---- Log ----
+LOG_AUTO = Refresh automatically
+LOG_DISABLED = Logging is turned off in the configuration.
+LOG_MISSING = No log file yet: {0}
+LOG_CLEAR_TITLE = Clear log
+LOG_CLEAR_TEXT = Clear the launcher log?\nThe current content is backed up once as .old.
+
+# ---- Options ----
+SET_LOOK = Appearance
+SET_THEME = Color scheme
+SET_SCALE = Interface size
+SET_LANGUAGE = Language
+SET_LANGUAGE_HINT = The interface switches right away. The launcher log stays in German (like the console version).
+SET_LIBRARY = Library
+SET_COVERS = Load cover images from Steam
+SET_COVERS_HINT = Needs internet the first time. After that the images are on your PC and work offline too.
+SET_COVERS_SIZE = Stored: {0}
+SET_TRUST = Trust list
+SET_TRUST_HINT = These programs start without asking when inserted – as long as file and arguments stay the same.
+SET_MOTOR = Floppy Launcher
+SET_WATCHED_DRIVE = Watched
+SET_HOME = Program folder
+SET_USERDATA = User data
+SET_LOGFILE = Log file
+SET_VERSION = Version
+
+MOTOR_RUNNING = The Floppy Launcher is running and waiting for floppies.
+MOTOR_STOPPED = The Floppy Launcher isn't running – inserted floppies won't start automatically.
+MOTOR_RUNNING_SHORT = Launcher on
+MOTOR_STOPPED_SHORT = Launcher off
+
+# ---- Status bar ----
+STATUS_NO_DISC = {0}  no floppy
+STATUS_LIBRARY = Library: {0}
+STATUS_REFRESHED = Everything reloaded.
+STATUS_STEAM_STARTED = Steam is starting “{0}” …
+STATUS_PROGRAM_STARTED = Starting “{0}” …
+STATUS_HUB_ALREADY = Hub floppy – you're already in Floppy Hub.
+STATUS_CONFIRM_STARTED = Program started.
+STATUS_CONFIRM_CANCELLED = Nothing started.
+
+# ---- Write ----
+BTN_WRITE = Write to floppy
+BTN_BROWSE = Browse…
+BTN_REPLACE = Replace
+WRITE_KIND = What should the floppy do?
+WRITE_KIND_STEAM = Start a Steam game
+WRITE_KIND_STEAM_HINT = Starts right away via Steam.
+WRITE_KIND_PCRUN = Start a program on this PC
+WRITE_KIND_PCRUN_HINT = For example a launcher. Allowed automatically.
+WRITE_KIND_RUN = Program on the floppy
+WRITE_KIND_RUN_HINT = The file itself is on the floppy.
+WRITE_KIND_HUB = Hub floppy
+WRITE_KIND_HUB_HINT = Opens this app when inserted.
+WRITE_TEMPLATE = Template
+WRITE_TEMPLATE_NONE = Take from the library …
+WRITE_TEMPLATE_HINT = Fills in the details from a saved game or program.
+WRITE_DETAILS = Details
+WRITE_VALUE_STEAM = Steam game
+WRITE_VALUE_STEAM_PLACEHOLDER = AppID or link from the Steam store
+WRITE_VALUE_PCRUN = Program
+WRITE_VALUE_PCRUN_PLACEHOLDER = e.g. C:\Games\MyGame\game.exe
+WRITE_VALUE_RUN = File on the floppy
+WRITE_VALUE_RUN_PLACEHOLDER = e.g. games\doom.exe
+WRITE_ARGS = Arguments
+WRITE_ARGS_PLACEHOLDER = optional, e.g. -fullscreen
+WRITE_TITLE = Title
+WRITE_TITLE_PLACEHOLDER = optional – the floppy's name in the app
+WRITE_ADD_LIBRARY = Also add to the library
+WRITE_PREVIEW = Preview – this is the game.txt
+WRITE_PREVIEW_INVALID = (nothing can be written like this – see the notes)
+WRITE_HINT_EMPTY_STEAM = Enter the AppID or paste the link from the Steam store.
+WRITE_HINT_EMPTY_PCRUN = Choose the program on your PC.
+WRITE_HINT_EMPTY_RUN = Choose the file on the floppy.
+WRITE_HINT_EMPTY_HUB = Nothing else needed.
+WRITE_REC_STEAM = Recognized: {0} · AppID {1}
+WRITE_REC_STEAM_ID = Steam AppID {0}
+WRITE_REC_FILE = Program found ({0}).
+WRITE_REC_TRUSTED = Already allowed.
+WRITE_REC_MISSING = This file doesn't exist on this PC (yet).
+WRITE_REC_ON_DISC = The file is on the floppy.
+WRITE_REC_NOT_ON_DISC = The file isn't on the floppy.
+WRITE_TARGET = Target: {0}
+WRITE_TARGET_FREE = {0} free
+WRITE_TARGET_NONE = No floppy in {0} – insert one to write.
+WRITE_TARGET_REPLACE = Warning: the existing game.txt will be replaced.
+WRITE_BROWSE_PCRUN = Choose program
+WRITE_BROWSE_RUN = Choose file on the floppy
+WRITE_FILTER_PROGRAMS = Programs
+WRITE_NOT_ON_DISC = This file isn't on the floppy ({0}). For programs on the PC use “Start a program on this PC”.
+WRITE_REPLACE_TITLE = Replace game.txt?
+WRITE_REPLACE_TEXT = There is already a game.txt on the floppy.\nReplace it with the new one?
+WRITE_FAILED_TITLE = Not written
+WRITE_DONE_TITLE = Floppy written
+WRITE_DONE_TEXT = Done! Next time it's inserted, “{0}” starts.
+WRITE_DONE_TRUSTED = The program is allowed and starts without asking.
+WRITE_DONE_LIBRARY = Also saved in the library.
+WRITE_DONE_STATUS = Floppy written: “{0}”
+
+WRITE_KIND_GAME = Mini-game floppy
+WRITE_KIND_GAME_HINT = Levels for “Floppy Depot”, the records travel along.
+WRITE_VALUE_GAME = Level pack
+WRITE_VALUE_GAME_PLACEHOLDER = empty = built-in “Floppy Depot”, or your own level file
+WRITE_HINT_EMPTY_GAME = Nothing else needed.
+WRITE_REC_GAME = Pack “{0}” · {1} levels – copied to the floppy as levels.txt.
+WRITE_REC_GAME_INVALID = This level pack has no playable levels.
+WRITE_BROWSE_GAME = Choose level pack
+WRITE_FILTER_LEVELS = Level packs
+
+# ---- Mini-game ----
+KIND_GAME_TITLE = Mini-game: {0}
+PLAN_GAME = Mini-game “Floppy Depot” · {0} levels
+TRUST_GAME = Opens the mini-game in the app – just level data, no program.
+GAME_PACK = Level pack:
+GAME_PACK_BUILTIN = Built-in: Floppy Depot
+GAME_PACK_DISC = Floppy {0}  “{1}”
+GAME_PACK_NO_DISC = (no mini-game floppy inserted)
+GAME_RELOAD_DISC = Read floppy
+GAME_MAKE_DISC = Make a game floppy…
+GAME_LEVEL = LEVEL
+GAME_MOVES = MOVES
+GAME_PUSHES = PUSHES
+GAME_LEVELS = Levels
+GAME_COL_LEVEL = Name
+GAME_COL_RECORD = Points
+GAME_BY = by {0}
+GAME_LEVEL_COUNT = {0} levels
+GAME_PROBLEMS = {0} broken (tooltip)
+GAME_NO_LEVELS = No playable levels
+GAME_LEVEL_TITLE = Level {0}: {1}
+GAME_NO_RECORD = No record yet – go for it!
+GAME_RECORD = Record: {0} points · {1} moves · {2} pushes · {3} · {4} ({5})
+GAME_PREV = Back
+GAME_NEXT = Next
+GAME_UNDO = Undo
+GAME_RESTART = Restart
+GAME_KEYS = Arrow keys/WASD · Z = undo · R = restart
+GAME_CLICK_TO_PLAY = Click to play
+GAME_SOLVED_BANNER = SOLVED!
+GAME_SOLVED_TITLE = Level solved
+GAME_SOLVED_HEADLINE = All floppies inserted!
+GAME_SOLVED_RECORD = New record!
+GAME_SOLVED_TEXT = {0} moves, {1} pushes in {2}.
+GAME_NAME = Your name:
+GAME_NAME_PLACEHOLDER = for the high scores
+GAME_AGAIN = Again
+GAME_ALL_DONE = All levels solved – you're a Floppy Depot master!
+GAME_SCORE_ON_DISC = Record saved on the floppy.
+GAME_SCORE_READONLY = Floppy is write-protected – record saved on this PC only.
+GAME_SCORE_DISC_GONE = Floppy removed – record saved on this PC only.
+GAME_TIME = TIME
+GAME_SOLVED_POINTS = {0} points
+GAME_POINTS_RULE = Points = 1000 × floppies − 5 × moves − 5 × pushes − 2 × seconds
+GAME_LEVEL_ID = Level ID {0}
+GAME_LEVEL_ID_TIP = Calculated from the layout. Same ID = same level – that's how you compare in the chat leaderboard.
+GAME_PACK_CUSTOM = My levels ({0})
+GAME_BTN_EDITOR = Level editor
+GAME_BTN_PLAY = Back to the game
+GAME_PAUSED = Paused – click to continue
+
+# ---- Level editor ----
+EDITOR_TITLE = Level editor
+EDITOR_TOOLS = Tool
+EDITOR_TOOL_WALL = Wall
+EDITOR_TOOL_FLOOR = Floor
+EDITOR_TOOL_GOAL = Drive
+EDITOR_TOOL_BOX = Floppy
+EDITOR_TOOL_PLAYER = Player
+EDITOR_TOOL_ERASE = Eraser
+EDITOR_NAME = Name:
+EDITOR_NAME_DEFAULT = My level
+EDITOR_SIZE = Size:
+EDITOR_NEW = New
+EDITOR_TEST = Test
+EDITOR_SAVE = Save
+EDITOR_DELETE = Delete
+EDITOR_TO_DISC = To floppy…
+EDITOR_MY_LEVELS = My levels
+EDITOR_MY_LEVELS_EMPTY = (none yet – build one!)
+EDITOR_HINT = Left click places the tool, right click erases. Hold the mouse button to paint.
+EDITOR_OK = Playable · Level ID {0}
+EDITOR_PROBLEM = Not playable yet: {0}
+EDITOR_SAVED = “{0}” saved – you'll find it under “My levels”.
+EDITOR_SAVE_FAILED = Not saved: {0}
+EDITOR_DELETE_TITLE = Delete level
+EDITOR_DELETE_TEXT = Delete “{0}” from your levels?
+EDITOR_REPLACE_TITLE = Replace level?
+EDITOR_REPLACE_TEXT = You already have a level called “{0}”. Replace it?
+EDITOR_TESTING = Test run “{0}”
+EDITOR_BACK = Back to the editor
+EDITOR_TEST_SOLVED = Solvable – you did it! Save it now?
+EDITOR_UNSAVED = Unsaved changes
+EDITOR_DISCARD_TEXT = The changes to the current level aren't saved yet. Discard them anyway?
+EDITOR_DISCARD = Discard
+
+# ---- Chat ----
+CHAT_OPEN_ROOM = Open chat
+CHAT_ROOM_CHECK = Room {0}
+CHAT_YOU = You
+CHAT_ID = ID {0}
+CHAT_APP = Floppy Hub
+CHAT_PROMPT = Please enter an encryption key.
+CHAT_PROMPT_HINT = Everyone who enters the same key ends up in the same room. The easiest way to share it is on a floppy or USB stick.
+CHAT_PLACEHOLDER_SECRET = Encryption key …
+CHAT_PLACEHOLDER_MESSAGE = Message …
+CHAT_SHOW_SECRET = Show
+CHAT_BTN_CONNECT = Connect
+CHAT_BTN_SEND = Send
+CHAT_BTN_LOAD_KEY = Load from drive…
+CHAT_BTN_NEW_KEY = New key…
+CHAT_BTN_SAVE_KEY = Save to drive…
+CHAT_BTN_OPEN = Open chat
+CHAT_BTN_LOCAL = Local network
+CHAT_BTN_SCORES = Leaderboard
+CHAT_BTN_LEAVE = Leave
+CHAT_BTN_OTHER_ROOM = Other room
+CHAT_BTN_SAVE_CONTACT = Save as contact…
+CHAT_BTN_REMOVE_CONTACT = Delete
+CHAT_BTN_CONNECT_CONTACT = Connect
+CHAT_BTN_COPY = Copy
+CHAT_OPEN_HINT = Default room without your own key, good for getting a feel for chat: open to everyone – anyone with Floppy Hub can read along.
+CHAT_OPEN_BADGE = OPEN · public
+CHAT_ROOM = Room
+CHAT_MEMBERS = In the room ({0})
+CHAT_CONTACTS = Contacts
+CHAT_CONTACTS_EMPTY = (no contacts yet)
+CHAT_CONTACT_KEY_TIP = Key saved – double-click to connect.
+CHAT_CONTACT_NO_KEY_TIP = No key saved – you'll recognize this person in the room.
+CHAT_CONTACT_IN_ROOM = in the room
+CHAT_MY_ID = Your ID
+CHAT_MY_ID_HINT = This is how others recognize you. It belongs to this installation and can't be faked.
+CHAT_COPIED = Copied to the clipboard.
+CHAT_MODE_ONLINE = online
+CHAT_MODE_LOCAL = local
+CHAT_STATE_OFFLINE = Not connected
+CHAT_STATE_DERIVING = Preparing the key …
+CHAT_STATE_CONNECTING = Connecting …
+CHAT_STATE_ONLINE = Online via {0}
+CHAT_STATE_RECONNECTING = Connection lost – reconnecting …
+CHAT_STATE_LOCAL = Local network · {0} connected
+CHAT_STATE_LOCAL_WAITING = Local network · waiting for others …
+CHAT_STATE_ENDED = Left the room
+CHAT_CHECK = Check code {0}
+CHAT_CHECK_TIP = If everyone sees the same check code, you're in the same room.
+CHAT_ENCRYPTED_TIP = End-to-end encrypted and signed. The service only sees gibberish, nothing is stored.
+CHAT_WEAK_KEY = Note: this key is easy to guess – strangers might end up in the same room by chance.
+CHAT_SECRET_EMPTY = Please enter an encryption key.
+CHAT_SECRET_TOOSHORT = The key is too short (at least 6 characters).
+CHAT_SECRET_TOOLONG = The key is too long.
+CHAT_SECRET_INVALIDCHARACTERS = The key contains invalid characters.
+CHAT_RESULT_TOOFAST = Slow down! Online allows at most {0} messages per minute (free service). The local network has no limit.
+CHAT_RESULT_TOOLONG = The message is too long.
+CHAT_RESULT_ALONE = You're alone in the room – nobody could come along.
+CHAT_RESULT_NONETWORK = No local network found.
+CHAT_RESULT_BUSY = A proposal is already running.
+CHAT_RESULT_NOTCONNECTED = Not connected.
+CHAT_RESULT_SCORES_TOOFAST = The leaderboard was just requested – wait a moment.
+STATUS_CHAT = Chat: {0} · {1}
+CHAT_NEW_MESSAGE = New chat message from {0}
+CHAT_NEW_PROPOSAL = Chat: {0} wants to switch to the local network – have a look at the chat.
+
+CHAT_N_CONNECTING = Looking for the room …
+CHAT_N_ONLINE = Connected via {1}. End-to-end encrypted, nothing is stored.
+CHAT_N_RECONNECTING = Connection to the service lost – reconnecting …
+CHAT_N_RECONNECTED = Connected again.
+CHAT_N_LIMITED = {1} isn't accepting messages right now (limit reached for your network). Tip: switch to the local network.
+CHAT_N_SEND_FAILED = A message couldn't be sent.
+CHAT_N_FOUND_LOCAL = The room is active on the local network – connecting directly.
+CHAT_N_JOINED = {0} joined the room.
+CHAT_N_LEFT = {0} left the room.
+CHAT_N_LOST = {0} can't be reached anymore.
+CHAT_N_STAYED_ONLINE = {0} didn't come along.
+CHAT_N_PROPOSAL = {0} suggests switching to the local network.
+CHAT_N_PROPOSAL_SENT = You suggested switching to the local network. Everyone who agrees comes along.
+CHAT_N_VOTE_NO = {0} would rather stay online.
+CHAT_N_VOTE_UNREACHABLE = {0} can't reach you on the local network (different network?).
+CHAT_N_PROPOSAL_REJECTED_MINE = Everyone declined – you're staying online.
+CHAT_N_PROPOSAL_TIMEOUT_MINE = Nobody agreed – you're staying online.
+CHAT_N_PROPOSAL_REJECTED = The switch was declined – you're staying online.
+CHAT_N_PROPOSAL_TIMEOUT = Nobody agreed – you're staying online.
+CHAT_N_PROPOSAL_EXPIRED = The proposal has expired.
+CHAT_N_PROPOSAL_GONE = {0} is gone – the proposal no longer applies.
+CHAT_N_YOU_DECLINED = You're staying online.
+CHAT_N_JOINING_LOCAL = Connecting to the local room …
+CHAT_N_LOCAL_UNREACHABLE = The local room can't be reached (different network or firewall?).
+CHAT_N_LOCAL_JOINED = You're on the local network now – no service, no limit.
+CHAT_N_SWITCHED_YOU = Someone is coming along – the room is switching to the local network.
+CHAT_N_SWITCH_COUNTDOWN = {0} moved the room to the local network. Anyone who doesn't come along is disconnected in 10 seconds.
+CHAT_N_LOCAL_ALONE = Nobody left in the local room – waiting for others …
+CHAT_N_LOCAL_PEERS = Connected to {1} PC on the local network.
+CHAT_N_EXCLUDED = The channel switched to the local network – you were disconnected.
+CHAT_N_SCORES_REQUESTED = Leaderboard requested …
+
+CHAT_BANNER_WAITING = Waiting for answers: {0} coming along · {1} staying online · {2} asked · {3} s left
+CHAT_BANNER_ASKING = {0} wants to switch to the local network (same network needed). Coming along? {1} s left
+CHAT_BANNER_JOINING = Connecting to the local room …
+CHAT_BANNER_DECLINED = You're staying online. If the room switches anyway, you'll be disconnected.
+CHAT_BANNER_COUNTDOWN = The room switched to the local network. You'll be disconnected in {0} s.
+CHAT_BTN_APPROVE = Come along
+CHAT_BTN_DECLINE = Stay online
+CHAT_BTN_FOLLOW = Come along after all
+CHAT_BTN_LEAVE_NOW = Leave now
+
+CHAT_CONTACT_TITLE = Save as contact
+CHAT_CONTACT_TEXT = What name should {0} be saved under?
+CHAT_CONTACT_NAME = Name:
+CHAT_CONTACT_WITH_KEY = Also save this room's key (a double-click is enough later)
+CHAT_CONTACT_KEY_OPEN = No key is saved in the open chat.
+CHAT_CONTACT_SAVED = Contact “{0}” saved.
+CHAT_CONTACT_REMOVE_TITLE = Delete contact
+CHAT_CONTACT_REMOVE_TEXT = Delete “{0}” from your contacts?
+CHAT_CONTACT_NO_KEY_TITLE = No key saved
+CHAT_CONTACT_NO_KEY_TEXT = There's no key saved for “{0}”. Enter it or load it from a drive.
+BTN_SAVE = Save
+
+CHAT_NEWKEY_TITLE = New encryption key
+CHAT_NEWKEY_TEXT = Randomly generated and hard to guess. Only give it to people who should be in the room – ideally on a floppy or USB stick.
+CHAT_BTN_USE = Use
+CHAT_LOADKEY_TITLE = Load key
+CHAT_LOADKEY_NONE = There's no chat-key.txt on any floppy or USB stick.
+CHAT_LOADKEY_CHOOSE = Several keys found. Which room?
+CHAT_LOADKEY_FILE = Choose file…
+CHAT_LOADKEY_INVALID = This file doesn't contain a valid key.
+CHAT_LOADKEY_FILTER = Chat keys
+CHAT_LOADKEY_ON = {0}  ·  check code shown after connecting
+CHAT_SAVEKEY_TITLE = Save key
+CHAT_SAVEKEY_TEXT = Saves the key as chat-key.txt. Anyone who has the file can read along – keep it safe!
+CHAT_SAVEKEY_TARGET = Target:
+CHAT_SAVEKEY_NONE = No drive found. Insert a floppy or plug in a USB stick.
+CHAT_SAVEKEY_REPLACE = There's already a chat-key.txt there – it will be replaced.
+CHAT_SAVEKEY_DONE = Key saved: {0}
+CHAT_SAVEKEY_FAILED = Not saved: {0}
+CHAT_SAVEKEY_NOTHING = Enter a key first (or generate a new one).
+
+CHAT_SCORES_TITLE = Room leaderboard
+CHAT_SCORES_TOTAL = Overall
+CHAT_SCORES_LEVELS = Per level
+CHAT_SCORES_SHARED_ONLY = Only levels several people played
+CHAT_SCORES_EMPTY = No results yet. Play “Floppy Depot” – solved levels count automatically.
+CHAT_SCORES_WAITING = Asking the others … results are on their way.
+CHAT_SCORES_COL_RANK = Rank
+CHAT_SCORES_COL_PLAYER = Player
+CHAT_SCORES_COL_POINTS = Points
+CHAT_SCORES_COL_LEVELS = Levels
+CHAT_SCORES_COL_WINS = Wins
+CHAT_SCORES_COL_TIME = Time
+CHAT_SCORES_COL_MOVES = Moves
+CHAT_SCORES_LEVEL = {0}  ·  ID {1}
+CHAT_SCORES_RULE = Points = 1000 × floppies − 5 × moves − 5 × pushes − 2 × seconds. Levels are compared by level ID – including your own levels from the editor.
+CHAT_SCORES_REFRESH = Ask again
+
+# ---- Messages from the core (checking floppies, writing) ----
+CORE_REF_UNREADABLE = Reference file can't be read: {0} ({1})
+CORE_STEAM_INVALID = Invalid Steam ID in {0}: “{1}”
+CORE_HUB_DISC = Hub floppy detected – opening Floppy Hub.
+CORE_GAME_DISC = Mini-game floppy detected – opening Floppy Hub.
+CORE_REF_NOTHING = {0} contains nothing usable (id= / run= / pcrun=).
+CORE_EXE_DUPLICATES = The same file name appears several times on the floppy – each EXE is asked about separately.
+CORE_EXE_MULTIPLE = Several executable files on the floppy – each is asked about separately.
+CORE_KEY_EMPTY = {0}= is empty.
+CORE_RUN_ROOTED = run= expects a path relative to the floppy. For PC paths use pcrun=: {0}
+CORE_KEY_ROOTED = {0}= expects a path relative to the floppy: {1}
+CORE_KEY_OUTSIDE = {0}= points outside the floppy and is ignored: {1}
+CORE_KEY_MISSING = {0}= file is missing on the floppy: {1}
+CORE_RUN_NOT_EXE = run= file isn't executable: {0}
+CORE_KEY_WRONG_EXT = {0}= file has the wrong extension (allowed: {1}): {2}
+CORE_PCRUN_NOT_ABSOLUTE = pcrun= needs an absolute path (e.g. C:\Games\x.exe): {0}
+CORE_PCRUN_INVALID = pcrun= isn't a valid path: {0}
+CORE_PCRUN_NOT_FOUND = pcrun= file not found: {0}
+CORE_PCRUN_NOT_EXE = pcrun= file isn't executable: {0}
+CORE_PCRUN_BLOCKED = pcrun= is inside a blocked system folder ({0}) and is rejected: {1}
+CORE_PCRUN_NOT_ALLOWED = pcrun= is outside the allowed folders and is rejected: {0}
+CORE_WRITE_NO_TARGET = Target not reachable: {0} (floppy inserted?)
+CORE_WRITE_EXISTS = {0} already exists – confirm to replace it.
+CORE_WRITE_FAILED = Writing failed: {0}
+CORE_WRITE_DONE = Written: {0}
+CORE_VALUE_NEWLINE = The details must not contain line breaks.
+CORE_STEAM_UNRECOGNIZED = No Steam AppID recognized: “{0}”
+CORE_RUN_EMPTY = run= needs a path.
+CORE_RUN_ABSOLUTE = run= expects a path RELATIVE to the floppy. For PC paths choose “Program on this PC”: {0}
+CORE_RUN_OUTSIDE = run= must not point outside the floppy: {0}
+CORE_RUN_NOT_EXE_ALLOWED = The file isn't executable (allowed: {0}): {1}
+CORE_RUN_NOT_ON_DISC = “{0}” isn't on the floppy (yet) – otherwise the launcher would reject it.
+CORE_GAME_EMPTY = minigame= needs a level file.
+CORE_GAME_NOT_RELATIVE = minigame= expects a file on the floppy (relative path): {0}
+CORE_GAME_NOT_TEXT = minigame= expects a text file ({0}): {1}
+CORE_GAME_NOT_ON_DISC = “{0}” isn't on the floppy (yet).
+CORE_PCRUN_EMPTY = pcrun= needs a path.
+CORE_PCRUN_NEEDS_ABSOLUTE = The program needs an ABSOLUTE path (e.g. D:\Games\x.exe): {0}
+CORE_PCRUN_NOT_EXE_ALLOWED = The file isn't executable (allowed: {0}): {1}
+CORE_PCRUN_MISSING_NOW = “{0}” doesn't exist right now – the launcher will reject it later.
+CORE_PCRUN_BLOCKED_WARN = “{0}” is inside a blocked system folder ({1}). Starting it will be REJECTED.
+
+# ---- Why a level isn't playable ----
+LEVEL_EMPTY = empty
+LEVEL_TOO_BIG = too big (at most {0} × {1})
+LEVEL_UNKNOWN_CHAR = unknown character “{0}”
+LEVEL_NO_PLAYER = no player
+LEVEL_MANY_PLAYERS = more than one player
+LEVEL_NO_BOX = no floppy
+LEVEL_COUNT_MISMATCH = {0} floppies but {1} drives
+LEVEL_SOLVED = already solved
+
+# ---- Names of the built-in levels (by level ID) ----
+LEVELNAME_18915287F6E8 = First Floppy
+LEVELNAME_E3D300CA4A97 = Two Drives
+LEVELNAME_8F32137AF25A = Around the Corner
+LEVELNAME_5FB1BE273BDF = Stacked Goods
+LEVELNAME_FE7AC6F9F248 = Write Protect
+LEVELNAME_A525F2B86D7B = Four Corners
+LEVELNAME_AE2CEE8CC385 = Cable Mess
+LEVELNAME_5D962D843BD8 = Master Exam
+
+# ---- Easter eggs (psst) ----
+EGG_DAY_XMAS = Merry Christmas!
+EGG_DAY_NEWYEAR = Happy New Year!
+EGG_DAY_APRIL = Now with 1.44 GB per floppy!
+EGG_DAY_STARWARS = May the floppy be with you.
+EGG_DAY_HALLOWEEN = Boooo! Unformatted …
+EGG_DAY_PI = Today 3.14 instead of 1.44 MB
+EGG_WORD_XYZZY = Nothing happens.
+EGG_WORD_42 = 42 – the answer has been found. Only the question is still missing from the library.
+EGG_WORD_SUDO = Nice try. You're the boss of your floppies here anyway.
+EGG_WORD_JOSHUA = A strange game. How about a nice game of chess?
+EGG_WORD_FLOPPY = Here! That's me.
+EGG_EDITION_ME = Floppy Hub ME? Better not …
+EGG_KONAMI = Cheat activated: infinite floppies!
+EGG_OFFICIAL_DISC = Official Floppy Hub floppy!
+EGG_EJECT = *clack* – floppy ejected. Just kidding, it's still in there.
+EGG_CUPHOLDER_TITLE = Cup holder?
+EGG_CUPHOLDER_TEXT = The CD drive is not a cup holder.\nPlease don't put your coffee in it.
+EGG_FACT_1 = Did you know? A 3.5-inch floppy holds 1.44 MB – less than a typical phone photo.
+EGG_FACT_2 = Did you know? The save icon in many programs is still a floppy today.
+EGG_FACT_3 = Did you know? If the little window in the floppy's corner is open, it's write-protected.
+EGG_FACT_4 = Did you know? Floppy drives are called A: and B:, which is why the hard drive still starts at C:.
+EGG_FACT_5 = Did you know? The 3.5-inch floppy came onto the market in the early 1980s.
+EGG_FACT_6 = Did you know? The metal shutter protects the magnetic disk – don't touch, however tempting.
+
+# ---- First start ----
+FIRST_TITLE = Welcome
+FIRST_HEADLINE = Welcome to Floppy Hub!
+FIRST_TEXT = Insert a floppy – known things start right away, new things are confirmed once. You can change language and appearance anytime under “Options”.
+FIRST_GO = Let's go
+
+# ---- About ----
+ABOUT_TITLE = About Floppy Hub
+ABOUT_VERSION = Version {0}
+ABOUT_TEXT = Start, manage and write floppies.
+ABOUT_CREDITS = © 2026 MaelVW · MIT License\nBuilt with Godot Engine (MIT). Placeholder graphics made in-house.
+ABOUT_EGG = Please insert disk 2 of 7 …

@@ -12,13 +12,18 @@
 .PARAMETER Quiet
     Keine Ausgabe (fuer die Deinstallation).
 
+.PARAMETER Folder
+    Nur Launcher beenden, deren FloppyLauncher.ps1 in diesem Ordner liegt
+    (Setup/Deinstallation: nie eine andere Kopie, z. B. ein Entwicklungs-Ordner).
+
 .EXAMPLE
     .\Stop-FloppyLauncher.ps1
 #>
 
 [CmdletBinding()]
 param(
-    [switch] $Quiet
+    [switch] $Quiet,
+    [string] $Folder
 )
 
 $ErrorActionPreference = 'SilentlyContinue'
@@ -27,9 +32,15 @@ function Note { param([string] $Text, [string] $Color = 'Gray')
     if (-not $Quiet) { try { Write-Host $Text -ForegroundColor $Color } catch { } }
 }
 
+$pattern = 'FloppyLauncher\.ps1'
+if ($Folder) {
+    $full = [System.IO.Path]::GetFullPath($Folder).TrimEnd('\')
+    $pattern = [regex]::Escape($full + '\FloppyLauncher.ps1')
+}
+
 $found = @(
     Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='pwsh.exe'" |
-        Where-Object { "$($_.CommandLine)" -match 'FloppyLauncher\.ps1' }
+        Where-Object { "$($_.CommandLine)" -match $pattern }
 )
 
 if ($found.Count -eq 0) {
@@ -46,7 +57,7 @@ Start-Sleep -Milliseconds 400
 
 $left = @(
     Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='pwsh.exe'" |
-        Where-Object { "$($_.CommandLine)" -match 'FloppyLauncher\.ps1' }
+        Where-Object { "$($_.CommandLine)" -match $pattern }
 )
 
 if ($left.Count -eq 0) {

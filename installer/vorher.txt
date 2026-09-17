@@ -1,4 +1,4 @@
-FLOPPY HUB
+﻿FLOPPY HUB
 ==========
 
 Aus Disketten wird eine physische Steam-Library.
@@ -6,39 +6,46 @@ Aus Disketten wird eine physische Steam-Library.
 Legst du eine vorbereitete Diskette ein, startet der Floppy Launcher
 automatisch das, was darauf hinterlegt ist:
 
-  * ein Steam-Spiel          (id=220)
+  * ein Steam-Spiel                 (id=220)
   * ein Programm von der Diskette   (run=spiel.exe)
-  * ein Programm auf dem PC  (pcrun=D:\Spiele\x.exe)  -> mit Sicherheitsabfrage
-  * das Floppy Hub Menue     (hub=1)
+  * ein Programm auf dem PC         (pcrun=D:\Spiele\x.exe)
+  * das Floppy Hub Menue            (hub=1)
 
 
-WAS INSTALLIERT WIRD
---------------------
-  FloppyLauncher.ps1       ueberwacht das Laufwerk (laeuft im Hintergrund)
-  FloppyInterface.ps1      Retro-Fenster fuer die Sicherheitsabfrage
-  FloppyHub.ps1            Menue: Disketten bespielen, Bibliothek, Log
-  FloppyDisc.ps1           dasselbe fuer die Kommandozeile
-  FloppyLib.ps1            gemeinsame Funktionen
-  FloppyLauncher.ini       Konfiguration (wird bei Updates NICHT ueberschrieben)
-  beispiele\               fertige game.txt-Vorlagen zum Kopieren
+ZWEI VARIANTEN - DU WAEHLST IM NAECHSTEN SCHRITT
+-------------------------------------------------
+  APP (empfohlen)
+    Floppy Hub als Fenster: Bibliothek mit Covern, Disketten bespielen,
+    Laufwerke-Ansicht, Chat, Minispiel mit Level-Editor, Hell/Dunkel,
+    Deutsch/Englisch. Der Floppy Launcher laeuft als kleines Programm
+    ohne Fenster im Hintergrund (wenige MB Arbeitsspeicher).
+    Neue oder veraenderte Programme werden einmal nachgefragt.
+
+  KONSOLE
+    Die bewaehrte PowerShell-Variante - genau wie Version 1.
+    Programme auf dem PC (pcrun=) werden immer nachgefragt.
+
+Wechseln geht jederzeit: Setup erneut ausfuehren und die andere Variante
+waehlen. Einstellungen (FloppyLauncher.ini) und Bibliothek bleiben.
 
 
 VORAUSSETZUNGEN
 ---------------
-  * Windows 10 oder 11
-  * Windows PowerShell 5.1 (ist bei Windows dabei)
+  * Windows 10 oder 11 (64 Bit)
+  * Konsole: Windows PowerShell 5.1 (ist bei Windows dabei)
   * ein Diskettenlaufwerk als A: (USB-Floppy genuegt)
 
 
 SICHERHEIT
 ----------
-Programme auf dem PC (pcrun=) startet der Launcher NIE ohne Rueckfrage.
 Pfade unterhalb von C:\Windows werden grundsaetzlich abgelehnt.
-Steam-IDs und Programme, die auf der Diskette selbst liegen, starten direkt.
+Der Chat der App ist Ende-zu-Ende verschluesselt; es wird nichts gespeichert.
+Beim ersten Wechsel des Chats ins lokale Netzwerk fragt die Windows-Firewall
+einmal nach - das ist normal.
 
 
 HINWEIS ZUM AUTOSTART
 ---------------------
-Das Setup kann den Launcher beim Anmelden versteckt starten. Hattest du das
+Das Setup kann den Launcher beim Anmelden unsichtbar starten. Hattest du das
 vorher schon von Hand eingerichtet, wird der alte Eintrag ersetzt - es laeuft
 also weiterhin nur ein Launcher.

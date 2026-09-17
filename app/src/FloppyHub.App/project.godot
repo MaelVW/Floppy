@@ -1,0 +1,40 @@
+; Floppy Hub App - Godot 4.7 (.NET)
+; Diese Datei wird vom Godot-Editor gepflegt, Aenderungen am besten dort machen.
+
+config_version=5
+
+[application]
+
+config/name="Floppy Hub"
+config/description="Floppy Hub - Disketten starten, verwalten und bespielen."
+config/version="2.0.0-beta.1"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
+run/low_processor_mode=true
+run/low_processor_mode_sleep_usec=12000
+boot_splash/show_image=false
+boot_splash/bg_color=Color(0.847, 0.835, 0.812, 1)
+config/icon="res://assets/app/icon.png"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="FloppyHub/godot"
+
+[display]
+
+window/size/viewport_width=960
+window/size/viewport_height=640
+window/energy_saving/keep_screen_on=false
+
+[dotnet]
+
+project/assembly_name="FloppyHub"
+
+[gui]
+
+common/snap_controls_to_pixels=true
+timers/tooltip_delay_sec=0.6
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.847, 0.835, 0.812, 1)

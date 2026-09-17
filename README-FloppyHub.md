@@ -6,23 +6,37 @@ Der Launcher selbst bleibt eine eigenständige Datei — der Autostart hängt an
 
 ## Installation
 
-**Fertiges Setup:** [Releases](https://github.com/MaelVW/Floppy/releases/latest) →
+**Fertiges Setup:** [Releases](https://github.com/MaelVW/Floppy/releases) →
 `FloppyHubSetup-x.y.z.exe` herunterladen und ausführen. Der Assistent fragt nach
-dem Zielordner und richtet auf Wunsch den versteckten Autostart ein.
+der **Variante**, dem Zielordner und richtet auf Wunsch den unsichtbaren Autostart ein.
+
+| Variante | Was |
+|---|---|
+| **App** (ab 2.0) | Floppy Hub als Fenster (Bibliothek, Bespielen, Laufwerke, Chat, Minispiel) + `FloppyLauncher.exe` als kleiner Motor ohne Fenster |
+| **Konsole** | die PowerShell-Skripte unten – genau wie Version 1 |
+
+Wechseln: Setup erneut ausführen und die andere Variante wählen – `FloppyLauncher.ini`
+und `library.csv` bleiben. Unbeaufsichtigt: `/VERYSILENT /VARIANT=app` bzw. `/VARIANT=console`.
 
 > Windows/SmartScreen meldet bei unsignierten Setups „Der Computer wurde geschützt" —
 > über *Weitere Informationen* → *Trotzdem ausführen*.
 
-**Selbst bauen** (braucht [Inno Setup](https://jrsoftware.org/isdl.php)):
+**Selbst bauen** (braucht [Inno Setup](https://jrsoftware.org/isdl.php), .NET 10 SDK,
+Visual Studio C++-Werkzeuge und Godot 4.7 .NET mit Exportvorlagen – Details in
+[docs/APP-PLAN.md](docs/APP-PLAN.md)):
 
 ```bash
 powershell -ExecutionPolicy Bypass -File .\build\Build-Installer.ps1
 ```
 
-**Release veröffentlichen** — Tag pushen, GitHub Actions baut und hängt das Setup an:
+**Signieren:** siehe [docs/SIGNIERUNG.md](docs/SIGNIERUNG.md). Mit hinterlegtem Zertifikat
+signiert der Build automatisch; `-Sign` erzwingt es.
+
+**Release veröffentlichen** — Tag pushen, GitHub Actions baut und hängt das Setup an
+(Versionen mit Bindestrich wie `2.0.0-beta.1` werden als Pre-Release markiert):
 
 ```bash
-git tag v1.0.0 && git push origin v1.0.0
+git tag v2.0.0-beta.1 && git push origin v2.0.0-beta.1
 ```
 
 **Ohne Installation:** Repo klonen und `FloppyHub.ps1` direkt starten — alle
@@ -42,8 +56,13 @@ angepasst werden.
 | `library.csv` | Katalog bekannter Disketten | von Hub/Disc-Tool |
 | `beispiele\` | fertige `game.txt`-Vorlagen + Regeln (erlaubt/verboten) | zum Kopieren |
 | `StartLauncherHidden.vbs` | startet den Launcher **ohne** aufblitzendes Fenster | Autostart |
-| `installer\FloppyHub.iss` | Inno-Setup-Skript für `FloppyHubSetup.exe` | beim Bauen |
-| `build\Build-Installer.ps1` | baut das Setup lokal | manuell |
+| `app\` | **App-Variante**: Floppy.Core (Regeln, Chat, Minispiel), Motor `FloppyLauncher.exe`, Godot-App, Tests | Quellcode |
+| `installer\FloppyHub.iss` | Inno-Setup-Skript für `FloppyHubSetup.exe` (beide Varianten) | beim Bauen |
+| `build\Build-App.ps1` | baut die App: Tests, Motor (native EXE), Godot-Export nach `build\app-out` | vom Setup-Build |
+| `build\Build-Installer.ps1` | baut App + Setup lokal, signiert automatisch, wenn ein Zertifikat da ist | manuell |
+| `build\Sign-FloppyFiles.ps1` | signiert Setup, Deinstaller, Skripte und App | vom Build |
+| `build\New-FloppyTestCertificate.ps1` | Test-Zertifikat, um die Signierung ohne Kauf auszuprobieren | manuell |
+| `docs\SIGNIERUNG.md` | Zertifikat besorgen und eintragen | Doku |
 | `.github\workflows\release.yml` | baut + veröffentlicht das Setup auf GitHub | bei Tag `v*` |
 
 ### Wohin geschrieben wird
