@@ -66,6 +66,19 @@ public partial class RetroDialog : Control
     public void Open(Control host)
     {
         host.AddChild(this);
+
+        // kurz aufpoppen (wie ein Fenster, das sich oeffnet) - dezent, 0,12 s
+        Modulate = new Color(1, 1, 1, 0);
+        _frame.Scale = new Vector2(0.96f, 0.96f);
+        Callable.From(() =>
+        {
+            if (!IsInstanceValid(this)) return;
+            _frame.PivotOffset = _frame.Size / 2;
+            var tween = CreateTween().SetParallel().SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Cubic);
+            tween.TweenProperty(this, "modulate:a", 1f, 0.12f);
+            tween.TweenProperty(_frame, "scale", Vector2.One, 0.12f);
+        }).CallDeferred();
+
         foreach (var child in _buttons.GetChildren())
         {
             if (child is Button b)

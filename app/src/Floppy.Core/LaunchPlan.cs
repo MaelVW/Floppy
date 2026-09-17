@@ -11,6 +11,9 @@ public enum LaunchKind
 
     /// <summary>Hub-Diskette: die Floppy-Hub-Oberflaeche oeffnen.</summary>
     Hub,
+
+    /// <summary>Minispiel-Diskette: Levelpaket in der App spielen (nur App-Variante).</summary>
+    Game,
 }
 
 /// <summary>Ergebnis der Auswertung einer Diskette.</summary>
@@ -36,9 +39,14 @@ public sealed record LaunchPlan(
 public enum MessageLevel { Info, Ok, Warn, Error }
 
 /// <summary>Meldung fuer Log und Oberflaeche (ASCII-Umschreibungen wie in V1-Logs).</summary>
-public sealed record PlanMessage(MessageLevel Level, string Text)
+/// <param name="Text">Deutscher Text (Log, V1-kompatibel).</param>
+/// <param name="Code">Kennung fuer die Uebersetzung in der App (<c>CORE_&lt;Code&gt;</c> in der Sprachdatei), sonst <c>null</c>.</param>
+/// <param name="Args">Werte fuer die Platzhalter der Uebersetzung.</param>
+public sealed record PlanMessage(MessageLevel Level, string Text, string? Code = null, IReadOnlyList<string>? Args = null)
 {
     public override string ToString() => $"[{Level.ToString().ToUpperInvariant(),-5}] {Text}";
+
+    public static PlanMessage Of(MessageLevel level, string code, string text, params string[] args) => new(level, text, code, args);
 }
 
 /// <summary>Plan (oder null) plus alle Meldungen, die dabei entstanden sind.</summary>

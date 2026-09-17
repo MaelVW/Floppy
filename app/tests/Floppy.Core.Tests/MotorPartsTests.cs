@@ -244,6 +244,66 @@ public class DriveSnapshotTests
     public void Erkennt_Datentraeger(DriveType type, string root, long total, MediaKind expected) =>
         Assert.Equal(expected, DriveSnapshot.Classify(type, root, total));
 
+    [Theory]
+    [InlineData(DriveType.Fixed, BusKind.Usb, "", MediaKind.ExternalDisk)]       // externe USB-Festplatte
+    [InlineData(DriveType.Fixed, BusKind.FireWire, "", MediaKind.ExternalDisk)]
+    [InlineData(DriveType.Fixed, BusKind.Nvme, "", MediaKind.Fixed)]
+    [InlineData(DriveType.Fixed, BusKind.Sd, "", MediaKind.Sd)]
+    [InlineData(DriveType.Removable, BusKind.Sd, "", MediaKind.Sd)]
+    [InlineData(DriveType.Removable, BusKind.Usb, "USB3.0 CRW-SD", MediaKind.Sd)]   // Kartenleser am USB
+    [InlineData(DriveType.Removable, BusKind.Usb, "Ultra", MediaKind.Usb)]
+    [InlineData(DriveType.CDRom, BusKind.Sata, "DVD-RW", MediaKind.Optical)]
+    public void Erkennt_Anschluss(DriveType type, BusKind bus, string model, MediaKind expected) =>
+        Assert.Equal(expected, DriveSnapshot.Classify(type, @"F:\", 32_000_000_000L, bus, model));
+
+    [Theory]
+    [InlineData(MediaKind.Floppy, 1_457_664L, false, MediaFormat.Floppy35HD)]
+    [InlineData(MediaKind.Floppy, 1_474_560L, false, MediaFormat.Floppy35HD)]
+    [InlineData(MediaKind.Floppy, 730_112L, false, MediaFormat.Floppy35DD)]
+    [InlineData(MediaKind.Floppy, 99_000L, false, MediaFormat.Unknown)]
+    [InlineData(MediaKind.Optical, 700L * 1024 * 1024, false, MediaFormat.Cd)]
+    [InlineData(MediaKind.Optical, 700L * 1024 * 1024, true, MediaFormat.AudioCd)]
+    [InlineData(MediaKind.Optical, 4_700_000_000L, false, MediaFormat.Dvd)]
+    [InlineData(MediaKind.Optical, 25_000_000_000L, false, MediaFormat.BluRay)]
+    [InlineData(MediaKind.Usb, 8_000_000_000L, false, MediaFormat.Unknown)]
+    public void Erkennt_Format(MediaKind kind, long total, bool audio, MediaFormat expected) =>
+        Assert.Equal(expected, DriveSnapshot.FormatOf(kind, total, audio));
+
+    [Fact]
+    public void Geraetebeschreibung_wird_gelesen()
+    {
+        // STORAGE_DEVICE_DESCRIPTOR wie von Windows geliefert (Werte ab Offset 40)
+        var buffer = new byte[128];
+        buffer[10] = 1;                                    // RemovableMedia
+        BitConverter.GetBytes(40).CopyTo(buffer, 12);      // VendorIdOffset
+        BitConverter.GetBytes(50).CopyTo(buffer, 16);      // ProductIdOffset
+        BitConverter.GetBytes(70).CopyTo(buffer, 20);      // ProductRevisionOffset
+        BitConverter.GetBytes(7).CopyTo(buffer, 28);       // BusTypeUsb
+        System.Text.Encoding.ASCII.GetBytes("SanDisk  ").CopyTo(buffer, 40);
+        System.Text.Encoding.ASCII.GetBytes("Ultra Fit      ").CopyTo(buffer, 50);
+        System.Text.Encoding.ASCII.GetBytes("1.00").CopyTo(buffer, 70);
+
+        var info = DriveProbe.ParseDescriptor(buffer)!;
+        Assert.Equal(BusKind.Usb, info.Bus);
+        Assert.Equal("SanDisk", info.Vendor);
+        Assert.Equal("Ultra Fit", info.Product);
+        Assert.Equal("1.00", info.Revision);
+        Assert.True(info.RemovableMedia);
+        Assert.Null(DriveProbe.ParseDescriptor(new byte[10]));
+    }
+
+    [Fact]
+    public void Echte_Systemplatte_hat_Anschluss_und_Seriennummer()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var c = DriveSnapshot.Read("C:");
+        Assert.Equal(MediaKind.Fixed, c.Kind);
+        Assert.NotEqual(BusKind.Unknown, c.Bus);
+        Assert.NotNull(c.SerialText);
+        Assert.True(c.ClusterBytes >= 512);
+        Assert.DoesNotContain(DriveSnapshot.RemovableDrives(), d => d.Root == @"C:\");
+    }
+
     [Fact]
     public void Lesen_wirft_nie()
     {

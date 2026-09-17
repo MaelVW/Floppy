@@ -23,3 +23,8 @@ app/**/bin/
 app/**/obj/
 .godot/
 *.user
+
+# App-Build (build\Build-App.ps1)
+build/app-out/
+build/motor-publish/
+build/app-export.log

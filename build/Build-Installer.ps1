@@ -1,22 +1,25 @@
 <#
 .SYNOPSIS
     Baut FloppyHubSetup-<Version>.exe aus installer\FloppyHub.iss - auf Wunsch signiert.
+    Das Setup enthaelt beide Varianten (App und Konsole).
 
 .DESCRIPTION
     1. prueft alle PowerShell-Skripte auf Syntaxfehler
-    2. sucht den Inno-Setup-Compiler (ISCC.exe)
-    3. SIGNIERT, sobald ein Zertifikat konfiguriert ist:
+    2. baut die App-Variante (build\Build-App.ps1: Tests, Motor, Godot-Export)
+    3. sucht den Inno-Setup-Compiler (ISCC.exe)
+    4. SIGNIERT, sobald ein Zertifikat konfiguriert ist:
          - legt eine Kopie aller Setup-Dateien in build\stage an
            (die Quelldateien im Repo bleiben unveraendert),
-         - signiert dort die .ps1- und .vbs-Dateien,
+         - signiert dort die .ps1-/.vbs-Dateien der Konsole und die EXE/DLL der App,
          - laesst Inno Setup das Setup UND das Deinstallationsprogramm signieren
-    4. prueft die Signatur des fertigen Setups
+    5. baut das Setup
+    6. prueft die Signatur des fertigen Setups
 
     Zertifikat konfigurieren: siehe docs\SIGNIERUNG.md bzw.
     build\Sign-FloppyFiles.ps1 (Fingerabdruck oder PFX).
 
 .PARAMETER Version
-    Versionsnummer fuer das Setup (Vorgabe: aus FloppyHub.iss).
+    Versionsnummer, z. B. 2.0.0-beta.1 (Vorgabe: config/version aus project.godot).
 
 .PARAMETER Sign
     Signieren ist Pflicht - ohne Zertifikat bricht der Build ab.
@@ -34,10 +37,16 @@
 .PARAMETER SkipChecks
     Syntaxpruefung ueberspringen.
 
+.PARAMETER SkipAppBuild
+    Die App nicht neu bauen, sondern build\app-out verwenden.
+
+.PARAMETER SkipTests
+    Beim App-Build die Unit-Tests ueberspringen.
+
 .EXAMPLE
     .\build\Build-Installer.ps1
 .EXAMPLE
-    .\build\Build-Installer.ps1 -Version 1.1.0 -Sign
+    .\build\Build-Installer.ps1 -Version 2.0.0 -Sign
 .EXAMPLE
     .\build\Build-Installer.ps1 -Sign -UseTestCertificate
 #>
@@ -49,7 +58,9 @@ param(
     [switch] $NoSign,
     [switch] $UseTestCertificate,
     [switch] $NoTimestamp,
-    [switch] $SkipChecks
+    [switch] $SkipChecks,
+    [switch] $SkipAppBuild,
+    [switch] $SkipTests
 )
 
 $ErrorActionPreference = 'Stop'
@@ -57,6 +68,7 @@ $root      = Split-Path -Parent $PSScriptRoot
 $iss       = Join-Path $root 'installer\FloppyHub.iss'
 $dist      = Join-Path $root 'dist'
 $stage     = Join-Path $PSScriptRoot 'stage'
+$appOut    = Join-Path $PSScriptRoot 'app-out'
 $signer    = Join-Path $PSScriptRoot 'Sign-FloppyFiles.ps1'
 $psExe     = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 
@@ -64,16 +76,22 @@ function Say { param([string]$t, [string]$c = 'Gray') Write-Host $t -ForegroundC
 
 if ($Sign -and $NoSign) { throw '-Sign und -NoSign schliessen sich aus.' }
 
+if (-not $Version) {
+    $godotProject = [IO.File]::ReadAllText((Join-Path $root 'app\src\FloppyHub.App\project.godot'))
+    if ($godotProject -match 'config/version="([^"]+)"') { $Version = $Matches[1] }
+}
+
 Say ''
 Say '  FLOPPY HUB  ::  Installer bauen' 'Cyan'
 Say '  ---------------------------------------------------------' 'DarkGray'
 Say "  Projekt: $root" 'DarkGray'
+Say "  Version: $Version" 'DarkGray'
 if (-not (Test-Path -LiteralPath $iss)) { throw "Nicht gefunden: $iss" }
 
 # --- 1) Syntaxpruefung -----------------------------------------------------
 Say ''
 if (-not $SkipChecks) {
-    Say '  [1/5] Syntaxpruefung' 'White'
+    Say '  [1/6] Syntaxpruefung' 'White'
     $bad = 0
     Get-ChildItem -LiteralPath $root -Filter '*.ps1' -File | ForEach-Object {
         $errs = $null; $tokens = $null
@@ -86,11 +104,28 @@ if (-not $SkipChecks) {
     }
     if ($bad -gt 0) { throw "$bad Datei(en) mit Syntaxfehlern - Abbruch." }
 }
-else { Say '  [1/5] Syntaxpruefung uebersprungen' 'DarkYellow' }
+else { Say '  [1/6] Syntaxpruefung uebersprungen' 'DarkYellow' }
 
-# --- 2) Inno Setup ---------------------------------------------------------
+# --- 2) App bauen ------------------------------------------------------------
 Say ''
-Say '  [2/5] Inno Setup suchen' 'White'
+if ($SkipAppBuild) {
+    Say '  [2/6] App-Build uebersprungen (build\app-out wird verwendet)' 'DarkYellow'
+}
+else {
+    Say '  [2/6] App bauen' 'White'
+    $appArgs = @{ Version = $Version }
+    if ($SkipTests) { $appArgs['SkipTests'] = $true }
+    & (Join-Path $PSScriptRoot 'Build-App.ps1') @appArgs
+}
+foreach ($required in 'FloppyLauncher.exe', 'FloppyHub.exe', 'FloppyHub.pck') {
+    if (-not (Test-Path -LiteralPath (Join-Path $appOut $required))) {
+        throw "App-Datei fehlt: build\app-out\$required  (zuerst .\build\Build-App.ps1 ausfuehren)"
+    }
+}
+
+# --- 3) Inno Setup ---------------------------------------------------------
+Say ''
+Say '  [3/6] Inno Setup suchen' 'White'
 $iscc = $null
 foreach ($c in @(
         "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
@@ -106,9 +141,9 @@ if (-not $iscc) {
 }
 Say "        gefunden: $iscc" 'DarkGray'
 
-# --- 3) Signieren? -----------------------------------------------------------
+# --- 4) Signieren? -----------------------------------------------------------
 Say ''
-Say '  [3/5] Signatur' 'White'
+Say '  [4/6] Signatur' 'White'
 if ($UseTestCertificate) {
     $testPfx = Join-Path $PSScriptRoot 'certs\floppy-test.pfx'
     if (-not (Test-Path -LiteralPath $testPfx)) {
@@ -129,16 +164,17 @@ if (-not $NoSign) {
 if ($Sign -and -not $doSign) {
     throw 'Signieren verlangt (-Sign), aber kein Zertifikat konfiguriert. Siehe docs\SIGNIERUNG.md.'
 }
-if ($doSign) { Say '        Zertifikat gefunden - Setup wird signiert.' 'Green' }
-else         { Say '        kein Zertifikat konfiguriert - Setup bleibt UNSIGNIERT.' 'DarkYellow' }
+if ($doSign) { Say '        Zertifikat gefunden - Setup, Skripte und App werden signiert.' 'Green' }
+else         { Say '        kein Zertifikat konfiguriert - alles bleibt UNSIGNIERT.' 'DarkYellow' }
 
-# --- 4) Setup bauen (bei Signatur aus signierter Kopie) -------------------------
+# --- 5) Setup bauen (bei Signatur aus signierter Kopie) -------------------------
 Say ''
-Say '  [4/5] Setup bauen' 'White'
+Say '  [5/6] Setup bauen' 'White'
 if (-not (Test-Path -LiteralPath $dist)) { New-Item -ItemType Directory -Path $dist -Force | Out-Null }
 
 $isccArgs = @('/Qp')
-if ($Version) { $isccArgs += "/DAppVersion=$Version"; Say "        Version: $Version" 'DarkGray' }
+if ($Version) { $isccArgs += "/DAppVersion=$Version" }
+$isccArgs += "/DAppDir=$appOut"
 
 if ($doSign) {
     # Alle Quelldateien, die das Setup einpackt, direkt aus dem .iss ermitteln.
@@ -159,30 +195,36 @@ if ($doSign) {
             Copy-Item -LiteralPath (Join-Path $root $rel) -Destination $dest -Force
         }
     }
-    Say "        $($sources.Count) Eintraege nach build\stage kopiert" 'DarkGray'
+    $stageApp = Join-Path $stage 'app-out'
+    Copy-Item -LiteralPath $appOut -Destination $stageApp -Recurse -Force
+    Say "        $($sources.Count) Eintraege + App nach build\stage kopiert" 'DarkGray'
 
-    $toSign = @(Get-ChildItem -LiteralPath $stage -Recurse -File | Where-Object { $_.Extension -in '.ps1', '.vbs' } |
-            Select-Object -ExpandProperty FullName)
-    Say "        signiere $($toSign.Count) Skripte ..." 'DarkGray'
+    # Konsole: alle Skripte. App: eigene EXE/DLL (nicht die .NET-Laufzeit von Microsoft).
+    $toSign = @(Get-ChildItem -LiteralPath $stage -Recurse -File | Where-Object {
+            $_.Extension -in '.ps1', '.vbs' -or $_.Name -in 'FloppyLauncher.exe', 'FloppyHub.exe', 'FloppyHub.dll', 'Floppy.Core.dll'
+        } | Select-Object -ExpandProperty FullName)
+    Say "        signiere $($toSign.Count) Dateien ..." 'DarkGray'
     # Im selben Prozess aufrufen: ueber powershell.exe -File wuerde das Array
     # in Einzelargumente zerfallen.
     & $signer -Path $toSign
-    if ($LASTEXITCODE -ne 0) { throw 'Signieren der Skripte fehlgeschlagen.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Signieren fehlgeschlagen.' }
 
     $signCmd = '$q' + $psExe + '$q -NoProfile -ExecutionPolicy Bypass -File $q' + $signer + '$q -Quiet -Path $f'
-    $isccArgs += @("/DSrcDir=$stage", '/DSign', "/Sfloppysign=$signCmd")
+    $isccArgs = @($isccArgs | Where-Object { $_ -notlike '/DAppDir=*' })
+    $isccArgs += @("/DSrcDir=$stage", "/DAppDir=$stageApp", '/DSign', "/Sfloppysign=$signCmd")
 }
 
 $isccArgs += $iss
 & $iscc @isccArgs
 if ($LASTEXITCODE -ne 0) { throw "ISCC.exe ist mit Code $LASTEXITCODE fehlgeschlagen." }
 
-$exe = Get-ChildItem -LiteralPath $dist -Filter '*.exe' -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+$exe = Get-ChildItem -LiteralPath $dist -Filter "FloppyHubSetup-$Version.exe" -File | Select-Object -First 1
+if (-not $exe) { $exe = Get-ChildItem -LiteralPath $dist -Filter '*.exe' -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1 }
 if (-not $exe) { throw 'Setup gebaut, aber keine EXE in dist\ gefunden.' }
 
-# --- 5) Ergebnis pruefen -----------------------------------------------------------
+# --- 6) Ergebnis pruefen -----------------------------------------------------------
 Say ''
-Say '  [5/5] Ergebnis' 'White'
+Say '  [6/6] Ergebnis' 'White'
 $sig = Get-AuthenticodeSignature -FilePath $exe.FullName
 if ($doSign) {
     if (-not $sig.SignerCertificate) { throw 'Setup sollte signiert sein, hat aber keine Signatur.' }

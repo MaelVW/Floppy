@@ -50,13 +50,15 @@ Zertifikat in den Windows-Zertifikatsspeicher ein. Dann:
      ```
 3. Bauen:
    ```powershell
-   .\build\Build-Installer.ps1 -Version 1.1.0 -Sign
+   .\build\Build-Installer.ps1 -Version 2.0.0 -Sign
    ```
    `-Sign` bricht ab, falls kein Zertifikat gefunden wird. So entsteht nie
    versehentlich ein unsignierter Release.
 
-Signiert werden **alle** Skripte (`.ps1`, `.vbs`), das **Setup** und das
-**Deinstallationsprogramm**, jeweils mit Zeitstempel. Dank Zeitstempel bleibt die
+Signiert werden **alle** Skripte der Konsole (`.ps1`, `.vbs`), von der App
+`FloppyHub.exe`, `FloppyLauncher.exe` und die eigenen DLLs (`FloppyHub.dll`,
+`Floppy.Core.dll` – die mitgelieferte .NET-Laufzeit ist bereits von Microsoft signiert),
+das **Setup** und das **Deinstallationsprogramm**, jeweils mit Zeitstempel. Dank Zeitstempel bleibt die
 Signatur gültig, auch wenn das Zertifikat später abläuft. Die Dateien im Repo
 bleiben unverändert, signiert wird eine Kopie in `build\stage`.
 

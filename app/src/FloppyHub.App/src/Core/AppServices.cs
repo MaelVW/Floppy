@@ -47,6 +47,11 @@ public sealed class AppServices
 
     public LaunchPlanner Planner => new(Options);
 
+    private Services.ChatService? _chat;
+
+    /// <summary>Chat (lebt so lange wie die App, auch wenn die Oberflaeche neu gebaut wird).</summary>
+    public Services.ChatService Chat => _chat ??= new Services.ChatService(this);
+
     private static string DefaultHome()
     {
         // Exportierte App: Ordner der FloppyHub.exe. Im Editor: Projektordner (zum Testen).

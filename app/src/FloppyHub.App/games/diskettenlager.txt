@@ -1,0 +1,84 @@
+; ===========================================================================
+;  DISKETTENLAGER  -  Levelpaket fuer das Floppy-Hub-Minispiel
+; ===========================================================================
+;  Schiebe alle Disketten ($) in die Laufwerke (.). Disketten lassen sich nur
+;  schieben, nicht ziehen - und immer nur eine auf einmal.
+;
+;  Eigene Level bauen? Datei kopieren, aendern, auf eine Diskette legen und in
+;  die game.txt schreiben:   minigame=levels.txt
+;  (oder in der App: Bespielen -> Minispiel-Diskette)
+;
+;  Zeichen:   #  Wand          @  Spieler        $  Diskette
+;             .  Laufwerk      *  Diskette im Laufwerk
+;             +  Spieler auf Laufwerk            Leerzeichen = Boden
+;  Grenzen:   hoechstens 40 x 30 Felder pro Level, 200 Level pro Datei
+; ===========================================================================
+
+title  = Diskettenlager
+author = Floppy Hub
+
+[level] Erste Diskette
+#######
+#@ $ .#
+#######
+
+[level] Zwei Laufwerke
+########
+#      #
+#@$ $..#
+#      #
+########
+
+[level] Um die Ecke
+######
+#@   #
+# $$ #
+#  # #
+#.  .#
+######
+
+[level] Stapelware
+ #####
+##   #
+#  $ #
+# #$ ##
+# .@. #
+#     #
+#######
+
+[level] Schreibschutz
+  ####
+###  ####
+#   $   #
+# #  #$ #
+# . .#@ #
+#########
+
+[level] Vier Ecken
+########
+#.   . #
+# $##$ #
+#  @   #
+# $##$ #
+#.   . #
+########
+
+[level] Kabelsalat
+#########
+#       #
+# $   $ #
+#  #.#  #
+#  .@.  #
+#  #.#  #
+# $   $ #
+#       #
+#########
+
+[level] Meisterpruefung
+  #######
+  #     #
+### $#$ #
+#  .  . #
+# #$##$##
+# . @ . #
+#########

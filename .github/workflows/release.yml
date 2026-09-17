@@ -1,14 +1,13 @@
 name: Release
 
-# Baut FloppyHubSetup.exe und haengt es an ein GitHub-Release.
+# Baut FloppyHubSetup.exe (App- und Konsolen-Variante) und haengt es an ein GitHub-Release.
 #
 #   Veroeffentlichen:
-#       git tag v1.0.0
-#       git push origin v1.0.0
+#       git tag v2.0.0-beta.1
+#       git push origin v2.0.0-beta.1
 #
-#   Danach liegt das Setup unter
-#       https://github.com/MaelVW/Floppy/releases/latest
-#   und kann von dort heruntergeladen werden.
+#   Versionen mit Bindestrich (z. B. 2.0.0-beta.1) werden als Pre-Release markiert.
+#   Release-Text: docs/releases/v<Version>.md (falls vorhanden), sonst ein Standardtext.
 #
 #   Ohne Tag laesst sich der Build ueber "Run workflow" auch manuell starten
 #   (dann nur als Artefakt, ohne Release).
@@ -20,12 +19,15 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version ohne fuehrendes v (z. B. 1.0.0)'
+        description: 'Version ohne fuehrendes v (z. B. 2.0.0-beta.1)'
         required: false
-        default: '1.0.0'
+        default: ''
 
 permissions:
   contents: write
+
+env:
+  GODOT_VERSION: '4.7.2'
 
 jobs:
   build:
@@ -43,10 +45,16 @@ jobs:
             $v = $env:GITHUB_REF -replace '^refs/tags/v', ''
           } else {
             $v = '${{ github.event.inputs.version }}'
-            if (-not $v) { $v = '1.0.0' }
+            if (-not $v -and (Get-Content app/src/FloppyHub.App/project.godot -Raw) -match 'config/version="([^"]+)"') { $v = $Matches[1] }
           }
           "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "prerelease=$(if ($v -like '*-*') { 'true' } else { 'false' })" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           Write-Host "Version: $v"
+
+      - name: .NET einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
 
       - name: PowerShell-Skripte pruefen
         shell: pwsh
@@ -77,6 +85,47 @@ jobs:
         shell: pwsh
         run: choco install innosetup --no-progress -y
 
+      - name: Godot-Cache
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/godot
+            ~/AppData/Roaming/Godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-mono-windows
+
+      - name: Godot (.NET) und Windows-Exportvorlagen installieren
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $v = $env:GODOT_VERSION
+          $base = "https://github.com/godotengine/godot/releases/download/$v-stable"
+          $dir = Join-Path $env:RUNNER_TEMP 'godot'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Invoke-WebRequest "$base/Godot_v$v-stable_mono_win64.zip" -OutFile "$dir\godot.zip"
+          Expand-Archive "$dir\godot.zip" -DestinationPath $dir -Force
+          Remove-Item "$dir\godot.zip"
+
+          Invoke-WebRequest "$base/Godot_v$v-stable_mono_export_templates.tpz" -OutFile "$dir\templates.tpz"
+          $target = Join-Path $env:APPDATA "Godot\export_templates\$v.stable.mono"
+          New-Item -ItemType Directory -Force $target | Out-Null
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = [IO.Compression.ZipFile]::OpenRead("$dir\templates.tpz")
+          foreach ($e in $zip.Entries) {
+            if ($e.FullName -match '^templates/(windows_.*|version\.txt|icudt_godot\.dat)$') {
+              [IO.Compression.ZipFileExtensions]::ExtractToFile($e, (Join-Path $target $Matches[1]), $true)
+            }
+          }
+          $zip.Dispose()
+          Remove-Item "$dir\templates.tpz"
+
+      - name: Godot in den PATH
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'godot') -Recurse -Filter 'Godot_v*_mono_win64_console.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'Godot nicht gefunden.' }
+          $exe.DirectoryName | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+
       - name: Signier-Zertifikat bereitstellen (falls Secrets gesetzt)
         # Secrets (Settings -> Secrets and variables -> Actions):
         #   FLOPPY_SIGN_PFX_BASE64   PFX-Datei als Base64
@@ -97,7 +146,7 @@ jobs:
           "FLOPPY_SIGN_PFX_PASSWORD=$env:PFX_PWD" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
           Write-Host "Signier-Zertifikat bereitgestellt."
 
-      - name: Setup bauen (signiert, wenn Zertifikat vorhanden)
+      - name: App + Setup bauen (signiert, wenn Zertifikat vorhanden)
         shell: powershell
         run: |
           .\build\Build-Installer.ps1 -Version "${{ steps.ver.outputs.version }}"
@@ -114,17 +163,41 @@ jobs:
       - name: Pruefsumme erzeugen
         shell: pwsh
         run: |
-          Get-ChildItem dist -Filter *.exe | ForEach-Object {
+          Get-ChildItem dist -Filter "FloppyHubSetup-${{ steps.ver.outputs.version }}.exe" | ForEach-Object {
             $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
             "$h  $($_.Name)" | Out-File "dist\$($_.Name).sha256.txt" -Encoding ascii
             Write-Host "$h  $($_.Name)"
           }
 
+      - name: Release-Text waehlen
+        id: notes
+        shell: pwsh
+        run: |
+          $v = '${{ steps.ver.outputs.version }}'
+          $file = "docs/releases/v$v.md"
+          if (-not (Test-Path $file)) {
+            $file = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+            @(
+              "## Floppy Hub $v",
+              '',
+              'Aus Disketten wird eine physische Steam-Library.',
+              '',
+              "1. ``FloppyHubSetup-$v.exe`` herunterladen und ausfuehren",
+              '2. Variante waehlen: **App** (grafisch) oder **Konsole** (wie Version 1)',
+              '3. Zielordner frei waehlbar, Autostart optional',
+              '',
+              'Die Pruefsumme der EXE steht in der beiliegenden `.sha256.txt`.'
+            ) | Set-Content $file -Encoding utf8
+          }
+          "path=$file" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
       - name: Artefakt hochladen
         uses: actions/upload-artifact@v4
         with:
           name: FloppyHubSetup
-          path: dist/*
+          path: |
+            dist/FloppyHubSetup-${{ steps.ver.outputs.version }}.exe
+            dist/*.sha256.txt
 
       - name: Release veroeffentlichen
         if: startsWith(github.ref, 'refs/tags/v')
@@ -132,26 +205,8 @@ jobs:
         with:
           name: Floppy Hub ${{ steps.ver.outputs.version }}
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.ver.outputs.prerelease == 'true' }}
+          body_path: ${{ steps.notes.outputs.path }}
           files: |
-            dist/*.exe
+            dist/FloppyHubSetup-${{ steps.ver.outputs.version }}.exe
             dist/*.sha256.txt
-          body: |
-            ## Floppy Hub ${{ steps.ver.outputs.version }}
-
-            Aus Disketten wird eine physische Steam-Library.
-
-            ### Installation
-            1. `FloppyHubSetup-${{ steps.ver.outputs.version }}.exe` herunterladen
-            2. Ausfuehren - der Assistent fuehrt durch die Installation
-            3. Zielordner frei waehlbar, Autostart optional
-
-            Windows meldet bei unsignierten Setups eventuell "Computer geschuetzt"
-            (SmartScreen). Ueber *Weitere Informationen* -> *Trotzdem ausfuehren*.
-
-            ### Voraussetzungen
-            - Windows 10 / 11
-            - Windows PowerShell 5.1 (bei Windows dabei)
-            - Diskettenlaufwerk als `A:` (USB-Floppy genuegt)
-
-            Die Pruefsumme der EXE steht in der beiliegenden `.sha256.txt`.

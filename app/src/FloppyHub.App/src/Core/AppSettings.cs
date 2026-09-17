@@ -20,6 +20,12 @@ public sealed class AppSettings
     public bool LoadCovers { get; set; } = true;
     public bool FirstRunDone { get; set; }
 
+    /// <summary>Name fuer Rekorde im Minispiel.</summary>
+    public string PlayerName { get; set; } = "";
+
+    /// <summary>Gratis-Dienst fuer den Online-Chat (ntfy). Leer = ntfy.sh.</summary>
+    public string ChatServer { get; set; } = "";
+
     public static AppSettings Load(string file)
     {
         var s = new AppSettings();
@@ -38,6 +44,8 @@ public sealed class AppSettings
                 ? Math.Clamp(f, 0f, 3f) : 0f;
             s.LoadCovers = ini.GetBool("library", "load_covers", true);
             s.FirstRunDone = ini.GetBool("app", "first_run_done", false);
+            s.PlayerName = Floppy.Core.Minigame.ScoreBoard.CleanName(ini.Get("game", "player", ""));
+            s.ChatServer = (ini.Get("chat", "server", "") ?? "").Trim();
         }
         catch
         {
@@ -57,7 +65,12 @@ public sealed class AppSettings
             .AppendLine("[library]")
             .AppendLine($"load_covers = {(LoadCovers ? "true" : "false")}")
             .AppendLine("[app]")
-            .AppendLine($"first_run_done = {(FirstRunDone ? "true" : "false")}");
+            .AppendLine($"first_run_done = {(FirstRunDone ? "true" : "false")}")
+            .AppendLine("[game]")
+            .AppendLine($"player = {PlayerName}")
+            .AppendLine("[chat]")
+            .AppendLine("; leer = https://ntfy.sh (oder eigener ntfy-Server, nur https)")
+            .AppendLine($"server = {ChatServer}");
         FloppyPaths.EnsureDirectory(Path.GetDirectoryName(file)!);
         File.WriteAllText(file, sb.ToString(), new UTF8Encoding(true));
     }

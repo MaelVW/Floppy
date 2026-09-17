@@ -1,4 +1,5 @@
 using Floppy.Core;
+using Floppy.Core.Minigame;
 using FloppyHub.App.Art;
 using FloppyHub.App.Core;
 using Godot;
@@ -20,6 +21,7 @@ public partial class WriteView : ViewBase
         (ReferenceKind.PcRun, "kind_pcrun", "PCRUN"),
         (ReferenceKind.Run, "kind_run", "RUN"),
         (ReferenceKind.Hub, "kind_hub", "HUB"),
+        (ReferenceKind.Game, "game", "GAME"),
     ];
 
     private readonly Dictionary<ReferenceKind, CheckBox> _kindButtons = new();
@@ -54,7 +56,7 @@ public partial class WriteView : ViewBase
         var kinds = Ui.VBox(2);
         foreach (var (kind, icon, key) in Kinds)
         {
-            var box = new CheckBox { Text = Loc.T("WRITE_KIND_" + key), Icon = Icons.Get(icon), ButtonGroup = group, ButtonPressed = kind == _kind };
+            var box = new CheckBox { Text = Loc.T("WRITE_KIND_" + key), Icon = Icons.GetSized(icon, 16), ButtonGroup = group, ButtonPressed = kind == _kind };
             box.Toggled += on => { if (on) SetKind(kind); };
             _kindButtons[kind] = box;
             var hint = Ui.Dim(Loc.T("WRITE_KIND_" + key + "_HINT"), wrap: true);
@@ -170,13 +172,17 @@ public partial class WriteView : ViewBase
         _kind = kind;
         var hub = kind == ReferenceKind.Hub;
         foreach (var c in _valueRows) c.Visible = !hub;
-        _addToLibrary.Disabled = hub;
-        _browse.Visible = kind is ReferenceKind.PcRun or ReferenceKind.Run;
+        var takesArgs = kind is ReferenceKind.Steam or ReferenceKind.PcRun or ReferenceKind.Run;
+        _argsLabel.Visible = takesArgs;
+        _args.Visible = takesArgs;
+        _addToLibrary.Disabled = kind is ReferenceKind.Hub or ReferenceKind.Game;
+        _browse.Visible = kind is ReferenceKind.PcRun or ReferenceKind.Run or ReferenceKind.Game;
         (_valueLabel.Text, _value.PlaceholderText) = kind switch
         {
             ReferenceKind.Steam => (Loc.T("WRITE_VALUE_STEAM"), Loc.T("WRITE_VALUE_STEAM_PLACEHOLDER")),
             ReferenceKind.PcRun => (Loc.T("WRITE_VALUE_PCRUN"), Loc.T("WRITE_VALUE_PCRUN_PLACEHOLDER")),
             ReferenceKind.Run => (Loc.T("WRITE_VALUE_RUN"), Loc.T("WRITE_VALUE_RUN_PLACEHOLDER")),
+            ReferenceKind.Game => (Loc.T("WRITE_VALUE_GAME"), Loc.T("WRITE_VALUE_GAME_PLACEHOLDER")),
             _ => ("", ""),
         };
         Refresh();
@@ -204,8 +210,11 @@ public partial class WriteView : ViewBase
         var root = s.DriveRoot;
         _discPresent = DiscWatcher.IsReady(root);
 
-        var preview = ReferenceWriter.Prepare(_kind, _value.Text, _args.Text, _title.Text, s.Options, _discPresent ? root : null);
-        var empty = _kind != ReferenceKind.Hub && PathRules.StripQuotes(_value.Text).Length == 0;
+        var game = _kind == ReferenceKind.Game ? LoadGameSource() : null;
+        var preview = _kind == ReferenceKind.Game
+            ? ReferenceWriter.Prepare(ReferenceKind.Game, GameFileName, null, TitleOrPack(game), s.Options)
+            : ReferenceWriter.Prepare(_kind, _value.Text, _args.Text, _title.Text, s.Options, _discPresent ? root : null);
+        var empty = _kind is not (ReferenceKind.Hub or ReferenceKind.Game) && PathRules.StripQuotes(_value.Text).Length == 0;
 
         _preview.Text = preview.IsValid ? preview.Text.Replace("\r\n", "\n").TrimEnd() : Loc.T("WRITE_PREVIEW_INVALID");
         _messages.ClearChildren();
@@ -218,16 +227,18 @@ public partial class WriteView : ViewBase
             foreach (var m in preview.Messages)
             {
                 var icon = m.Level switch { MessageLevel.Error => "error", MessageLevel.Warn => "warn", _ => "info" };
-                _messages.AddChild(Ui.IconLine(icon, m.Text, "DimLabel"));
+                _messages.AddChild(Ui.IconLine(icon, Loc.Message(m), "DimLabel"));
             }
+            foreach (var problem in game?.Pack.Problems ?? [])
+                _messages.AddChild(Ui.IconLine(game!.Pack.Levels.Count == 0 ? "error" : "warn", problem, "DimLabel"));
         }
 
-        ShowRecognized(preview, empty);
+        ShowRecognized(preview, empty, game);
         ShowTarget(root);
-        _write.Disabled = !_discPresent || !preview.IsValid;
+        _write.Disabled = !_discPresent || !preview.IsValid || game is { Pack.Levels.Count: 0 };
     }
 
-    private void ShowRecognized(ReferencePreview preview, bool empty)
+    private void ShowRecognized(ReferencePreview preview, bool empty, GameSource? game)
     {
         _cover.Visible = false;
         var row = _recognizedIcon.GetParent<Control>();
@@ -261,6 +272,12 @@ public partial class WriteView : ViewBase
                 var onDisc = _discPresent && File.Exists(System.IO.Path.Combine(Host.Services.DriveRoot, preview.Value));
                 SetRecognized(onDisc ? "ok" : "warn", onDisc ? Loc.T("WRITE_REC_ON_DISC") : Loc.T("WRITE_REC_NOT_ON_DISC"));
                 break;
+
+            case ReferenceKind.Game when game is not null:
+                SetRecognized(game.Pack.Levels.Count > 0 ? "ok" : "error", game.Pack.Levels.Count > 0
+                    ? Loc.T("WRITE_REC_GAME", game.Pack.Title, game.Pack.Levels.Count)
+                    : Loc.T("WRITE_REC_GAME_INVALID"));
+                break;
         }
     }
 
@@ -289,7 +306,8 @@ public partial class WriteView : ViewBase
             return;
         }
         _targetIcon.Texture = Icons.Get("media_floppy");
-        var existing = File.Exists(System.IO.Path.Combine(root, "game.txt"));
+        var existing = File.Exists(System.IO.Path.Combine(root, "game.txt")) ||
+                       (_kind == ReferenceKind.Game && File.Exists(System.IO.Path.Combine(root, GameFileName)));
         var free = root.Length <= 3 ? Ui.Bytes(DriveSnapshot.Read(root).FreeBytes) : null;
         _target.Text = Loc.T("WRITE_TARGET", shown) +
                        (free is null ? "" : "  ·  " + Loc.T("WRITE_TARGET_FREE", free)) +
@@ -309,8 +327,15 @@ public partial class WriteView : ViewBase
             FileMode = FileDialog.FileModeEnum.OpenFile,
             Access = FileDialog.AccessEnum.Filesystem,
             UseNativeDialog = true,
-            Title = Loc.T(_kind == ReferenceKind.Run ? "WRITE_BROWSE_RUN" : "WRITE_BROWSE_PCRUN"),
-            Filters = [$"{string.Join(", ", s.Options.ExecutableExtensions.Select(e => "*" + e))} ; {Loc.T("WRITE_FILTER_PROGRAMS")}"],
+            Title = Loc.T(_kind switch
+            {
+                ReferenceKind.Run => "WRITE_BROWSE_RUN",
+                ReferenceKind.Game => "WRITE_BROWSE_GAME",
+                _ => "WRITE_BROWSE_PCRUN",
+            }),
+            Filters = _kind == ReferenceKind.Game
+                ? [$"*.txt ; {Loc.T("WRITE_FILTER_LEVELS")}"]
+                : [$"{string.Join(", ", s.Options.ExecutableExtensions.Select(e => "*" + e))} ; {Loc.T("WRITE_FILTER_PROGRAMS")}"],
         };
         if (_kind == ReferenceKind.Run && DiscWatcher.IsReady(s.DriveRoot)) _dialog.CurrentDir = s.DriveRoot;
 
@@ -327,7 +352,7 @@ public partial class WriteView : ViewBase
                 path = System.IO.Path.GetRelativePath(s.DriveRoot, path);
             }
             _value.Text = path;
-            if (_title.Text.Length == 0) _title.Text = System.IO.Path.GetFileNameWithoutExtension(path);
+            if (_title.Text.Length == 0 && _kind != ReferenceKind.Game) _title.Text = System.IO.Path.GetFileNameWithoutExtension(path);
             Refresh();
         };
         AddChild(_dialog);
@@ -341,7 +366,8 @@ public partial class WriteView : ViewBase
     private void Write()
     {
         var root = Host.Services.DriveRoot;
-        if (File.Exists(System.IO.Path.Combine(root, "game.txt")))
+        if (File.Exists(System.IO.Path.Combine(root, "game.txt")) ||
+            (_kind == ReferenceKind.Game && File.Exists(System.IO.Path.Combine(root, GameFileName))))
         {
             RetroDialog.Ask(Host.DialogLayer, Loc.T("WRITE_REPLACE_TITLE"), Loc.T("WRITE_REPLACE_TEXT"), Loc.T("BTN_REPLACE"),
                 () => DoWrite(force: true));
@@ -356,20 +382,41 @@ public partial class WriteView : ViewBase
         var root = s.DriveRoot;
         if (s.ReadOnlyMode) return;
 
+        var game = _kind == ReferenceKind.Game ? LoadGameSource() : null;
+        if (game is { Pack.Levels.Count: 0 }) return;
+
         // 1. Motor vorwarnen, 2. schreiben, 3. Fingerabdruck hinterlegen
         WriteGuard.Begin(s.Paths.UserData);
-        var result = ReferenceWriter.Write(root, _kind, _value.Text, _args.Text, _title.Text, s.Options, force: force);
+        WriteResult result;
+        if (game is not null)
+        {
+            try
+            {
+                File.WriteAllText(System.IO.Path.Combine(root, GameFileName), game.Text, new System.Text.UTF8Encoding(true));
+                result = ReferenceWriter.Write(root, ReferenceKind.Game, GameFileName, null, TitleOrPack(game), s.Options, force: force);
+            }
+            catch (Exception ex)
+            {
+                result = new WriteResult(null, [new PlanMessage(MessageLevel.Error, ex.Message)]);
+            }
+        }
+        else
+        {
+            result = ReferenceWriter.Write(root, _kind, _value.Text, _args.Text, _title.Text, s.Options, force: force);
+        }
         if (!result.Success)
         {
             WriteGuard.Cancel(s.Paths.UserData);
             RetroDialog.Message(Host.DialogLayer, Loc.T("WRITE_FAILED_TITLE"),
-                string.Join("\n", result.Messages.Where(m => m.Level != MessageLevel.Ok).Select(m => m.Text)), "error");
+                string.Join("\n", result.Messages.Where(m => m.Level != MessageLevel.Ok).Select(Loc.Message)), "error");
             return;
         }
         WriteGuard.Note(s.Paths.UserData, DiskSignature.Compute(root));
 
-        var preview = ReferenceWriter.Prepare(_kind, _value.Text, _args.Text, _title.Text, s.Options, root);
-        var label = Label(preview);
+        var preview = game is not null
+            ? ReferenceWriter.Prepare(ReferenceKind.Game, GameFileName, null, TitleOrPack(game), s.Options)
+            : ReferenceWriter.Prepare(_kind, _value.Text, _args.Text, _title.Text, s.Options, root);
+        var label = game is not null ? TitleOrPack(game) : Label(preview);
         s.Log.Write(LogLevel.Ok, $"App: Diskette bespielt ({_kind}): {result.Path}");
 
         var trusted = TrustWritten(preview, label);
@@ -420,7 +467,7 @@ public partial class WriteView : ViewBase
 
     private bool AddToLibrary(ReferencePreview p, string label)
     {
-        if (!_addToLibrary.ButtonPressed || _kind == ReferenceKind.Hub) return false;
+        if (!_addToLibrary.ButtonPressed || _kind is ReferenceKind.Hub or ReferenceKind.Game) return false;
         var s = Host.Services;
         try
         {
@@ -438,6 +485,51 @@ public partial class WriteView : ViewBase
             return false;
         }
     }
+
+    // ------------------------------------------------------------------
+    // Minispiel-Diskette
+    // ------------------------------------------------------------------
+
+    /// <summary>So heisst das Levelpaket auf der Diskette.</summary>
+    public const string GameFileName = "levels.txt";
+
+    private sealed record GameSource(string Text, LevelPack Pack);
+
+    /// <summary>"Minispiel-Diskette" vorauswaehlen (Knopf im Minispiel).</summary>
+    public void PrefillGame(string? packFile = null)
+    {
+        _kindButtons[ReferenceKind.Game].ButtonPressed = true;
+        SetKind(ReferenceKind.Game);
+        _value.Text = packFile ?? "";
+        _title.Text = "";
+        Refresh();
+    }
+
+    /// <summary>Leer = eingebautes Paket, sonst die gewaehlte Datei.</summary>
+    private GameSource LoadGameSource()
+    {
+        var path = PathRules.StripQuotes(_value.Text);
+        try
+        {
+            if (path.Length == 0)
+            {
+                var text = GameView.BuiltInPackText();
+                return new GameSource(text, LevelPack.Parse(text));
+            }
+            var info = new FileInfo(path);
+            if (!info.Exists) return new GameSource("", LevelPack.Parse("") with { Problems = [Loc.T("WRITE_REC_MISSING")] });
+            if (info.Length > LevelPack.MaxFileBytes) return new GameSource("", LevelPack.Load(path));
+            var fileText = File.ReadAllText(path);
+            return new GameSource(fileText, LevelPack.Parse(fileText));
+        }
+        catch (Exception ex)
+        {
+            return new GameSource("", LevelPack.Parse("") with { Problems = [ex.Message] });
+        }
+    }
+
+    private string TitleOrPack(GameSource? game) =>
+        _title.Text.Trim().Length > 0 ? _title.Text.Trim() : game?.Pack.Title ?? "";
 
     private static ReferenceKind? ParseKind(string kind) => kind.ToLowerInvariant() switch
     {

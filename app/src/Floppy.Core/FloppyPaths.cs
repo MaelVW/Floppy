@@ -37,6 +37,15 @@ public sealed class FloppyPaths
     public string CoverCacheDir => Path.Combine(UserData, "covers");
     public string AppSettingsFile => Path.Combine(UserData, "app.ini");
 
+    /// <summary>Chat: eigene Identitaet + Kontakte (nie der Verlauf).</summary>
+    public string ChatDir => Path.Combine(UserData, "chat");
+
+    /// <summary>Minispiel: lokale Bestenlisten (eine Datei pro Levelpaket).</summary>
+    public string ScoresDir => Path.Combine(UserData, "scores");
+
+    /// <summary>Minispiel: eigene Level aus dem Editor.</summary>
+    public string LevelsDir => Path.Combine(UserData, "levels");
+
     /// <summary>Programmordner, wenn beschreibbar - sonst <see cref="UserData"/> (V1: Get-WritableDir).</summary>
     public string DataHome => _dataHome ??= IsWritable(Home) ? Home : EnsureDirectory(UserData);
 

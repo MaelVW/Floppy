@@ -7,6 +7,9 @@ public enum GateAction
     StartSteam,
     OpenHub,
 
+    /// <summary>Minispiel in der App oeffnen (reine Daten, keine Freigabe noetig).</summary>
+    OpenGame,
+
     /// <summary>Bekanntes Programm - sofort starten.</summary>
     Start,
 
@@ -34,6 +37,8 @@ public static class LaunchGate
                 return new(GateAction.StartSteam, plan, null, TrustState.Trusted, "Steam-Spiel");
             case LaunchKind.Hub:
                 return new(GateAction.OpenHub, plan, null, TrustState.Trusted, "Hub-Diskette");
+            case LaunchKind.Game:
+                return new(GateAction.OpenGame, plan, plan.Candidates.FirstOrDefault(), TrustState.Trusted, "Minispiel-Diskette");
         }
 
         if (plan.Candidates.Count != 1)

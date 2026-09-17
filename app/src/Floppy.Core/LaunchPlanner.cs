@@ -32,7 +32,7 @@ public sealed class LaunchPlanner(FloppyOptions options)
             try { map = ReferenceFile.Load(refPath); }
             catch (Exception ex)
             {
-                log.Add(new(MessageLevel.Error, $"Referenzdatei nicht lesbar: {refPath} ({ex.Message})"));
+                log.Add(PlanMessage.Of(MessageLevel.Error, "REF_UNREADABLE", $"Referenzdatei nicht lesbar: {refPath} ({ex.Message})", refPath, ex.Message));
                 return null;
             }
 
@@ -42,7 +42,7 @@ public sealed class LaunchPlanner(FloppyOptions options)
             {
                 if (!IsDigits(steamId))
                 {
-                    log.Add(new(MessageLevel.Error, $"Ungueltige Steam-ID in {refPath}: '{steamId}'"));
+                    log.Add(PlanMessage.Of(MessageLevel.Error, "STEAM_INVALID", $"Ungueltige Steam-ID in {refPath}: '{steamId}'", refPath, steamId));
                     return null;
                 }
                 return new LaunchPlan(LaunchKind.Steam, steamId, [], null, false, refPath);
@@ -51,8 +51,18 @@ public sealed class LaunchPlanner(FloppyOptions options)
             // --- Hub-Diskette ---
             if (_o.HubEnabled && ReferenceFile.FirstValue(map, _o.HubKeys) is not null)
             {
-                log.Add(new(MessageLevel.Ok, "Hub-Diskette erkannt - oeffne Floppy Hub."));
+                log.Add(PlanMessage.Of(MessageLevel.Ok, "HUB_DISC", "Hub-Diskette erkannt - oeffne Floppy Hub."));
                 return new LaunchPlan(LaunchKind.Hub, null, [], null, false, refPath);
+            }
+
+            // --- Minispiel-Diskette (App-Variante): nur ein Levelpaket, nie Programmcode ---
+            var gameRef = ReferenceFile.FirstValue(map, ReferenceFile.GameKeys);
+            if (gameRef is not null)
+            {
+                var pack = ResolveOnDrive(root, gameRef, log, Minigame.LevelPack.Extensions, "minigame");
+                if (pack is null) return null;
+                log.Add(PlanMessage.Of(MessageLevel.Ok, "GAME_DISC", "Minispiel-Diskette erkannt - oeffne Floppy Hub."));
+                return new LaunchPlan(LaunchKind.Game, null, [pack], null, false, refPath);
             }
 
             map.TryGetValue(ReferenceFile.ArgsKey, out var args);
@@ -77,7 +87,7 @@ public sealed class LaunchPlanner(FloppyOptions options)
                     : new LaunchPlan(LaunchKind.Process, null, [exePath], args, false, refPath);
             }
 
-            log.Add(new(MessageLevel.Warn, $"Referenzdatei {refPath} enthaelt keine verwertbare Angabe (id= / run= / pcrun=)."));
+            log.Add(PlanMessage.Of(MessageLevel.Warn, "REF_NOTHING", $"Referenzdatei {refPath} enthaelt keine verwertbare Angabe (id= / run= / pcrun=).", refPath));
         }
 
         // --- Keine (brauchbare) Referenzdatei: ausfuehrbare Dateien suchen ---
@@ -86,24 +96,30 @@ public sealed class LaunchPlanner(FloppyOptions options)
         if (found.Length == 1) return new LaunchPlan(LaunchKind.Process, null, found, null, false, "EXE-Suche");
 
         var duplicateNames = found.GroupBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1);
-        log.Add(new(MessageLevel.Warn, duplicateNames
-            ? "Gleicher Dateiname mehrfach auf der Diskette - jede EXE wird einzeln abgefragt."
-            : "Mehrere ausfuehrbare Dateien auf der Diskette - jede wird einzeln abgefragt."));
+        log.Add(duplicateNames
+            ? PlanMessage.Of(MessageLevel.Warn, "EXE_DUPLICATES", "Gleicher Dateiname mehrfach auf der Diskette - jede EXE wird einzeln abgefragt.")
+            : PlanMessage.Of(MessageLevel.Warn, "EXE_MULTIPLE", "Mehrere ausfuehrbare Dateien auf der Diskette - jede wird einzeln abgefragt."));
         return new LaunchPlan(LaunchKind.Process, null, found, null, true, "EXE-Suche");
     }
 
     /// <summary>run=: Pfad relativ zur Diskette, muss auf der Diskette bleiben.</summary>
-    public string? ResolveOnDrive(string root, string value, List<PlanMessage> log)
+    public string? ResolveOnDrive(string root, string value, List<PlanMessage> log) =>
+        ResolveOnDrive(root, value, log, _o.ExecutableExtensions, "run");
+
+    /// <summary>Datei relativ zur Diskette (run= oder minigame=), muss auf der Diskette bleiben.</summary>
+    private static string? ResolveOnDrive(string root, string value, List<PlanMessage> log, IReadOnlyList<string> extensions, string key)
     {
         var rel = PathRules.StripQuotes(value);
         if (rel.Length == 0)
         {
-            log.Add(new(MessageLevel.Error, "run= ist leer."));
+            log.Add(PlanMessage.Of(MessageLevel.Error, "KEY_EMPTY", $"{key}= ist leer.", key));
             return null;
         }
         if (PathRules.IsRooted(rel))
         {
-            log.Add(new(MessageLevel.Error, $"run= erwartet einen Pfad relativ zur Diskette. Fuer PC-Pfade bitte pcrun= verwenden: {rel}"));
+            log.Add(key == "run"
+                ? PlanMessage.Of(MessageLevel.Error, "RUN_ROOTED", $"run= erwartet einen Pfad relativ zur Diskette. Fuer PC-Pfade bitte pcrun= verwenden: {rel}", rel)
+                : PlanMessage.Of(MessageLevel.Error, "KEY_ROOTED", $"{key}= erwartet einen Pfad relativ zur Diskette: {rel}", key, rel));
             return null;
         }
 
@@ -112,17 +128,20 @@ public sealed class LaunchPlanner(FloppyOptions options)
 
         if (!PathRules.IsUnder(full, root))
         {
-            log.Add(new(MessageLevel.Warn, $"run= zeigt aus der Diskette heraus, ignoriert: {rel}"));
+            log.Add(PlanMessage.Of(MessageLevel.Warn, "KEY_OUTSIDE", $"{key}= zeigt aus der Diskette heraus, ignoriert: {rel}", key, rel));
             return null;
         }
         if (!File.Exists(full))
         {
-            log.Add(new(MessageLevel.Error, $"run=-Datei fehlt auf der Diskette: {rel}"));
+            log.Add(PlanMessage.Of(MessageLevel.Error, "KEY_MISSING", $"{key}=-Datei fehlt auf der Diskette: {rel}", key, rel));
             return null;
         }
-        if (!PathRules.HasExecutableExtension(full, _o.ExecutableExtensions))
+        if (!PathRules.HasExecutableExtension(full, extensions))
         {
-            log.Add(new(MessageLevel.Error, $"run=-Datei ist nicht ausfuehrbar: {rel}"));
+            log.Add(key == "run"
+                ? PlanMessage.Of(MessageLevel.Error, "RUN_NOT_EXE", $"run=-Datei ist nicht ausfuehrbar: {rel}", rel)
+                : PlanMessage.Of(MessageLevel.Error, "KEY_WRONG_EXT", $"{key}=-Datei hat die falsche Endung (erlaubt: {string.Join(", ", extensions)}): {rel}",
+                    key, string.Join(", ", extensions), rel));
             return null;
         }
         return full;
@@ -134,43 +153,43 @@ public sealed class LaunchPlanner(FloppyOptions options)
         var input = PathRules.StripQuotes(value);
         if (input.Length == 0)
         {
-            log.Add(new(MessageLevel.Error, "pcrun= ist leer."));
+            log.Add(PlanMessage.Of(MessageLevel.Error, "KEY_EMPTY", "pcrun= ist leer.", "pcrun"));
             return null;
         }
         if (!PathRules.IsRooted(input))
         {
-            log.Add(new(MessageLevel.Error, $"pcrun= benoetigt einen absoluten Pfad (z. B. C:\\Spiele\\x.exe): {input}"));
+            log.Add(PlanMessage.Of(MessageLevel.Error, "PCRUN_NOT_ABSOLUTE", $"pcrun= benoetigt einen absoluten Pfad (z. B. C:\\Spiele\\x.exe): {input}", input));
             return null;
         }
 
         var full = PathRules.TryGetFullPath(input);
         if (full is null)
         {
-            log.Add(new(MessageLevel.Error, $"pcrun= ist kein gueltiger Pfad: {input}"));
+            log.Add(PlanMessage.Of(MessageLevel.Error, "PCRUN_INVALID", $"pcrun= ist kein gueltiger Pfad: {input}", input));
             return null;
         }
         if (!File.Exists(full))
         {
-            log.Add(new(MessageLevel.Error, $"pcrun=-Datei nicht gefunden: {full}"));
+            log.Add(PlanMessage.Of(MessageLevel.Error, "PCRUN_NOT_FOUND", $"pcrun=-Datei nicht gefunden: {full}", full));
             return null;
         }
         if (!PathRules.HasExecutableExtension(full, _o.ExecutableExtensions))
         {
-            log.Add(new(MessageLevel.Error, $"pcrun=-Datei ist nicht ausfuehrbar: {full}"));
+            log.Add(PlanMessage.Of(MessageLevel.Error, "PCRUN_NOT_EXE", $"pcrun=-Datei ist nicht ausfuehrbar: {full}", full));
             return null;
         }
         foreach (var blocked in _o.BlockedRoots.Where(b => !string.IsNullOrWhiteSpace(b)))
         {
             if (PathRules.IsUnder(full, blocked))
             {
-                log.Add(new(MessageLevel.Error, $"pcrun= liegt in einem gesperrten Systemordner ({blocked}) und wird abgelehnt: {full}"));
+                log.Add(PlanMessage.Of(MessageLevel.Error, "PCRUN_BLOCKED", $"pcrun= liegt in einem gesperrten Systemordner ({blocked}) und wird abgelehnt: {full}", blocked, full));
                 return null;
             }
         }
         var allowed = _o.AllowedRoots.Where(a => !string.IsNullOrWhiteSpace(a)).ToArray();
         if (allowed.Length > 0 && !allowed.Any(a => PathRules.IsUnder(full, a)))
         {
-            log.Add(new(MessageLevel.Error, $"pcrun= liegt ausserhalb der erlaubten Ordner und wird abgelehnt: {full}"));
+            log.Add(PlanMessage.Of(MessageLevel.Error, "PCRUN_NOT_ALLOWED", $"pcrun= liegt ausserhalb der erlaubten Ordner und wird abgelehnt: {full}", full));
             return null;
         }
         return full;

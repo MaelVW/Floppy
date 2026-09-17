@@ -39,6 +39,13 @@ public static class IconForge
         ["media_usb"] = new(32, false, (c, _) => Usb(c)),
         ["media_cd"] = new(32, false, (c, _) => Cd(c)),
         ["media_empty"] = new(32, false, (c, _) => EmptyDrive(c)),
+        ["media_dvd"] = new(32, false, (c, _) => Dvd(c)),
+        ["media_bluray"] = new(32, false, (c, _) => BluRay(c)),
+        ["media_audio"] = new(32, false, (c, _) => AudioCd(c)),
+        ["media_virtual"] = new(32, false, (c, _) => VirtualDisc(c)),
+        ["media_sd"] = new(32, false, (c, _) => SdCard(c)),
+        ["media_reader"] = new(32, false, (c, _) => CardReader(c)),
+        ["media_hdd"] = new(32, false, (c, _) => ExternalDisk(c)),
 
         // ---- Listen (16) ----
         ["kind_steam"] = new(16, false, (c, _) => Play(c)),
@@ -63,6 +70,24 @@ public static class IconForge
         ["add"] = new(16, false, (c, _) => Plus(c)),
         ["remove"] = new(16, false, (c, _) => Minus(c)),
 
+        // ---- Chat (16) ----
+        ["key"] = new(16, false, (c, _) => Key16(c)),
+        ["lan"] = new(16, false, (c, _) => Lan16(c)),
+        ["trophy"] = new(16, false, (c, _) => Trophy16(c)),
+        ["contact"] = new(16, false, (c, _) => Contact16(c)),
+        ["send"] = new(16, false, (c, _) => Send16(c)),
+        ["pencil"] = new(16, false, (c, _) => Pencil16(c)),
+        ["cloud"] = new(16, false, (c, _) => Cloud16(c)),
+        ["door"] = new(16, false, (c, _) => Door16(c)),
+
+        // ---- Minispiel-Kacheln (16) ----
+        ["tile_floor"] = new(16, false, (c, _) => TileFloor(c)),
+        ["tile_wall"] = new(16, false, (c, _) => TileWall(c)),
+        ["tile_goal"] = new(16, false, (c, _) => TileGoal(c)),
+        ["tile_box"] = new(16, false, (c, _) => TileBox(c, done: false)),
+        ["tile_box_goal"] = new(16, false, (c, _) => TileBox(c, done: true)),
+        ["tile_player"] = new(16, false, (c, _) => TilePlayer(c)),
+
         // ---- Bedienelemente (haengen vom Farbschema ab) ----
         ["arrow_down"] = new(10, true, (c, p) => c.Polygon(p.Text, new(1, 3), new(9, 3), new(5, 8))),
         ["arrow_right"] = new(10, true, (c, p) => c.Polygon(p.Text, new(3, 1), new(8, 5), new(3, 9))),
@@ -85,15 +110,19 @@ public static class IconForge
         return canvas.Image;
     }
 
-    /// <summary>Alle Nicht-Glyph-Icons als PNG speichern (Vorlage zum Uebermalen).</summary>
+    /// <summary>
+    /// Fehlende Nicht-Glyph-Icons als PNG speichern (Vorlage zum Uebermalen).
+    /// Vorhandene Dateien werden NIE ueberschrieben - das koennten Maels eigene Grafiken sein.
+    /// </summary>
     public static int ExportPngs(string directory)
     {
         System.IO.Directory.CreateDirectory(directory);
         var n = 0;
         foreach (var (name, def) in All)
         {
-            if (def.Glyph) continue;
-            Draw(name, Palette.Classic).SavePng(System.IO.Path.Combine(directory, name + ".png"));
+            var file = System.IO.Path.Combine(directory, name + ".png");
+            if (def.Glyph || System.IO.File.Exists(file)) continue;
+            Draw(name, Palette.Classic).SavePng(file);
             n++;
         }
         return n;
@@ -303,17 +332,95 @@ public static class IconForge
         c.DropShadow(Shade);
     }
 
-    private static void Cd(PixelCanvas c)
+    private static void Cd(PixelCanvas c) =>
+        Disc(c, "#cdd3dc", A("#8fd3ff", 0.6f), A("#ffd27a", 0.55f), A("#ff9ad5", 0.5f));
+
+    private static void Dvd(PixelCanvas c) =>
+        Disc(c, "#d6d0e4", A("#b98cff", 0.6f), A("#ffc86b", 0.5f), A("#e7a0ff", 0.45f));
+
+    private static void BluRay(PixelCanvas c) =>
+        Disc(c, "#c9d8ee", A("#3f8cff", 0.65f), A("#9fd8ff", 0.55f), A("#5fa8ff", 0.45f));
+
+    private static void Disc(PixelCanvas c, string baseColor, Color outer, Color middle, Color inner, bool finish = true)
     {
-        c.Disc(16, 16, 13, C("#cdd3dc"));
-        c.Ring(16, 16, 12, 2, A("#8fd3ff", 0.6f));
-        c.Ring(16, 16, 9.5f, 2, A("#ffd27a", 0.55f));
-        c.Ring(16, 16, 7, 1.5f, A("#ff9ad5", 0.5f));
+        c.Disc(16, 16, 13, C(baseColor));
+        c.Ring(16, 16, 12, 2, outer);
+        c.Ring(16, 16, 9.5f, 2, middle);
+        c.Ring(16, 16, 7, 1.5f, inner);
         c.Line(8, 9, 12, 13, A("#ffffff", 0.9f));
         c.Line(9, 8, 13, 12, A("#ffffff", 0.6f));
         c.Disc(16, 16, 4.5f, C("#a0a8b5"));
         c.Punch(16, 16, 2.2f);
+        if (!finish) return;
         c.Outline(C("#3a3f4a"));
+        c.DropShadow(Shade);
+    }
+
+    private static void AudioCd(PixelCanvas c)
+    {
+        Disc(c, "#cdd3dc", A("#8fd3ff", 0.6f), A("#ffd27a", 0.55f), A("#ff9ad5", 0.5f), finish: false);
+        var ink = C("#1b1b22");
+        c.Disc(20.5f, 25.5f, 2.6f, ink);
+        c.Disc(27.5f, 23.5f, 2.6f, ink);
+        c.Rect(22, 14, 1, 12, ink);
+        c.Rect(29, 12, 1, 12, ink);
+        c.Line(22, 14, 29, 12, ink);
+        c.Line(22, 15, 29, 13, ink);
+        c.Outline(C("#3a3f4a"));
+        c.DropShadow(Shade);
+    }
+
+    private static void VirtualDisc(PixelCanvas c)
+    {
+        Disc(c, "#cdd3dc", A("#8fd3ff", 0.6f), A("#ffd27a", 0.55f), A("#ff9ad5", 0.5f), finish: false);
+        c.Rect(20, 20, 11, 10, C("#2f5fb3"));
+        var w = C("#ffffff");
+        c.Line(22, 22, 25, 28, w);
+        c.Line(28, 22, 25, 28, w);
+        c.Outline(C("#3a3f4a"));
+        c.DropShadow(Shade);
+    }
+
+    private static void SdCard(PixelCanvas c)
+    {
+        c.Polygon(C("#30384a"), new(8, 2), new(21, 2), new(26, 7), new(26, 30), new(8, 30));
+        c.VLine(8, 2, 28, C("#4a556d"));
+        for (var x = 11; x <= 21; x += 2) c.VLine(x, 3, 4, C("#d9b54a"));
+        c.Rect(10, 12, 14, 15, C("#e9eef6"));
+        c.HLine(10, 12, 14, C("#ffffff"));
+        c.Rect(10, 15, 14, 3, C("#d9443a"));
+        c.HLine(12, 21, 9, C("#9aa5ba"));
+        c.HLine(12, 23, 6, C("#9aa5ba"));
+        c.Rect(6, 16, 2, 5, C("#f1f3f6"));   // Schreibschutz-Schieber
+        c.Outline(C("#141820"));
+        c.DropShadow(Shade);
+    }
+
+    private static void ExternalDisk(PixelCanvas c)
+    {
+        c.VGradient(4, 5, 24, 20, C("#5a606b"), C("#2c3038"));
+        c.Bevel(4, 5, 24, 20, C("#7c838f"), C("#1f2228"));
+        c.Clear(4, 5); c.Clear(27, 5); c.Clear(4, 24); c.Clear(27, 24);
+        c.HLine(8, 9, 16, C("#737a86"));
+        c.HLine(8, 11, 10, C("#4a505a"));
+        c.Rect(22, 20, 3, 2, C("#4fa8ff"));
+        c.Px(22, 20, C("#c9e6ff"));
+        // Kabel
+        c.Rect(15, 25, 2, 3, C("#2a2d33"));
+        c.Line(16, 28, 20, 30, C("#2a2d33"));
+        c.Line(20, 30, 26, 30, C("#2a2d33"));
+        c.Outline(C("#15171b"));
+        c.DropShadow(Shade);
+    }
+
+    private static void CardReader(PixelCanvas c)
+    {
+        c.VGradient(4, 11, 24, 12, C("#e3e5e8"), C("#b3b8bf"));
+        c.Bevel(4, 11, 24, 12, C("#ffffff"), C("#7c828b"));
+        c.Rect(8, 15, 12, 2, C("#2c2f35"));
+        c.Rect(8, 19, 7, 1, C("#2c2f35"));
+        c.Rect(23, 18, 2, 2, C("#8d939b"));
+        c.Outline(C("#2b2e33"));
         c.DropShadow(Shade);
     }
 
@@ -499,6 +606,186 @@ public static class IconForge
     {
         c.Rect(2, 6, 12, 4, C("#d64533"));
         c.Outline(C("#6e1c12"));
+    }
+
+    // ==================================================================
+    // Chat
+    // ==================================================================
+
+    private static void Key16(PixelCanvas c)
+    {
+        var gold = C("#f2c230");
+        c.Ring(5, 8, 4.5f, 2.2f, gold);
+        c.Rect(8, 7, 7, 2, gold);
+        c.Rect(12, 9, 2, 3, gold);
+        c.Rect(9, 9, 2, 2, gold);
+        c.Px(3, 6, C("#fff0a8"));
+        c.Outline(C("#7a5a10"));
+    }
+
+    private static void Lan16(PixelCanvas c)
+    {
+        // zwei Bildschirme, verbunden
+        void Screen(int x, int y)
+        {
+            c.Rect(x, y, 7, 6, C("#c9ced6"));
+            c.Rect(x + 1, y + 1, 5, 4, C("#3f69b8"));
+            c.Px(x + 1, y + 1, C("#7099de"));
+            c.Rect(x + 2, y + 6, 3, 1, C("#8b919b"));
+        }
+        Screen(0, 1);
+        Screen(9, 8);
+        c.HLine(3, 11, 6, C("#2e9e3e"));
+        c.VLine(3, 8, 4, C("#2e9e3e"));
+        c.Outline(C("#1b2130"));
+    }
+
+    private static void Trophy16(PixelCanvas c)
+    {
+        var gold = C("#f2c230");
+        c.Rect(4, 1, 8, 6, gold);
+        c.Rect(5, 7, 6, 2, gold);
+        c.Rect(7, 9, 2, 3, gold);
+        c.Rect(4, 12, 8, 3, C("#8a5a2b"));
+        c.Ring(3, 4, 2.6f, 1.2f, gold);
+        c.Ring(13, 4, 2.6f, 1.2f, gold);
+        c.VLine(5, 2, 4, C("#fff0a8"));
+        c.Outline(C("#7a5a10"));
+    }
+
+    private static void Contact16(PixelCanvas c)
+    {
+        c.Rect(1, 2, 14, 12, C("#f4f0e3"));
+        c.Bevel(1, 2, 14, 12, C("#ffffff"), C("#b8b0a0"));
+        c.Disc(5.5f, 6.5f, 2.2f, C("#e0a878"));
+        c.Rect(3, 9, 6, 3, C("#3f69b8"));
+        c.HLine(10, 5, 4, C("#6b6560"));
+        c.HLine(10, 8, 4, C("#9a948c"));
+        c.HLine(10, 10, 3, C("#9a948c"));
+        c.Outline(C("#4a4438"));
+    }
+
+    private static void Send16(PixelCanvas c)
+    {
+        c.Polygon(C("#5b8bd9"), new(1, 2), new(15, 8), new(1, 14), new(4, 8));
+        c.Polygon(C("#2f5fb3"), new(4, 8), new(15, 8), new(1, 14));
+        c.Outline(C("#15305f"));
+    }
+
+    private static void Pencil16(PixelCanvas c)
+    {
+        for (var i = 0; i < 9; i++)
+        {
+            c.Rect(3 + i, 10 - i, 2, 2, C("#f2c230"));
+            c.Px(4 + i, 11 - i, C("#c98208"));
+        }
+        c.Rect(12, 1, 2, 2, C("#e07a8a"));
+        c.Rect(2, 12, 2, 2, C("#e8d2a8"));
+        c.Px(1, 14, C("#2b2b2b"));
+        c.Outline(C("#5a4010"));
+    }
+
+    private static void Cloud16(PixelCanvas c)
+    {
+        var white = C("#f6f8fc");
+        c.Disc(5, 9, 3.5f, white);
+        c.Disc(9, 7, 4.2f, white);
+        c.Disc(12, 10, 3, white);
+        c.Rect(4, 9, 9, 4, white);
+        c.HLine(4, 12, 9, C("#c9d4e6"));
+        c.Outline(C("#3f69b8"));
+    }
+
+    private static void Door16(PixelCanvas c)
+    {
+        c.Rect(3, 1, 9, 14, C("#8a5a2b"));
+        c.Rect(4, 2, 7, 12, C("#b07a42"));
+        c.Rect(5, 3, 5, 4, C("#9a6634"));
+        c.Rect(5, 8, 5, 5, C("#9a6634"));
+        c.Px(9, 8, C("#f2c230"));
+        c.Polygon(C("#d64533"), new(12, 6), new(15, 8), new(12, 10));
+        c.Outline(C("#3c2410"));
+    }
+
+    // ==================================================================
+    // Minispiel "Diskettenlager"
+    // ==================================================================
+
+    private static void TileFloor(PixelCanvas c)
+    {
+        c.Rect(0, 0, 16, 16, C("#d6cfbd"));
+        for (var y = 0; y < 15; y++)
+            for (var x = 0; x < 15; x++)
+                if ((x + y * 3) % 7 == 0) c.Px(x, y, C("#cbc3af"));
+        c.HLine(0, 15, 16, C("#b9b09a"));
+        c.VLine(15, 0, 16, C("#b9b09a"));
+        c.HLine(0, 0, 15, C("#e4decf"));
+    }
+
+    private static void TileWall(PixelCanvas c)
+    {
+        var mortar = C("#cfc2ab");
+        c.Rect(0, 0, 16, 16, mortar);
+        for (var row = 0; row < 4; row++)
+        {
+            var y = row * 4;
+            var offset = row % 2 == 0 ? 0 : 4;
+            for (var x = -offset; x < 16; x += 8)
+            {
+                var bx = Math.Max(0, x);
+                var bw = Math.Min(x + 7, 16) - bx;
+                if (bw <= 0) continue;
+                c.Rect(bx, y, bw, 3, C("#a5492f"));
+                c.HLine(bx, y, bw, C("#c4674a"));
+                c.HLine(bx, y + 2, bw, C("#833722"));
+            }
+        }
+    }
+
+    private static void TileGoal(PixelCanvas c)
+    {
+        c.Rect(2, 4, 12, 8, C("#c9ced6"));
+        c.Bevel(2, 4, 12, 8, C("#f1f3f6"), C("#7d838c"));
+        c.Rect(4, 6, 8, 2, C("#20242c"));
+        c.HLine(4, 8, 8, C("#f8f9fb"));
+        c.Rect(11, 10, 2, 1, C("#8d939b"));
+        c.Outline(C("#3a3f47"));
+    }
+
+    private static void TileBox(PixelCanvas c, bool done)
+    {
+        var body = C(done ? "#2e9e57" : "#3f69b8");
+        c.Rect(2, 2, 12, 12, body);
+        c.VLine(2, 2, 12, body.Lightened(0.3f));
+        c.HLine(2, 2, 11, body.Lightened(0.3f));
+        c.HLine(3, 13, 11, body.Darkened(0.3f));
+        c.Rect(5, 2, 6, 4, C("#c9ced6"));
+        c.Rect(8, 3, 2, 2, C("#343942"));
+        c.Rect(4, 8, 8, 5, C("#f4f0e3"));
+        c.HLine(5, 9, 6, C(done ? "#2e9e57" : "#d9443a"));
+        c.HLine(5, 11, 4, C("#9aa5ba"));
+        c.Clear(13, 2);
+        if (done) c.Px(12, 12, C("#b8ffc2"));
+        c.Outline(C("#141a28"));
+    }
+
+    private static void TilePlayer(PixelCanvas c)
+    {
+        // "Compu": kleiner Kerl mit Roehrenmonitor-Kopf
+        c.Rect(3, 0, 10, 8, C("#d9d2bd"));
+        c.HLine(3, 0, 10, C("#efe9d8"));
+        c.Rect(4, 1, 8, 5, C("#173524"));
+        c.Px(6, 3, C("#6dff8a"));
+        c.Px(9, 3, C("#6dff8a"));
+        c.HLine(6, 5, 4, C("#3fbf5a"));
+        c.Rect(7, 8, 2, 1, C("#8d939b"));
+        c.Rect(4, 9, 8, 4, C("#3f69b8"));
+        c.HLine(4, 9, 8, C("#7099de"));
+        c.Rect(2, 9, 2, 3, C("#d9d2bd"));
+        c.Rect(12, 9, 2, 3, C("#d9d2bd"));
+        c.Rect(5, 13, 2, 3, C("#2b2b33"));
+        c.Rect(9, 13, 2, 3, C("#2b2b33"));
+        c.Outline(C("#15161b"));
     }
 
     // ==================================================================

@@ -29,6 +29,7 @@ public partial class MainWindow : PanelContainer, IAppHost
 
     private Action<string> _applyTheme = _ => { };
     private Action<float> _applyScale = _ => { };
+    private Action<string> _applyLanguage = _ => { };
 
     public AppServices Services { get; private set; } = null!;
     public CoverCache Covers { get; private set; } = null!;
@@ -36,12 +37,13 @@ public partial class MainWindow : PanelContainer, IAppHost
     public IReadOnlyList<LibraryEntry> Library => _library;
     public string CurrentView => _current;
 
-    public void Setup(AppServices services, CoverCache covers, string startView, Action<string> applyTheme, Action<float> applyScale)
+    public void Setup(AppServices services, CoverCache covers, string startView, Action<string> applyTheme, Action<float> applyScale, Action<string> applyLanguage)
     {
         Services = services;
         Covers = covers;
         _applyTheme = applyTheme;
         _applyScale = applyScale;
+        _applyLanguage = applyLanguage;
         ThemeTypeVariation = "WindowPanel";
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
 
@@ -63,6 +65,56 @@ public partial class MainWindow : PanelContainer, IAppHost
         };
         AddChild(konami);
         if (EasterEggs.StartupFact(new Random()) is { } fact) SetStatusMessage(fact, "info");
+
+        services.Chat.Changed += OnChatChanged;
+        _seenChatSession = services.Chat.Session;
+        _seenChatLines = services.Chat.Session?.Lines.Count ?? 0;
+        OnChatChanged();
+    }
+
+    public override void _ExitTree()
+    {
+        if (Services is not null) Services.Chat.Changed -= OnChatChanged;
+    }
+
+    // ------------------------------------------------------------------
+    // Chat im Hintergrund
+    // ------------------------------------------------------------------
+
+    private Floppy.Core.Chat.ChatSession? _seenChatSession;
+    private int _seenChatLines;
+    private string? _seenProposal;
+
+    /// <summary>Statusleiste + Hinweis auf neue Nachrichten, wenn der Chat gerade nicht sichtbar ist.</summary>
+    private void OnChatChanged()
+    {
+        var chat = Services.Chat;
+        var session = chat.Session;
+        _status.SetVisible("chat", chat.IsInRoom || chat.IsDeriving);
+        if (chat.IsInRoom)
+            _status.Set("chat", Loc.T("STATUS_CHAT", chat.RoomLabel, session!.Members.Count),
+                session.State == Floppy.Core.Chat.ChatSessionState.Connected ? "led_on" : "led_warn");
+        else if (chat.IsDeriving)
+            _status.Set("chat", Loc.T("CHAT_STATE_DERIVING"), "led_warn");
+
+        if (session != _seenChatSession)
+        {
+            _seenChatSession = session;
+            _seenChatLines = 0;
+        }
+        var lines = session?.Lines ?? [];
+        if (_seenChatLines > lines.Count) _seenChatLines = 0;
+        if (_current != "chat")
+        {
+            var incoming = lines.Skip(_seenChatLines).LastOrDefault(l => l.Kind == Floppy.Core.Chat.ChatLineKind.Theirs);
+            if (incoming is not null) SetStatusMessage(Loc.T("CHAT_NEW_MESSAGE", chat.NameOf(incoming.Fingerprint, incoming.MemberId)), "chat");
+            if (session?.Proposal is { Stage: Floppy.Core.Chat.ProposalStage.Asking or Floppy.Core.Chat.ProposalStage.Countdown } p && p.Id + p.Stage != _seenProposal)
+            {
+                _seenProposal = p.Id + p.Stage;
+                SetStatusMessage(Loc.T("CHAT_NEW_PROPOSAL", chat.NameOf(p.ProposerFingerprint, p.ProposerId)), "lan");
+            }
+        }
+        _seenChatLines = lines.Count;
     }
 
     /// <summary>Nur fuer Bildschirmfotos der Easter Eggs.</summary>
@@ -87,6 +139,8 @@ public partial class MainWindow : PanelContainer, IAppHost
         _status.AddCell("motor", 150);
         _status.AddCell("disc", 290);
         _status.AddCell("message", 0, expand: true);
+        _status.AddCell("chat", 150);
+        _status.SetVisible("chat", false);
         _status.AddCell("library", 120);
 
         var layout = Ui.VBox(0, Ui.Panel("WindowPanel", menu), toolbar, _viewHost, _status);
@@ -111,8 +165,8 @@ public partial class MainWindow : PanelContainer, IAppHost
         AddView(new LibraryView());
         AddView(new WriteView());
         AddView(new DrivesView());
-        AddView(new ComingSoonView("chat", "chat", 6));
-        AddView(new ComingSoonView("game", "game", 5));
+        AddView(new ChatView());
+        AddView(new GameView());
         AddView(new LogView());
         AddView(new SettingsView());
     }
@@ -264,7 +318,8 @@ public partial class MainWindow : PanelContainer, IAppHost
         if (!_views.ContainsKey(key)) key = "disc";
         _current = key;
         foreach (var (k, v) in _views) v.Visible = k == key;
-        if (_tools.TryGetValue(key, out var tool)) tool.SetPressedNoSignal(true);
+        // SetPressedNoSignal kuemmert sich nicht um die ButtonGroup - alle selbst setzen
+        foreach (var (k, tool) in _tools) tool.SetPressedNoSignal(k == key);
 
         var index = Array.IndexOf(new[] { "disc", "library", "write", "drives", "chat", "game", "log", "settings" }, key);
         for (var i = 0; i < 8; i++) _viewMenu.SetItemChecked(_viewMenu.GetItemIndex(300 + i), i == index);
@@ -310,6 +365,9 @@ public partial class MainWindow : PanelContainer, IAppHost
                 Services.Log.Write(LogLevel.Ok, $"App: starte Steam-Spiel {id}.");
                 SetStatusMessage(Loc.T("STATUS_STEAM_STARTED", name), "kind_steam");
                 break;
+            case GateAction.OpenGame:
+                OpenGameFromDisc();
+                break;
             case GateAction.OpenHub:
                 ShowView("disc");
                 SetStatusMessage(Loc.T("STATUS_HUB_ALREADY"), "kind_hub");
@@ -324,7 +382,7 @@ public partial class MainWindow : PanelContainer, IAppHost
                 break;
             default:
                 var why = st.Present
-                    ? string.Join("\n", st.Result?.Messages.Select(m => m.Text) ?? []) is { Length: > 0 } msg ? msg : Loc.T("DISC_NOTHING_TEXT")
+                    ? string.Join("\n", st.Result?.Messages.Select(Loc.Message) ?? []) is { Length: > 0 } msg ? msg : Loc.T("DISC_NOTHING_TEXT")
                     : Loc.T("DISC_NONE_TEXT", st.Root);
                 RetroDialog.Message(_dialogs, Loc.T("DISC_NOTHING"), why, st.Present ? "warn" : "info");
                 break;
@@ -377,8 +435,36 @@ public partial class MainWindow : PanelContainer, IAppHost
         ((WriteView)_views["write"]).Prefill(entry);
     }
 
+    public void OpenWriteGame(string? packFile = null)
+    {
+        ShowView("write");
+        ((WriteView)_views["write"]).PrefillGame(packFile);
+    }
+
+    /// <summary>Minispiel-Diskette (Motor oder "Jetzt starten").</summary>
+    public void OpenGameFromDisc()
+    {
+        ShowView("game");
+        ((GameView)_views["game"]).OpenDiscPack();
+    }
+
+    /// <summary>Level-Editor im Minispiel (auch fuer Bildschirmfotos).</summary>
+    public void OpenLevelEditor()
+    {
+        ShowView("game");
+        ((GameView)_views["game"]).OpenEditor();
+    }
+
+    /// <summary>Rangliste des aktuellen Chatraums.</summary>
+    public void OpenChatScores()
+    {
+        ShowView("chat");
+        LeaderboardDialog.Open(this);
+    }
+
     public void ApplyTheme(string theme) => _applyTheme(theme);
     public void ApplyScale(float scale) => _applyScale(scale);
+    public void ApplyLanguage(string language) => _applyLanguage(language);
 
     // ------------------------------------------------------------------
 

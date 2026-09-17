@@ -29,6 +29,12 @@ public interface IAppHost
     /// <summary>"Bespielen" oeffnen, vorausgefuellt mit einem Bibliothekseintrag.</summary>
     void OpenWrite(LibraryEntry entry);
 
+    /// <summary>"Bespielen" mit Art Minispiel-Diskette oeffnen (optional mit einem Levelpaket, z. B. eigene Level).</summary>
+    void OpenWriteGame(string? packFile = null);
+
     void ApplyTheme(string theme);
+
+    /// <summary>Sprache wechseln (de/en) - die Oberflaeche wird neu aufgebaut.</summary>
+    void ApplyLanguage(string language);
     void ApplyScale(float scale);
 }

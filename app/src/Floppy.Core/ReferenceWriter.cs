@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Floppy.Core;
 
-public enum ReferenceKind { Steam, Run, PcRun, Hub }
+public enum ReferenceKind { Steam, Run, PcRun, Hub, Game }
 
 public sealed record WriteResult(string? Path, IReadOnlyList<PlanMessage> Messages)
 {
@@ -45,16 +45,16 @@ public static class ReferenceWriter
         bool force = false,
         DateTime? now = null)
     {
-        WriteResult Fail(string text, IEnumerable<PlanMessage>? before = null)
+        WriteResult Fail(string code, string text, IEnumerable<PlanMessage>? before, params string[] args)
         {
-            var messages = new List<PlanMessage>(before ?? []) { new(MessageLevel.Error, text) };
+            var messages = new List<PlanMessage>(before ?? []) { PlanMessage.Of(MessageLevel.Error, code, text, args) };
             return new WriteResult(null, messages);
         }
 
-        if (!Directory.Exists(root)) return Fail($"Ziel nicht erreichbar: {root} (Diskette eingelegt?)");
+        if (!Directory.Exists(root)) return Fail("WRITE_NO_TARGET", $"Ziel nicht erreichbar: {root} (Diskette eingelegt?)", null, root);
 
         var target = Path.Combine(root, fileName);
-        if (File.Exists(target) && !force) return Fail($"{target} existiert bereits - zum Ersetzen bestaetigen.");
+        if (File.Exists(target) && !force) return Fail("WRITE_EXISTS", $"{target} existiert bereits - zum Ersetzen bestaetigen.", null, target);
 
         var preview = Prepare(kind, value, arguments, title, options, root, now);
         if (!preview.IsValid) return new WriteResult(null, preview.Messages);
@@ -66,10 +66,10 @@ public static class ReferenceWriter
         }
         catch (Exception ex)
         {
-            return Fail($"Schreiben fehlgeschlagen: {ex.Message}", log);
+            return Fail("WRITE_FAILED", $"Schreiben fehlgeschlagen: {ex.Message}", log, ex.Message);
         }
 
-        log.Add(new(MessageLevel.Ok, $"geschrieben: {target}"));
+        log.Add(PlanMessage.Of(MessageLevel.Ok, "WRITE_DONE", $"geschrieben: {target}", target));
         return new WriteResult(target, log);
     }
 
@@ -91,43 +91,53 @@ public static class ReferenceWriter
         var v = PathRules.StripQuotes(value);
         var a = PathRules.StripQuotes(arguments);
 
-        ReferencePreview Fail(string text)
+        ReferencePreview Fail(string code, string text, params string[] args)
         {
-            log.Add(new(MessageLevel.Error, text));
+            log.Add(PlanMessage.Of(MessageLevel.Error, code, text, args));
             return new ReferencePreview(null, log, v, a);
         }
 
         // Zeilenumbrueche wuerden zusaetzliche Schluessel einschleusen (z. B. "\npcrun=...").
-        if (ContainsNewline(v) || ContainsNewline(a)) return Fail("Werte duerfen keine Zeilenumbrueche enthalten.");
+        if (ContainsNewline(v) || ContainsNewline(a)) return Fail("VALUE_NEWLINE", "Werte duerfen keine Zeilenumbrueche enthalten.");
 
         switch (kind)
         {
             case ReferenceKind.Steam:
-                if (!SteamApps.TryResolveAppId(v, out var appId)) return Fail($"Keine Steam-AppID erkennbar: '{v}'");
+                if (!SteamApps.TryResolveAppId(v, out var appId)) return Fail("STEAM_UNRECOGNIZED", $"Keine Steam-AppID erkennbar: '{v}'", v);
                 v = appId;
                 break;
 
             case ReferenceKind.Run:
-                if (v.Length == 0) return Fail("run= braucht einen Pfad.");
-                if (PathRules.IsRooted(v)) return Fail($"run= erwartet einen Pfad RELATIV zur Diskette. Fuer PC-Pfade pcrun= verwenden: {v}");
+                if (v.Length == 0) return Fail("RUN_EMPTY", "run= braucht einen Pfad.");
+                if (PathRules.IsRooted(v)) return Fail("RUN_ABSOLUTE", $"run= erwartet einen Pfad RELATIV zur Diskette. Fuer PC-Pfade pcrun= verwenden: {v}", v);
                 if (!PathRules.IsUnder(Path.Combine(VirtualRoot, v), VirtualRoot))
-                    return Fail($"run= darf nicht aus der Diskette heraus zeigen: {v}");
+                    return Fail("RUN_OUTSIDE", $"run= darf nicht aus der Diskette heraus zeigen: {v}", v);
                 if (!PathRules.HasExecutableExtension(v, options.ExecutableExtensions))
-                    return Fail($"run=-Datei ist nicht ausfuehrbar (erlaubt: {string.Join(", ", options.ExecutableExtensions)}): {v}");
+                    return Fail("RUN_NOT_EXE_ALLOWED", $"run=-Datei ist nicht ausfuehrbar (erlaubt: {string.Join(", ", options.ExecutableExtensions)}): {v}", string.Join(", ", options.ExecutableExtensions), v);
                 if (root is not null && !File.Exists(Path.Combine(root, v)))
-                    log.Add(new(MessageLevel.Warn, $"'{v}' liegt (noch) nicht auf der Diskette - der Launcher wird es sonst ablehnen."));
+                    log.Add(PlanMessage.Of(MessageLevel.Warn, "RUN_NOT_ON_DISC", $"'{v}' liegt (noch) nicht auf der Diskette - der Launcher wird es sonst ablehnen.", v));
+                break;
+
+            case ReferenceKind.Game:
+                if (v.Length == 0) return Fail("GAME_EMPTY", "minigame= braucht eine Leveldatei.");
+                if (PathRules.IsRooted(v) || !PathRules.IsUnder(Path.Combine(VirtualRoot, v), VirtualRoot))
+                    return Fail("GAME_NOT_RELATIVE", $"minigame= erwartet eine Datei auf der Diskette (relativer Pfad): {v}", v);
+                if (!PathRules.HasExecutableExtension(v, Minigame.LevelPack.Extensions))
+                    return Fail("GAME_NOT_TEXT", $"minigame= erwartet eine Textdatei ({string.Join(", ", Minigame.LevelPack.Extensions)}): {v}", string.Join(", ", Minigame.LevelPack.Extensions), v);
+                if (root is not null && !File.Exists(Path.Combine(root, v)))
+                    log.Add(PlanMessage.Of(MessageLevel.Warn, "GAME_NOT_ON_DISC", $"'{v}' liegt (noch) nicht auf der Diskette.", v));
                 break;
 
             case ReferenceKind.PcRun:
-                if (v.Length == 0) return Fail("pcrun= braucht einen Pfad.");
-                if (!PathRules.IsRooted(v)) return Fail($"pcrun= braucht einen ABSOLUTEN Pfad (z. B. D:\\Spiele\\x.exe): {v}");
+                if (v.Length == 0) return Fail("PCRUN_EMPTY", "pcrun= braucht einen Pfad.");
+                if (!PathRules.IsRooted(v)) return Fail("PCRUN_NEEDS_ABSOLUTE", $"pcrun= braucht einen ABSOLUTEN Pfad (z. B. D:\\Spiele\\x.exe): {v}", v);
                 if (!PathRules.HasExecutableExtension(v, options.ExecutableExtensions))
-                    return Fail($"pcrun=-Datei ist nicht ausfuehrbar (erlaubt: {string.Join(", ", options.ExecutableExtensions)}): {v}");
+                    return Fail("PCRUN_NOT_EXE_ALLOWED", $"pcrun=-Datei ist nicht ausfuehrbar (erlaubt: {string.Join(", ", options.ExecutableExtensions)}): {v}", string.Join(", ", options.ExecutableExtensions), v);
                 if (!File.Exists(v))
-                    log.Add(new(MessageLevel.Warn, $"'{v}' existiert derzeit nicht - der Launcher wird es spaeter ablehnen."));
+                    log.Add(PlanMessage.Of(MessageLevel.Warn, "PCRUN_MISSING_NOW", $"'{v}' existiert derzeit nicht - der Launcher wird es spaeter ablehnen.", v));
                 var blocked = options.BlockedRoots.FirstOrDefault(b => !string.IsNullOrWhiteSpace(b) && PathRules.IsUnder(v, b));
                 if (blocked is not null)
-                    log.Add(new(MessageLevel.Warn, $"'{v}' liegt in einem gesperrten Systemordner ({blocked}). Der Start wird ABGELEHNT."));
+                    log.Add(PlanMessage.Of(MessageLevel.Warn, "PCRUN_BLOCKED_WARN", $"'{v}' liegt in einem gesperrten Systemordner ({blocked}). Der Start wird ABGELEHNT.", v, blocked));
                 break;
         }
 
@@ -139,11 +149,13 @@ public static class ReferenceWriter
             ReferenceKind.Steam => $"id={v}",
             ReferenceKind.Run => $"run={v}",
             ReferenceKind.PcRun => $"pcrun={v}",
+            ReferenceKind.Game => $"minigame={v}",
             _ => "hub=1",
         });
-        if (a.Length > 0 && kind != ReferenceKind.Hub) lines.Add($"args={a}");
+        var takesArgs = kind is ReferenceKind.Steam or ReferenceKind.Run or ReferenceKind.PcRun;
+        if (a.Length > 0 && takesArgs) lines.Add($"args={a}");
 
-        return new ReferencePreview(lines, log, v, kind == ReferenceKind.Hub ? string.Empty : a);
+        return new ReferencePreview(lines, log, v, takesArgs ? a : string.Empty);
     }
 
     private static bool ContainsNewline(string s) => s.Contains('\n') || s.Contains('\r');

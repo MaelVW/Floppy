@@ -1,0 +1,17 @@
+# ---------------------------------------------------------------------------
+# BEISPIEL: MINISPIEL-Diskette  -  "Diskettenlager" in der Floppy Hub App
+# ---------------------------------------------------------------------------
+# Nur fuer die grafische App-Variante (die Konsolen-Variante ignoriert das).
+#
+# Als  game.txt  ins Wurzelverzeichnis der Diskette kopieren und daneben eine
+# Leveldatei legen, z. B. eine Kopie von
+#     app\src\FloppyHub.App\games\diskettenlager.txt   als   levels.txt
+# Einfacher: in der App  Bespielen -> Minispiel-Diskette.
+#
+# Die Leveldatei ist reiner Text (Waende, Disketten, Laufwerke) - KEIN
+# Programmcode. Eine fremde Spiel-Diskette kann also nichts ausfuehren.
+# Rekorde landen als scores.txt ebenfalls auf der Diskette und reisen mit.
+#
+# Erlaubt: nur .txt, nur ein Pfad AUF der Diskette (kein C:\..., kein ..\).
+
+minigame=levels.txt

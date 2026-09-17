@@ -42,7 +42,7 @@ public sealed record DiscState(
 
         var drive = IsDriveRoot(root)
             ? DriveSnapshot.Read(root)
-            : new DriveSnapshot(root, MediaKind.Floppy, true, "TEST", "Ordner", 1_457_664,
+            : new DriveSnapshot(root, MediaKind.Floppy, true, "TEST", Loc.T("DISC_TESTFOLDER"), 1_457_664,
                 Math.Max(0, 1_457_664 - entries.OfType<FileInfo>().Sum(f => f.Length)));
 
         return new DiscState(root, true, drive, result, decision, entries, ReadTitle(result.Plan?.Source, s),
@@ -80,6 +80,11 @@ public sealed record DiscState(
             return fromLibrary?.Label ?? SteamApps.TryGetKnownName(id) ?? Loc.T("KIND_STEAM_ID", id);
         }
         if (plan.Kind == LaunchKind.Hub) return Loc.T("KIND_HUB");
+        if (plan.Kind == LaunchKind.Game)
+        {
+            var title = Floppy.Core.Minigame.LevelPack.Load(plan.Candidates[0]).Title;
+            return Loc.T("KIND_GAME_TITLE", title);
+        }
         if (plan.Candidates.Count == 1)
         {
             var target = plan.Candidates[0];

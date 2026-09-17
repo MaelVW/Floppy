@@ -1,0 +1,50 @@
+﻿FLOPPY HUB
+==========
+
+Turns floppy disks into a physical Steam library.
+
+Insert a prepared floppy and the Floppy Launcher automatically starts
+whatever is stored on it:
+
+  * a Steam game                    (id=220)
+  * a program on the floppy         (run=game.exe)
+  * a program on the PC             (pcrun=D:\Games\x.exe)
+  * the Floppy Hub menu             (hub=1)
+
+
+TWO VARIANTS - YOU CHOOSE IN THE NEXT STEP
+------------------------------------------
+  APP (recommended)
+    Floppy Hub in a window: library with covers, writing floppies,
+    drives view, chat, mini-game with level editor, light/dark,
+    German/English. The Floppy Launcher runs as a small program
+    without a window in the background (a few MB of memory).
+    New or changed programs are confirmed once.
+
+  CONSOLE
+    The proven PowerShell variant - exactly like version 1.
+    Programs on the PC (pcrun=) are always confirmed.
+
+You can switch at any time: run setup again and pick the other variant.
+Settings (FloppyLauncher.ini) and library are kept.
+
+
+REQUIREMENTS
+------------
+  * Windows 10 or 11 (64-bit)
+  * Console: Windows PowerShell 5.1 (included with Windows)
+  * a floppy drive as A: (a USB floppy drive is fine)
+
+
+SECURITY
+--------
+Paths below C:\Windows are always rejected.
+The app's chat is end-to-end encrypted; nothing is stored.
+The first time a chat switches to the local network, Windows Firewall asks
+once - that's normal.
+
+
+ABOUT AUTOSTART
+---------------
+Setup can start the launcher hidden at sign-in. If you had set that up by
+hand before, the old entry is replaced - so still only one launcher runs.

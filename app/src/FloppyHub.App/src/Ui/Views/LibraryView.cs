@@ -181,7 +181,7 @@ public partial class LibraryView : ViewBase
                 var path = planner.ResolvePcPath(e.Value, messages);
                 if (path is null)
                 {
-                    RetroDialog.Message(Host.DialogLayer, Loc.T("LIB_START_FAILED"), string.Join("\n", messages.Select(m => m.Text)), "error");
+                    RetroDialog.Message(Host.DialogLayer, Loc.T("LIB_START_FAILED"), string.Join("\n", messages.Select(Loc.Message)), "error");
                     return;
                 }
                 Host.LaunchProgram(path, null, e.Label);

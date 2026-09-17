@@ -12,6 +12,8 @@
     .\app\tools\Start-App.ps1 -Theme dark -FirstRun
 .EXAMPLE
     .\app\tools\Start-App.ps1 -Editor      # Projekt im Godot-Editor oeffnen
+.EXAMPLE
+    .\app\tools\Start-App.ps1 -SecondWindow   # zweites Fenster mit eigener Chat-ID
 #>
 [CmdletBinding()]
 param(
@@ -25,7 +27,10 @@ param(
     [string] $Drive,
 
     # Godot-Editor statt App oeffnen
-    [switch] $Editor
+    [switch] $Editor,
+
+    # Zweites App-Fenster mit eigener Chat-ID (eigener Benutzerordner) - z. B. um mit sich selbst zu chatten
+    [switch] $SecondWindow
 )
 
 $ErrorActionPreference = 'Stop'
@@ -44,7 +49,7 @@ if (-not $godot) {
 }
 
 Write-Host "[1/3] C# bauen ..." -ForegroundColor Cyan
-dotnet build (Join-Path $project 'FloppyHub.App.csproj') -nologo -v q
+dotnet build (Join-Path $project 'FloppyHub.csproj') -nologo -v q
 if ($LASTEXITCODE -ne 0) { throw 'Build fehlgeschlagen.' }
 
 if (-not (Test-Path (Join-Path $project '.godot'))) {
@@ -65,6 +70,7 @@ $appArgs = @('--path', "`"$project`"", '++', '--home', "`"$repo`"")
 if ($Theme) { $appArgs += @('--theme', $Theme) }
 if ($FirstRun) { $appArgs += '--first-run' }
 if ($Drive) { $appArgs += @('--drive', "`"$Drive`"") }
+if ($SecondWindow) { $appArgs += @('--allow-multiple', '--user-data', "`"$env:LOCALAPPDATA\FloppyHub-Zweitfenster`"") }
 
 Write-Host "[3/3] Floppy Hub starten ..." -ForegroundColor Cyan
 Start-Process -FilePath $godot -ArgumentList $appArgs

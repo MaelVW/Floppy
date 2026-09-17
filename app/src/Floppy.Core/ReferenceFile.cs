@@ -13,6 +13,9 @@ public static partial class ReferenceFile
     public static readonly string[] DefaultHubKeys = ["hub", "hubmenu", "menu", "floppyhub"];
     public static readonly string[] PcRunKeys = ["pcrun", "localrun", "pcexe"];
     public static readonly string[] RunKeys = ["run", "exe", "program", "path"];
+
+    /// <summary>App-Variante: Levelpaket fuer das Minispiel (nur Daten, kein Programm).</summary>
+    public static readonly string[] GameKeys = ["minigame"];
     public const string ArgsKey = "args";
 
     [GeneratedRegex(@"^\s*([A-Za-z_]+)\s*[:=]\s*(.+?)\s*$")]

@@ -179,10 +179,10 @@ public partial class DiscView : ViewBase
             return;
         }
 
-        foreach (var m in st.Result?.Messages ?? [])
+        foreach (var m in (st.Result?.Messages ?? []).Where(m => m.Level != MessageLevel.Ok))
         {
             var icon = m.Level switch { MessageLevel.Error => "error", MessageLevel.Warn => "warn", MessageLevel.Ok => "ok", _ => "info" };
-            _messages.AddChild(Ui.IconLine(icon, m.Text, "DimLabel"));
+            _messages.AddChild(Ui.IconLine(icon, Loc.Message(m), "DimLabel"));
         }
 
         var plan = st.Plan;
@@ -209,6 +209,11 @@ public partial class DiscView : ViewBase
             case LaunchKind.Hub:
                 SetPlan("kind_hub", Loc.T("KIND_HUB"), Loc.T("PLAN_HUB"), "ok", Loc.T("TRUST_HUB"));
                 _start.Disabled = true;
+                break;
+
+            case LaunchKind.Game:
+                var pack = Floppy.Core.Minigame.LevelPack.Load(plan.Candidates[0]);
+                SetPlan("game", name, Loc.T("PLAN_GAME", pack.Levels.Count), "ok", Loc.T("TRUST_GAME"));
                 break;
 
             default:

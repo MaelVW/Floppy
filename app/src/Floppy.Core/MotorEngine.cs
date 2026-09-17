@@ -124,6 +124,12 @@ public sealed class MotorEngine
                     _log.Write(LogLevel.Warn, "Hub-Diskette erkannt, aber die Floppy Hub App ist nicht installiert.");
                 return;
 
+            case GateAction.OpenGame:
+                if (_dryRun) { _log.Write(LogLevel.Ok, "[DRYRUN] wuerde das Minispiel in der Floppy Hub App oeffnen."); return; }
+                if (!_actions.WakeApp(HubPipe.Game))
+                    _log.Write(LogLevel.Warn, "Minispiel-Diskette erkannt, aber die Floppy Hub App ist nicht installiert.");
+                return;
+
             case GateAction.Start when d.Target is not null:
                 if (_dryRun) { _log.Write(LogLevel.Ok, $"[DRYRUN] wuerde starten (freigegeben): {d.Target} {plan?.Arguments}".TrimEnd()); return; }
                 _log.Write(LogLevel.Ok, $"Freigegeben - starte Programm: {d.Target} {plan?.Arguments}".TrimEnd());

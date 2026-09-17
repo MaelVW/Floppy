@@ -7,7 +7,7 @@ namespace FloppyHub.App.Ui;
 public partial class StatusBar : PanelContainer
 {
     private readonly HBoxContainer _row;
-    private readonly Dictionary<string, (TextureRect Icon, Label Text)> _cells = new();
+    private readonly Dictionary<string, (TextureRect Icon, Label Text, PanelContainer Cell)> _cells = new();
 
     public StatusBar()
     {
@@ -28,7 +28,12 @@ public partial class StatusBar : PanelContainer
         cell.CustomMinimumSize = new Vector2(minWidth, 0);
         if (expand) cell.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         _row.AddChild(cell);
-        _cells[key] = (icon, label);
+        _cells[key] = (icon, label, cell);
+    }
+
+    public void SetVisible(string key, bool visible)
+    {
+        if (_cells.TryGetValue(key, out var cell)) cell.Cell.Visible = visible;
     }
 
     public void Set(string key, string text, string? icon = null, string? tooltip = null)

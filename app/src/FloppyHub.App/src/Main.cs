@@ -24,6 +24,7 @@ public partial class Main : Control
     private MainWindow? _main;
     private bool _compact;
     private bool _quitting;
+    private ChatDemo? _chatDemo;
 
     public override void _Ready()
     {
@@ -39,8 +40,12 @@ public partial class Main : Control
         _s = AppServices.Create(args);
         _covers = new CoverCache(_s.Paths.CoverCacheDir);
 
-        if (!_s.ReadOnlyMode && !TakeSingleInstance(args)) return;
+        if (!_s.ReadOnlyMode && !args.AllowMultiple && !TakeSingleInstance(args)) return;
 
+        // Allererster Start: Sprache wie Windows (Deutsch, sonst Englisch) - im Willkommensdialog aenderbar
+        if (!_s.Settings.FirstRunDone && !File.Exists(_s.Paths.AppSettingsFile))
+            _s.Settings.Language = OS.GetLocaleLanguage() == "de" ? "de" : "en";
+        if (args.Language is not null) _s.Settings.Language = args.Language;   // Test: nur fuer diesen Start
         Loc.Load(_s.Settings.Language);
         EasterEggs.Enabled = _s.Options.EasterEggs;
         if (args.EggDate is { } eggDate) EasterEggs.Today = eggDate;
@@ -68,7 +73,7 @@ public partial class Main : Control
         if (!isNew)
         {
             // App laeuft schon: Bescheid geben und sofort wieder beenden.
-            HubPipe.TrySend(args.Confirm ? HubPipe.Confirm : args.Hub ? HubPipe.Hub : HubPipe.Show, 1000);
+            HubPipe.TrySend(args.Confirm ? HubPipe.Confirm : args.Game ? HubPipe.Game : args.Hub ? HubPipe.Hub : HubPipe.Show, 1000);
             _instance.Dispose();
             _instance = null;
             GetTree().Quit();
@@ -87,6 +92,9 @@ public partial class Main : Control
         {
             case HubPipe.Hub:
                 _main?.ShowView("disc");
+                break;
+            case HubPipe.Game:
+                _main?.OpenGameFromDisc();
                 break;
             case HubPipe.Confirm:
                 if (_main is not null) _main.ConfirmDisc();
@@ -141,6 +149,16 @@ public partial class Main : Control
         Rebuild();
     }
 
+    private void ApplyLanguage(string language)
+    {
+        if (!Loc.IsAvailable(language)) return;
+        _s.Settings.Language = language;
+        _s.SaveSettings();
+        Loc.Load(language);
+        GetWindow().Title = _compact ? Loc.T("CONFIRM_WINDOW_TITLE") : "Floppy Hub";
+        ApplyTheme(_s.Settings.Theme, save: false);   // baut alles in der neuen Sprache neu auf
+    }
+
     private void ApplyScale(float scale)
     {
         _s.Settings.Scale = scale;
@@ -151,7 +169,7 @@ public partial class Main : Control
 
     private void Rebuild()
     {
-        var view = _main?.CurrentView ?? _s.Args.View ?? "disc";
+        var view = _main?.CurrentView ?? _s.Args.View ?? (_s.Args.Game ? "game" : "disc");
         this.ClearChildren();
         _main = null;
 
@@ -163,7 +181,7 @@ public partial class Main : Control
 
         _main = new MainWindow();
         AddChild(_main);
-        _main.Setup(_s, _covers, IsViewKey(view) ? view : "disc", t => ApplyTheme(t), ApplyScale);
+        _main.Setup(_s, _covers, IsViewKey(view) ? view : "disc", t => ApplyTheme(t), ApplyScale, ApplyLanguage);
     }
 
     private static bool IsViewKey(string v) => v is "disc" or "library" or "write" or "drives" or "chat" or "game" or "log" or "settings";
@@ -205,8 +223,14 @@ public partial class Main : Control
         var d = new RetroDialog(Loc.T("FIRST_TITLE"), "app", 520);
 
         var language = new ButtonGroup();
-        var de = new CheckBox { Text = "Deutsch", ButtonGroup = language, ButtonPressed = true };
-        var en = new CheckBox { Text = "English", ButtonGroup = language, Disabled = !Loc.IsAvailable("en") };
+        var de = new CheckBox { Text = "Deutsch", ButtonGroup = language, ButtonPressed = Loc.Language == "de" };
+        var en = new CheckBox { Text = "English", ButtonGroup = language, ButtonPressed = Loc.Language == "en", Disabled = !Loc.IsAvailable("en") };
+        void LanguageChoice(CheckBox box, string value) => box.Toggled += on =>
+        {
+            if (on && Loc.Language != value) Callable.From(() => SwitchLanguageFromFirstRun(value)).CallDeferred();
+        };
+        LanguageChoice(de, "de");
+        LanguageChoice(en, "en");
 
         var themes = new ButtonGroup();
         CheckBox ThemeChoice(string key, string value)
@@ -230,7 +254,7 @@ public partial class Main : Control
         d.AddButton(Loc.T("FIRST_GO"), () =>
         {
             _s.Settings.FirstRunDone = true;
-            _s.Settings.Language = "de";
+            _s.Settings.Language = Loc.Language;
             _s.SaveSettings();
         });
         d.Open(_main.DialogLayer);
@@ -240,6 +264,23 @@ public partial class Main : Control
     {
         ApplyTheme(theme);
         ShowFirstRun();   // Dialog im neuen Aussehen wieder oeffnen
+    }
+
+    private void SwitchLanguageFromFirstRun(string language)
+    {
+        ApplyLanguage(language);
+        ShowFirstRun();   // Dialog in der neuen Sprache wieder oeffnen
+    }
+
+    // ------------------------------------------------------------------
+    // Chat im Hintergrund
+    // ------------------------------------------------------------------
+
+    public override void _Process(double delta)
+    {
+        if (_s is null || _compact || _quitting) return;
+        _chatDemo?.Pump();
+        _s.Chat.Pump();
     }
 
     // ------------------------------------------------------------------
@@ -255,6 +296,9 @@ public partial class Main : Control
     {
         if (_quitting) return;
         _quitting = true;
+
+        // Chat: den anderen tschuess sagen (wartet hoechstens kurz)
+        if (_s is not null && !_compact) _s.Chat.Shutdown();
 
         if (_s is not null && !_s.ReadOnlyMode && !_compact && _s.Options.ClearLogOnHubExit)
         {
@@ -283,9 +327,13 @@ public partial class Main : Control
 
         var appDir = ProjectSettings.GlobalizePath("res://assets/app");
         System.IO.Directory.CreateDirectory(appDir);
-        var icon = IconForge.Draw("app", Palette.Classic);
-        icon.Resize(256, 256, Image.Interpolation.Nearest);
-        icon.SavePng(System.IO.Path.Combine(appDir, "icon.png"));
+        var appIcon = System.IO.Path.Combine(appDir, "icon.png");
+        if (!System.IO.File.Exists(appIcon))
+        {
+            var icon = IconForge.Draw("app", Palette.Classic);
+            icon.Resize(256, 256, Image.Interpolation.Nearest);
+            icon.SavePng(appIcon);
+        }
 
         GD.Print($"FORGE OK {n} Icons -> {dir}");
         GetTree().Quit();
@@ -301,7 +349,30 @@ public partial class Main : Control
             case "confirm": _main?.ConfirmDisc(); break;
             case "about": _main?.ShowAbout(); break;
             case "crt": _main?.TriggerCrt(); break;
+            case "game-solve":
+                // Level 1 per simulierter Tastatur loesen (prueft Steuerung + Geschafft-Dialog)
+                _main?.ShowView("game");
+                await ToSignal(GetTree().CreateTimer(0.4), SceneTreeTimer.SignalName.Timeout);
+                foreach (var key in new[] { Key.Right, Key.Right, Key.Right })
+                {
+                    Input.ParseInputEvent(new InputEventKey { Keycode = key, Pressed = true });
+                    Input.ParseInputEvent(new InputEventKey { Keycode = key, Pressed = false });
+                    await ToSignal(GetTree().CreateTimer(0.15), SceneTreeTimer.SignalName.Timeout);
+                }
+                break;
             case "write-demo" when _main is { Library.Count: > 0 }: _main.OpenWrite(_main.Library[^1]); break;
+            case "editor":
+                _main?.ShowView("game");
+                _main?.OpenLevelEditor();
+                break;
+            case "chat-open":
+                _main?.ShowView("chat");
+                _s.Chat.ConnectOpen();
+                await ToSignal(GetTree().CreateTimer(4), SceneTreeTimer.SignalName.Timeout);
+                break;
+            case { } chat when chat.StartsWith("chat-", StringComparison.Ordinal):
+                await RunChatDemo(chat);
+                break;
         }
 
         await ToSignal(GetTree().CreateTimer(1.6), SceneTreeTimer.SignalName.Timeout);
@@ -309,7 +380,72 @@ public partial class Main : Control
         var image = GetViewport().GetTexture().GetImage();
         image.SavePng(file);
         GD.Print($"SCREENSHOT OK {file} {image.GetWidth()}x{image.GetHeight()}");
+        _s.Chat.Shutdown();
         _quitting = true;
         GetTree().Quit();
+    }
+
+    /// <summary>Chat-Vorschau ohne Netzwerk: zwei Mitspieler im Speicher.</summary>
+    private async Task RunChatDemo(string scenario)
+    {
+        if (_main is null) return;
+        _main.ShowView("chat");
+        if (scenario == "chat-prompt") return;
+
+        var demo = new ChatDemo();
+        _chatDemo = demo;
+        demo.Attach(_s.Chat);
+        await demo.StartBotsAsync();
+        _s.Chat.Connect(ChatDemo.Secret, "Schulhof");
+        await WaitUntil(() => _s.Chat.Session is { State: Floppy.Core.Chat.ChatSessionState.Connected }, 10);
+        demo.StartBots(DateTimeOffset.UtcNow);
+        await WaitUntil(() => _s.Chat.Session!.Members.Count == 3, 10);
+        await Seconds(0.3);
+
+        var now = DateTimeOffset.UtcNow;
+        demo.Tom!.SendText("Hallo! Ist das hier die Schulhof-Diskette?", now);
+        await Seconds(0.3);
+        _s.Chat.Session!.SendText("Ja, die Prüfzahl stimmt bei mir auch.", DateTimeOffset.UtcNow);
+        await Seconds(0.3);
+        demo.Lea!.SendText("Ich hab „Zwei Laufwerke“ in 0:18 geschafft 💾", DateTimeOffset.UtcNow);
+        await Seconds(0.3);
+
+        switch (scenario)
+        {
+            case "chat-proposal":
+                demo.Tom.ProposeLocal(DateTimeOffset.UtcNow);
+                await WaitUntil(() => _s.Chat.Session!.Proposal is not null, 5);
+                break;
+            case "chat-countdown":
+                demo.Tom.ProposeLocal(DateTimeOffset.UtcNow);
+                await WaitUntil(() => demo.Lea.Proposal is not null && _s.Chat.Session!.Proposal is not null, 5);
+                demo.Lea.AnswerProposal(true, DateTimeOffset.UtcNow);
+                await WaitUntil(() => _s.Chat.Session!.Proposal is { Stage: Floppy.Core.Chat.ProposalStage.Countdown }, 5);
+                await Seconds(2);
+                break;
+            case "chat-local":
+                _s.Chat.Session.ProposeLocal(DateTimeOffset.UtcNow);
+                await WaitUntil(() => demo.Tom.Proposal is not null, 5);
+                demo.Tom.AnswerProposal(true, DateTimeOffset.UtcNow);
+                await WaitUntil(() => _s.Chat.Session.Mode == Floppy.Core.Chat.ChatMode.Local, 5);
+                await Seconds(0.5);
+                demo.Tom.SendText("Jetzt ohne Dienst und ohne Limit.", DateTimeOffset.UtcNow);
+                await Seconds(0.3);
+                break;
+            case "chat-scores":
+                _main.OpenChatScores();
+                await Seconds(3);
+                break;
+        }
+    }
+
+    private async Task Seconds(double seconds) =>
+        await ToSignal(GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
+
+    private async Task WaitUntil(Func<bool> condition, double timeoutSeconds)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+        while (!condition() && DateTime.UtcNow < deadline) await Seconds(0.05);
+        if (!condition()) GD.PushWarning("Chat-Vorschau: Bedingung nicht erreicht.");
     }
 }

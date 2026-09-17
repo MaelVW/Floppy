@@ -46,8 +46,11 @@ public partial class SettingsView : ViewBase
 
         // ---- Sprache ----
         var group = new ButtonGroup();
-        var de = new CheckBox { Text = "Deutsch", ButtonGroup = group, ButtonPressed = true };
-        var en = new CheckBox { Text = "English", ButtonGroup = group, Disabled = !Loc.IsAvailable("en") };
+        var de = new CheckBox { Text = "Deutsch", ButtonGroup = group, ButtonPressed = Loc.Language == "de" };
+        var en = new CheckBox { Text = "English", ButtonGroup = group, ButtonPressed = Loc.Language == "en", Disabled = !Loc.IsAvailable("en") };
+        // erst nach dem Aufbau umschalten (baut die ganze Oberflaeche neu)
+        de.Toggled += on => { if (on && Loc.Language != "de") Callable.From(() => Host.ApplyLanguage("de")).CallDeferred(); };
+        en.Toggled += on => { if (on && Loc.Language != "en") Callable.From(() => Host.ApplyLanguage("en")).CallDeferred(); };
         column.AddChild(new GroupBox(Loc.T("SET_LANGUAGE"), Ui.VBox(4,
             Ui.HBox(16, de, en), Ui.Dim(Loc.T("SET_LANGUAGE_HINT"), wrap: true))));
 

@@ -21,7 +21,10 @@ public static class HubPipe
     /// <summary>Diskette braucht eine Rueckfrage: App wertet A: aus und fragt.</summary>
     public const string Confirm = "confirm";
 
-    public static IReadOnlyList<string> Commands { get; } = [Show, Hub, Confirm];
+    /// <summary>Minispiel-Diskette eingelegt: App mit dem Spiel oeffnen.</summary>
+    public const string Game = "game";
+
+    public static IReadOnlyList<string> Commands { get; } = [Show, Hub, Confirm, Game];
 
     /// <summary>Einzelinstanz-Sperre der App (der Motor nutzt die V1-Sperre).</summary>
     public const string AppMutexName = @"Local\FloppyHubAppSingleInstance";
