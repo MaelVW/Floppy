@@ -22,6 +22,7 @@ BTN_REMOVE_TRUST = Remove permission
 BTN_OPEN_CONFIG = Open configuration
 BTN_OPEN_HOME = Program folder
 BTN_OPEN_DATA = User data
+BTN_CHECK_UPDATE = Check for updates
 
 BRAND_TAGLINE = Floppy headquarters
 
@@ -41,6 +42,7 @@ MENU_TRUST = Trust list…
 MENU_LOG = Show log
 MENU_CLEAR_LOG = Clear log…
 MENU_HELP = Help
+MENU_FAQ = Frequently Asked Questions…
 MENU_ABOUT = About Floppy Hub
 
 # ---- Views (toolbar) ----
@@ -673,6 +675,87 @@ UPDATE_TITLE = Update available
 UPDATE_TEXT = A newer version is out: Floppy Hub {0}. Download it now?
 UPDATE_BTN_GET = Download
 UPDATE_BTN_LATER = Later
+UPDATE_CHECKING = Checking for updates …
+UPDATE_NONE = You already have the newest version.
+
+# ---- Frequently Asked Questions ----
+FAQ_INTRO = Answers to the most common questions. If yours isn't here, the log (toolbar) often helps.
+
+FAQ_CAT_START = Getting started
+FAQ_START_Q1 = How do I get started?
+FAQ_START_A1 = Insert a floppy into A:. If Floppy Hub already knows it, it starts right away – if it's new, the app asks once.
+FAQ_START_Q2 = What's the difference between the Motor and the app?
+FAQ_START_A2 = The Motor (FloppyLauncher.exe) runs invisibly in the background and notices when a floppy is inserted. The app is the window you're looking at now – the two only talk over a short, purely local connection.
+FAQ_START_Q3 = Does the app need to be open for floppies to start?
+FAQ_START_A3 = No. The Motor keeps running on its own, even if the app window is closed.
+
+FAQ_CAT_TRUST = Trust list
+FAQ_TRUST_Q1 = What do "Start once" and "Always allow" mean?
+FAQ_TRUST_A1 = For a program the app doesn't know yet, it asks once. "Start once" only applies to this floppy; "Always allow" remembers the path, arguments, and checksum for good.
+FAQ_TRUST_Q2 = Why is C:\Windows blocked?
+FAQ_TRUST_A2 = System folders stay blocked for safety, no matter what's on the trust list.
+FAQ_TRUST_Q3 = How do I remove a permission again?
+FAQ_TRUST_A3 = Options → Trust list → select the entry → "Remove permission".
+
+FAQ_CAT_WRITE = Writing a floppy
+FAQ_WRITE_Q1 = What does "Write" do?
+FAQ_WRITE_A1 = It writes a game.txt to the floppy – for a Steam game, a program on the PC or the floppy, the hub menu, or the minigame. The app checks everything first and shows a preview.
+FAQ_WRITE_Q2 = Why doesn't a freshly written floppy start right away?
+FAQ_WRITE_A2 = On purpose: the app briefly remembers what it just wrote so the Motor doesn't accidentally start it immediately.
+
+FAQ_CAT_LIBRARY = Library
+FAQ_LIBRARY_Q1 = Where do the covers come from?
+FAQ_LIBRARY_A1 = From Steam, loaded once and then cached locally – can be turned off in Options.
+FAQ_LIBRARY_Q2 = Where is the library stored?
+FAQ_LIBRARY_A2 = In library.csv, in the program folder – or under %LOCALAPPDATA%\FloppyHub if the program folder is read-only.
+
+FAQ_CAT_DRIVES = Drives
+FAQ_DRIVES_Q1 = Which drives does the app show?
+FAQ_DRIVES_A1 = All removable media: floppies, USB sticks, memory cards, external hard drives, CD/DVD/Blu-ray – with connection, device name, serial number, and usage.
+FAQ_DRIVES_Q2 = Why does it only watch A:?
+FAQ_DRIVES_A2 = The Motor deliberately watches just one drive (configurable in FloppyLauncher.ini) so nothing unexpected runs automatically.
+
+FAQ_CAT_CHAT = Chat
+FAQ_CHAT_Q1 = How do I start a chat?
+FAQ_CHAT_A1 = Type in a key, or load one from a floppy/USB stick – whoever types the same one lands in the same room. Without your own key, use the "Open Chat" instead.
+FAQ_CHAT_Q2 = What is the Open Chat?
+FAQ_CHAT_A2 = A permanent room without your own key, good for trying things out. Anyone with Floppy Hub can read along there – use your own key for private conversations.
+FAQ_CHAT_Q3 = How do I switch to the local network?
+FAQ_CHAT_A3 = Click "Local network" in the chat room. The others see a proposal with a Wi-Fi recommendation and can approve or decline – everyone needs to be on the same network.
+FAQ_CHAT_Q4 = Switching to the local network doesn't work – why?
+FAQ_CHAT_A4 = Usually because the devices are on different networks (the Wi-Fi recommendation in the proposal helps spot that). Sometimes the Windows Firewall, which asks once the first time.
+FAQ_CHAT_Q5 = How do I save a contact?
+FAQ_CHAT_A5 = Click a name in the members list → "Save as contact". Your own ID number stays the same across restarts.
+
+FAQ_CAT_GAME = Minigame
+FAQ_GAME_Q1 = How do I play "Floppy Depot"?
+FAQ_GAME_A1 = Push floppies into the marked slots with the arrow keys, Sokoban-style. Time, moves, and points count toward the leaderboard.
+FAQ_GAME_Q2 = How do I create my own levels?
+FAQ_GAME_A2 = Switch to the level editor in the minigame, paint, test, save. Every level gets its own ID – matching IDs let players compare.
+FAQ_GAME_Q3 = Where do I see the leaderboard?
+FAQ_GAME_A3 = In the chat room via the leaderboard button, or directly in the minigame.
+
+FAQ_CAT_SETTINGS = Settings
+FAQ_SETTINGS_Q1 = How do I change the language or look?
+FAQ_SETTINGS_A1 = Options → Appearance/Language. The interface rebuilds right away, nothing needs restarting.
+FAQ_SETTINGS_Q2 = How do I change autostart?
+FAQ_SETTINGS_A2 = Run the setup again – it lets you turn autostart on or off without losing anything else.
+FAQ_SETTINGS_Q3 = Where is my data stored?
+FAQ_SETTINGS_A3 = Options → Motor shows the exact paths, with buttons to open them directly.
+
+FAQ_CAT_TROUBLE = Troubleshooting
+FAQ_TROUBLE_Q1 = Windows warns "Windows protected your PC" – what now?
+FAQ_TROUBLE_A1 = The setup isn't signed yet. Click "More info" → "Run anyway".
+FAQ_TROUBLE_Q2 = The floppy isn't recognized.
+FAQ_TROUBLE_A2 = Check whether it's mounted as A: (Drives view) and whether the Motor is running (LED in Options). Some floppies take a moment to read.
+FAQ_TROUBLE_Q3 = Where do I find error messages?
+FAQ_TROUBLE_A3 = In the log (toolbar) – the same file as the console variant, lines colored by severity.
+
+FAQ_CAT_PRIVACY = Privacy
+FAQ_PRIVACY_Q1 = What leaves my computer?
+FAQ_PRIVACY_A1 = Only chat – end-to-end encrypted over the free ntfy.sh service or the local network. Library, log, trust list, and settings stay on your own computer.
+FAQ_PRIVACY_Q2 = Does chat save the history?
+FAQ_PRIVACY_A2 = Nowhere, neither online nor locally. Only your own ID, contacts, and – if you choose – minigame records are kept.
 
 # ---- About ----
 ABOUT_TITLE = About Floppy Hub

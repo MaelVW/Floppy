@@ -43,6 +43,27 @@ public sealed class UpdateService
         });
     }
 
+    /// <summary>
+    /// Auf Knopfdruck (Optionen): ruft <paramref name="onResult"/> immer auf, auch wenn nichts Neues da ist
+    /// (dann null) - anders als <see cref="CheckInBackground"/> ignoriert das eine zuvor uebersprungene Version.
+    /// </summary>
+    public void CheckManually(string currentVersion, Action<UpdateInfo?> onResult)
+    {
+        if (!AppVersion.TryParse(currentVersion, out var current))
+        {
+            onResult(null);
+            return;
+        }
+        Task.Run(async () =>
+        {
+            UpdateInfo? found;
+            try { found = await _feed.GetLatestAsync(CancellationToken.None); }
+            catch { found = null; }
+            var isNewer = found is not null && AppVersion.TryParse(found.Version, out var latest) && latest.IsNewerThan(current);
+            onResult(isNewer ? found : null);
+        });
+    }
+
     /// <summary>"Spaeter": diese Version nicht mehr vorschlagen.</summary>
     public void Skip(string version)
     {

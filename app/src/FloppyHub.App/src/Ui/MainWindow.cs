@@ -169,6 +169,7 @@ public partial class MainWindow : PanelContainer, IAppHost
         AddView(new GameView());
         AddView(new LogView());
         AddView(new SettingsView());
+        AddView(new HelpView());
     }
 
     private PanelContainer BuildToolbar()
@@ -265,6 +266,7 @@ public partial class MainWindow : PanelContainer, IAppHost
             (403, "MENU_CLEAR_LOG", "remove", Key.None));
 
         Menu("MENU_HELP",
+            (502, "MENU_FAQ", "info", Key.None),
             (501, "MENU_ABOUT", "info", Key.F1));
 
         return bar;
@@ -306,6 +308,7 @@ public partial class MainWindow : PanelContainer, IAppHost
                 });
                 break;
             case 501: ShowAbout(); break;
+            case 502: ShowView("help"); break;
         }
     }
 

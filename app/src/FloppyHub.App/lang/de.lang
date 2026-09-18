@@ -22,6 +22,7 @@ BTN_REMOVE_TRUST = Freigabe entfernen
 BTN_OPEN_CONFIG = Konfiguration öffnen
 BTN_OPEN_HOME = Programmordner
 BTN_OPEN_DATA = Benutzerdaten
+BTN_CHECK_UPDATE = Nach Updates suchen
 
 BRAND_TAGLINE = Disketten-Zentrale
 
@@ -41,6 +42,7 @@ MENU_TRUST = Vertrauensliste…
 MENU_LOG = Log anzeigen
 MENU_CLEAR_LOG = Log leeren…
 MENU_HELP = Hilfe
+MENU_FAQ = Häufige Fragen…
 MENU_ABOUT = Über Floppy Hub
 
 # ---- Ansichten (Werkzeugleiste) ----
@@ -673,6 +675,87 @@ UPDATE_TITLE = Update verfügbar
 UPDATE_TEXT = Es gibt eine neuere Version: Floppy Hub {0}. Jetzt herunterladen?
 UPDATE_BTN_GET = Herunterladen
 UPDATE_BTN_LATER = Später
+UPDATE_CHECKING = Suche nach Updates …
+UPDATE_NONE = Du hast schon die neueste Version.
+
+# ---- Häufige Fragen ----
+FAQ_INTRO = Antworten auf die häufigsten Fragen. Steht deine Frage nicht dabei, hilft oft ein Blick ins Log (Werkzeugleiste).
+
+FAQ_CAT_START = Erste Schritte
+FAQ_START_Q1 = Wie fange ich an?
+FAQ_START_A1 = Diskette in A: einlegen. Kennt Floppy Hub sie schon, startet sie sofort – ist sie neu, fragt die App kurz nach.
+FAQ_START_Q2 = Was ist der Unterschied zwischen Motor und App?
+FAQ_START_A2 = Der Motor (FloppyLauncher.exe) läuft unsichtbar im Hintergrund und merkt, wenn eine Diskette steckt. Die App ist das Fenster, das du gerade siehst – beide sprechen nur über eine kurze, rein lokale Verbindung miteinander.
+FAQ_START_Q3 = Muss die App offen sein, damit Disketten starten?
+FAQ_START_A3 = Nein. Der Motor läuft für sich allein weiter, auch wenn das App-Fenster geschlossen ist.
+
+FAQ_CAT_TRUST = Vertrauensliste
+FAQ_TRUST_Q1 = Was bedeuten „Einmal starten“ und „Immer erlauben“?
+FAQ_TRUST_A1 = Bei einem noch unbekannten Programm fragt die App einmal nach. „Einmal starten“ gilt nur für diese Diskette, „Immer erlauben“ merkt sich Pfad, Argumente und Prüfsumme dauerhaft.
+FAQ_TRUST_Q2 = Warum ist C:\Windows gesperrt?
+FAQ_TRUST_A2 = Systemordner bleiben aus Sicherheitsgründen immer gesperrt, egal was auf der Vertrauensliste steht.
+FAQ_TRUST_Q3 = Wie entferne ich eine Freigabe wieder?
+FAQ_TRUST_A3 = Optionen → Vertrauensliste → Eintrag auswählen → „Freigabe entfernen“.
+
+FAQ_CAT_WRITE = Diskette bespielen
+FAQ_WRITE_Q1 = Was macht „Bespielen“?
+FAQ_WRITE_A1 = Schreibt eine game.txt auf die Diskette – für ein Steam-Spiel, ein Programm auf PC oder Diskette, das Hub-Menü oder das Minispiel. Die App prüft alles vorher und zeigt eine Vorschau.
+FAQ_WRITE_Q2 = Warum startet eine frisch bespielte Diskette nicht sofort?
+FAQ_WRITE_A2 = Absicht: Die App merkt sich kurz, was gerade geschrieben wurde, damit der Motor es nicht versehentlich sofort ausführt.
+
+FAQ_CAT_LIBRARY = Bibliothek
+FAQ_LIBRARY_Q1 = Woher kommen die Cover?
+FAQ_LIBRARY_A1 = Von Steam, einmal geladen und dann lokal zwischengespeichert – in den Optionen abschaltbar.
+FAQ_LIBRARY_Q2 = Wo liegt die Bibliothek?
+FAQ_LIBRARY_A2 = In library.csv, im Programmordner – oder unter %LOCALAPPDATA%\FloppyHub, wenn der Programmordner schreibgeschützt ist.
+
+FAQ_CAT_DRIVES = Laufwerke
+FAQ_DRIVES_Q1 = Welche Laufwerke zeigt die App?
+FAQ_DRIVES_A1 = Alle Wechseldatenträger: Disketten, USB-Sticks, Speicherkarten, externe Festplatten, CD/DVD/Blu-ray – mit Anschluss, Gerätename, Seriennummer und Belegung.
+FAQ_DRIVES_Q2 = Warum wird nur A: beobachtet?
+FAQ_DRIVES_A2 = Der Motor achtet bewusst nur auf ein Laufwerk (einstellbar in FloppyLauncher.ini), damit nichts Unerwartetes automatisch losläuft.
+
+FAQ_CAT_CHAT = Chat
+FAQ_CHAT_Q1 = Wie fange ich einen Chat an?
+FAQ_CHAT_A1 = Verschlüsselung eintippen oder von Diskette/USB-Stick laden – wer dieselbe eingibt, landet im selben Raum. Ohne eigene Verschlüsselung geht es über den „Offenen Chat“.
+FAQ_CHAT_Q2 = Was ist der Offene Chat?
+FAQ_CHAT_A2 = Ein dauerhafter Raum ohne eigene Verschlüsselung, gut zum Ausprobieren. Jeder mit Floppy Hub kann dort mitlesen – für private Gespräche lieber eine eigene Verschlüsselung nutzen.
+FAQ_CHAT_Q3 = Wie wechsle ich ins lokale Netzwerk?
+FAQ_CHAT_A3 = Im Chatraum auf „Ins lokale Netz“ klicken. Die anderen sehen einen Vorschlag mit WLAN-Empfehlung und können zustimmen oder ablehnen – wichtig: alle müssen im selben Netzwerk sein.
+FAQ_CHAT_Q4 = Der Wechsel ins lokale Netz klappt nicht – woran liegt's?
+FAQ_CHAT_A4 = Meistens daran, dass die Geräte in unterschiedlichen Netzwerken sind (die WLAN-Empfehlung im Vorschlag hilft, das zu erkennen). Manchmal auch an der Windows-Firewall – sie fragt beim ersten Mal einmal nach.
+FAQ_CHAT_Q5 = Wie speichere ich einen Kontakt?
+FAQ_CHAT_A5 = Im Mitgliederbereich auf den Namen klicken → „Als Kontakt speichern“. Die eigene ID-Nummer bleibt über Neustarts hinweg gleich.
+
+FAQ_CAT_GAME = Minispiel
+FAQ_GAME_Q1 = Wie spiele ich „Diskettenlager“?
+FAQ_GAME_A1 = Disketten mit den Pfeiltasten in die markierten Fächer schieben, wie bei Sokoban. Zeit, Züge und Punkte zählen für die Rangliste.
+FAQ_GAME_Q2 = Wie erstelle ich eigene Level?
+FAQ_GAME_A2 = Im Minispiel in den Level-Editor wechseln, malen, testen, speichern. Jedes Level bekommt eine eigene ID – wer dieselbe ID hat, kann sich vergleichen.
+FAQ_GAME_Q3 = Wo sehe ich die Rangliste?
+FAQ_GAME_A3 = Im Chatraum über den Rangliste-Knopf, oder direkt beim Minispiel.
+
+FAQ_CAT_SETTINGS = Einstellungen
+FAQ_SETTINGS_Q1 = Wie ändere ich Sprache oder Aussehen?
+FAQ_SETTINGS_A1 = Optionen → Darstellung/Sprache. Die Oberfläche baut sich sofort neu auf, nichts muss neu gestartet werden.
+FAQ_SETTINGS_Q2 = Wie ändere ich den Autostart?
+FAQ_SETTINGS_A2 = Das Setup noch einmal ausführen – dort lässt sich der Autostart an- oder abwählen, ohne dass etwas anderes verloren geht.
+FAQ_SETTINGS_Q3 = Wo liegen meine Daten?
+FAQ_SETTINGS_A3 = Optionen → Motor zeigt die genauen Pfade, mit Knöpfen zum direkten Öffnen.
+
+FAQ_CAT_TROUBLE = Problembehandlung
+FAQ_TROUBLE_Q1 = Windows warnt „Der Computer wurde geschützt“ – was tun?
+FAQ_TROUBLE_A1 = Das Setup ist (noch) nicht signiert. Auf „Weitere Informationen“ → „Trotzdem ausführen“ klicken.
+FAQ_TROUBLE_Q2 = Die Diskette wird nicht erkannt.
+FAQ_TROUBLE_A2 = Prüfen, ob sie unter A: eingehängt ist (Laufwerke-Ansicht) und ob der Motor läuft (LED in den Optionen). Manche Disketten brauchen einen Moment zum Einlesen.
+FAQ_TROUBLE_Q3 = Wo finde ich Fehlermeldungen?
+FAQ_TROUBLE_A3 = Im Log (Werkzeugleiste) – dieselbe Datei wie bei der Konsolen-Variante, Zeilen sind nach Schwere eingefärbt.
+
+FAQ_CAT_PRIVACY = Datenschutz
+FAQ_PRIVACY_Q1 = Was verlässt meinen Rechner?
+FAQ_PRIVACY_A1 = Nur der Chat – Ende-zu-Ende verschlüsselt über den Gratis-Dienst ntfy.sh oder das lokale Netzwerk. Bibliothek, Log, Vertrauensliste und Einstellungen bleiben auf dem eigenen Rechner.
+FAQ_PRIVACY_Q2 = Speichert der Chat den Verlauf?
+FAQ_PRIVACY_A2 = Nirgendwo, weder online noch lokal. Gespeichert bleiben nur die eigene ID, Kontakte und – auf Wunsch – Minispiel-Rekorde.
 
 # ---- Über ----
 ABOUT_TITLE = Über Floppy Hub

@@ -106,6 +106,17 @@ public partial class SettingsView : ViewBase
             FloppyPaths.EnsureDirectory(s.Paths.UserData);
             OS.ShellOpen(s.Paths.UserData);
         });
+        var checkUpdate = Ui.Button(Loc.T("BTN_CHECK_UPDATE"), "cloud", () =>
+        {
+            if (s.ReadOnlyMode) return;
+            Host.SetStatusMessage(Loc.T("UPDATE_CHECKING"), "cloud");
+            var current = (string)ProjectSettings.GetSetting("application/config/version");
+            s.Updates.CheckManually(current, info => Callable.From(() =>
+            {
+                if (info is null) Host.SetStatusMessage(Loc.T("UPDATE_NONE"), "ok");
+                else RetroDialog.Update(Host.DialogLayer, info.Version, info.HtmlUrl, () => s.Updates.Skip(info.Version));
+            }).CallDeferred());
+        });
         var info = new GridContainer { Columns = 2 };
         void Row(string key, string value)
         {
@@ -125,7 +136,7 @@ public partial class SettingsView : ViewBase
         column.AddChild(new GroupBox(Loc.T("SET_MOTOR"), Ui.VBox(8,
             Ui.HBox(6, _motorLed, _motorText),
             info,
-            Ui.HBox(6, configure, folder, data))));
+            Ui.HBox(6, configure, folder, data, checkUpdate))));
 
         var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled }.Expand(vertical: true);
         scroll.AddChild(Ui.Margin(column.Expand(), 0, 0, 8, 0).Expand());

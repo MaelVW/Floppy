@@ -6,7 +6,6 @@ using FloppyHub.App.Services;
 using FloppyHub.App.Skin;
 using FloppyHub.App.Ui;
 using Godot;
-using UiKit = FloppyHub.App.Ui.Ui;
 
 namespace FloppyHub.App;
 
@@ -186,7 +185,7 @@ public partial class Main : Control
         _main.Setup(_s, _covers, IsViewKey(view) ? view : "disc", t => ApplyTheme(t), ApplyScale, ApplyLanguage);
     }
 
-    private static bool IsViewKey(string v) => v is "disc" or "library" or "write" or "drives" or "chat" or "game" or "log" or "settings";
+    private static bool IsViewKey(string v) => v is "disc" or "library" or "write" or "drives" or "chat" or "game" or "log" or "settings" or "help";
 
     /// <summary>Nur die Rueckfrage - fuer den Motor, wenn die App nicht offen ist.</summary>
     private void BuildCompact()
@@ -287,11 +286,7 @@ public partial class Main : Control
     private void ShowUpdateDialog(Floppy.Core.Updates.UpdateInfo info)
     {
         if (_main is null || _quitting) return;
-        var d = new RetroDialog(Loc.T("UPDATE_TITLE"), "cloud", 460);
-        d.Body.AddChild(UiKit.HBox(12, Icons.Rect("cloud", 2f), UiKit.Label(Loc.T("UPDATE_TEXT", info.Version), wrap: true).Expand()));
-        d.AddButton(Loc.T("UPDATE_BTN_GET"), () => OS.ShellOpen(info.HtmlUrl), icon: "cloud");
-        d.AddButton(Loc.T("UPDATE_BTN_LATER"), () => _s.Updates.Skip(info.Version));
-        d.Open(_main.DialogLayer);
+        RetroDialog.Update(_main.DialogLayer, info.Version, info.HtmlUrl, () => _s.Updates.Skip(info.Version));
     }
 
     // ------------------------------------------------------------------
