@@ -26,6 +26,12 @@ public sealed class AppSettings
     /// <summary>Gratis-Dienst fuer den Online-Chat (ntfy). Leer = ntfy.sh.</summary>
     public string ChatServer { get; set; } = "";
 
+    /// <summary>Woher die Update-Pruefung ihre Daten holt. Leer = eingebauter GitHub-Feed.</summary>
+    public string UpdateFeedUrl { get; set; } = "";
+
+    /// <summary>Diese Version wurde per "Spaeter" abgelehnt - nicht nochmal vorschlagen.</summary>
+    public string SkippedUpdateVersion { get; set; } = "";
+
     public static AppSettings Load(string file)
     {
         var s = new AppSettings();
@@ -46,6 +52,8 @@ public sealed class AppSettings
             s.FirstRunDone = ini.GetBool("app", "first_run_done", false);
             s.PlayerName = Floppy.Core.Minigame.ScoreBoard.CleanName(ini.Get("game", "player", ""));
             s.ChatServer = (ini.Get("chat", "server", "") ?? "").Trim();
+            s.UpdateFeedUrl = (ini.Get("update", "feed_url", "") ?? "").Trim();
+            s.SkippedUpdateVersion = (ini.Get("update", "skipped_version", "") ?? "").Trim();
         }
         catch
         {
@@ -70,7 +78,11 @@ public sealed class AppSettings
             .AppendLine($"player = {PlayerName}")
             .AppendLine("[chat]")
             .AppendLine("; leer = https://ntfy.sh (oder eigener ntfy-Server, nur https)")
-            .AppendLine($"server = {ChatServer}");
+            .AppendLine($"server = {ChatServer}")
+            .AppendLine("[update]")
+            .AppendLine("; leer = eingebauter GitHub-Feed")
+            .AppendLine($"feed_url = {UpdateFeedUrl}")
+            .AppendLine($"skipped_version = {SkippedUpdateVersion}");
         FloppyPaths.EnsureDirectory(Path.GetDirectoryName(file)!);
         File.WriteAllText(file, sb.ToString(), new UTF8Encoding(true));
     }

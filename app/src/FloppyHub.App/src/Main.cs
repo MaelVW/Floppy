@@ -6,6 +6,7 @@ using FloppyHub.App.Services;
 using FloppyHub.App.Skin;
 using FloppyHub.App.Ui;
 using Godot;
+using UiKit = FloppyHub.App.Ui.Ui;
 
 namespace FloppyHub.App;
 
@@ -60,6 +61,7 @@ public partial class Main : Control
         if (_s.OptionsProblem is not null) _s.Log.Write(LogLevel.Warn, "App: " + _s.OptionsProblem);
 
         if (!_compact && (!_s.Settings.FirstRunDone || args.FirstRun)) Callable.From(ShowFirstRun).CallDeferred();
+        else if (!_compact && !_s.ReadOnlyMode) CheckForUpdate();
         if (args.Screenshot is not null) TakeScreenshotLater(args.Screenshot, args.View);
     }
 
@@ -270,6 +272,26 @@ public partial class Main : Control
     {
         ApplyLanguage(language);
         ShowFirstRun();   // Dialog in der neuen Sprache wieder oeffnen
+    }
+
+    // ------------------------------------------------------------------
+    // Update-Pruefung
+    // ------------------------------------------------------------------
+
+    private void CheckForUpdate()
+    {
+        var current = (string)ProjectSettings.GetSetting("application/config/version");
+        _s.Updates.CheckInBackground(current, info => Callable.From(() => ShowUpdateDialog(info)).CallDeferred());
+    }
+
+    private void ShowUpdateDialog(Floppy.Core.Updates.UpdateInfo info)
+    {
+        if (_main is null || _quitting) return;
+        var d = new RetroDialog(Loc.T("UPDATE_TITLE"), "cloud", 460);
+        d.Body.AddChild(UiKit.HBox(12, Icons.Rect("cloud", 2f), UiKit.Label(Loc.T("UPDATE_TEXT", info.Version), wrap: true).Expand()));
+        d.AddButton(Loc.T("UPDATE_BTN_GET"), () => OS.ShellOpen(info.HtmlUrl), icon: "cloud");
+        d.AddButton(Loc.T("UPDATE_BTN_LATER"), () => _s.Updates.Skip(info.Version));
+        d.Open(_main.DialogLayer);
     }
 
     // ------------------------------------------------------------------

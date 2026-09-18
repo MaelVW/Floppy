@@ -437,7 +437,9 @@ public partial class ChatView : ViewBase
         (string text, string? yes, string? no) = p.Stage switch
         {
             ProposalStage.Waiting => (Loc.T("CHAT_BANNER_WAITING", p.YesCount, p.NoCount, p.AskedCount, seconds), null, null),
-            ProposalStage.Asking => (Loc.T("CHAT_BANNER_ASKING", name, seconds), Loc.T("CHAT_BTN_APPROVE"), Loc.T("CHAT_BTN_DECLINE")),
+            ProposalStage.Asking => (p.Wifi is { } wifi
+                ? Loc.T("CHAT_BANNER_ASKING_WIFI", name, seconds, wifi)
+                : Loc.T("CHAT_BANNER_ASKING", name, seconds), Loc.T("CHAT_BTN_APPROVE"), Loc.T("CHAT_BTN_DECLINE")),
             ProposalStage.Joining => (Loc.T("CHAT_BANNER_JOINING"), null, null),
             ProposalStage.Declined => (Loc.T("CHAT_BANNER_DECLINED"), null, null),
             _ => (Loc.T("CHAT_BANNER_COUNTDOWN", seconds), Loc.T("CHAT_BTN_FOLLOW"), Loc.T("CHAT_BTN_LEAVE_NOW")),

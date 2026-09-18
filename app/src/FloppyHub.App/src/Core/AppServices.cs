@@ -52,6 +52,11 @@ public sealed class AppServices
     /// <summary>Chat (lebt so lange wie die App, auch wenn die Oberflaeche neu gebaut wird).</summary>
     public Services.ChatService Chat => _chat ??= new Services.ChatService(this);
 
+    private Services.UpdateService? _updates;
+
+    /// <summary>Prueft einmal pro Start im Hintergrund auf ein neueres Release.</summary>
+    public Services.UpdateService Updates => _updates ??= new Services.UpdateService(this);
+
     private static string DefaultHome()
     {
         // Exportierte App: Ordner der FloppyHub.exe. Im Editor: Projektordner (zum Testen).

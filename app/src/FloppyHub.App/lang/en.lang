@@ -518,6 +518,7 @@ CHAT_N_SCORES_REQUESTED = Leaderboard requested …
 
 CHAT_BANNER_WAITING = Waiting for answers: {0} coming along · {1} staying online · {2} asked · {3} s left
 CHAT_BANNER_ASKING = {0} wants to switch to the local network (same network needed). Coming along? {1} s left
+CHAT_BANNER_ASKING_WIFI = {0} wants to switch to the local network – best to be on Wi-Fi "{2}". Coming along? {1} s left
 CHAT_BANNER_JOINING = Connecting to the local room …
 CHAT_BANNER_DECLINED = You're staying online. If the room switches anyway, you'll be disconnected.
 CHAT_BANNER_COUNTDOWN = The room switched to the local network. You'll be disconnected in {0} s.
@@ -666,6 +667,12 @@ FIRST_TITLE = Welcome
 FIRST_HEADLINE = Welcome to Floppy Hub!
 FIRST_TEXT = Insert a floppy – known things start right away, new things are confirmed once. You can change language and appearance anytime under “Options”.
 FIRST_GO = Let's go
+
+# ---- Update ----
+UPDATE_TITLE = Update available
+UPDATE_TEXT = A newer version is out: Floppy Hub {0}. Download it now?
+UPDATE_BTN_GET = Download
+UPDATE_BTN_LATER = Later
 
 # ---- About ----
 ABOUT_TITLE = About Floppy Hub

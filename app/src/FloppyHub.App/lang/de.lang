@@ -518,6 +518,7 @@ CHAT_N_SCORES_REQUESTED = Rangliste angefragt …
 
 CHAT_BANNER_WAITING = Warte auf Antworten: {0} kommen mit · {1} bleiben online · {2} gefragt · noch {3} s
 CHAT_BANNER_ASKING = {0} möchte ins lokale Netzwerk wechseln (gleiches Netzwerk nötig). Kommst du mit? Noch {1} s
+CHAT_BANNER_ASKING_WIFI = {0} möchte ins lokale Netzwerk wechseln – am besten im WLAN „{2}“ sein. Kommst du mit? Noch {1} s
 CHAT_BANNER_JOINING = Verbinde mit dem lokalen Raum …
 CHAT_BANNER_DECLINED = Du bleibst online. Wechselt der Raum trotzdem, wirst du danach getrennt.
 CHAT_BANNER_COUNTDOWN = Der Raum ist ins lokale Netzwerk gewechselt. Du wirst in {0} s getrennt.
@@ -666,6 +667,12 @@ FIRST_TITLE = Willkommen
 FIRST_HEADLINE = Willkommen bei Floppy Hub!
 FIRST_TEXT = Lege eine Diskette ein – Bekanntes startet sofort, Neues wird einmal nachgefragt. Sprache und Aussehen kannst du jederzeit unter „Optionen“ ändern.
 FIRST_GO = Los geht's
+
+# ---- Update ----
+UPDATE_TITLE = Update verfügbar
+UPDATE_TEXT = Es gibt eine neuere Version: Floppy Hub {0}. Jetzt herunterladen?
+UPDATE_BTN_GET = Herunterladen
+UPDATE_BTN_LATER = Später
 
 # ---- Über ----
 ABOUT_TITLE = Über Floppy Hub
