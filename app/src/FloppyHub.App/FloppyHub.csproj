@@ -11,7 +11,7 @@
     <Company>MaelVW</Company>
     <Copyright>Copyright (c) 2026 MaelVW</Copyright>
     <Version>2.0.0</Version>
-    <InformationalVersion>2.0.0-beta.2</InformationalVersion>
+    <InformationalVersion>2.0.0-beta.3</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -449,6 +449,19 @@ public partial class Main : Control
                 demo.Tom.SendText("Jetzt ohne Dienst und ohne Limit.", DateTimeOffset.UtcNow);
                 await Seconds(0.3);
                 break;
+            case "chat-chess":
+                _s.Chat.Session!.ChallengeChess(demo.Tom!.Me.Id, DateTimeOffset.UtcNow);
+                await WaitUntil(() => demo.Tom.Chess is not null, 5);
+                demo.Tom.AnswerChessChallenge(true, DateTimeOffset.UtcNow);
+                await WaitUntil(() => _s.Chat.Session!.Chess is { Stage: Floppy.Core.Chat.ChessGameStage.Active }, 5);
+                Floppy.Core.Chess.ChessMove.TryParse("e2e4", out var wm1); _s.Chat.Session!.MakeChessMove(wm1, DateTimeOffset.UtcNow);
+                await WaitUntil(() => demo.Tom.Chess!.Board.History.Count == 1, 5);
+                Floppy.Core.Chess.ChessMove.TryParse("e7e5", out var bm1); demo.Tom.MakeChessMove(bm1, DateTimeOffset.UtcNow);
+                await WaitUntil(() => _s.Chat.Session!.Chess!.Board.History.Count == 2, 5);
+                Floppy.Core.Chess.ChessMove.TryParse("g1f3", out var wm2); _s.Chat.Session!.MakeChessMove(wm2, DateTimeOffset.UtcNow);
+                await WaitUntil(() => demo.Tom.Chess!.Board.History.Count == 3, 5);
+                _main.ShowView("chess");
+                break;
             case "chat-scores":
                 _main.OpenChatScores();
                 await Seconds(3);

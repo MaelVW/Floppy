@@ -16,8 +16,8 @@ public sealed record Level(string Name, IReadOnlyList<string> Rows)
     /// </summary>
     public string Id => LevelPack.LevelIdOf(Rows);   // berechnet, damit "with { Rows = ... }" stimmt
 
-    /// <summary>Anzahl Disketten (fuer die Punkte).</summary>
-    public int Boxes => Rows.Sum(r => r.Count(c => c is '$' or '*'));
+    /// <summary>Anzahl Disketten (fuer die Punkte) - normal, farbig oder mit begrenzter Reichweite.</summary>
+    public int Boxes => Rows.Sum(r => r.Count(c => c is '$' or '*' or 'R' or 'B' || c is >= '1' and <= '9'));
 
     /// <summary>ID lesbar: <c>3F9A-0C1B-22D7</c>.</summary>
     public string DisplayId => Id.Length == 12 ? $"{Id[..4]}-{Id[4..8]}-{Id[8..]}" : Id;
@@ -43,6 +43,8 @@ public sealed record LevelProblem(string Code, IReadOnlyList<string> Args);
 /// </code>
 /// Zeichen: <c>#</c> Wand, <c>@</c> Spieler, <c>$</c> Diskette, <c>.</c> Laufwerk,
 /// <c>*</c> Diskette im Laufwerk, <c>+</c> Spieler auf Laufwerk, Leerzeichen/<c>-</c>/<c>_</c> Boden.
+/// Farbige Disketten (passen nur ins gleichfarbige Laufwerk): <c>R</c>/<c>r</c> rot, <c>B</c>/<c>b</c> blau.
+/// <c>1</c>-<c>9</c>: normale Diskette, aber nur noch so oft schiebbar (dann steht sie fest).
 /// </summary>
 public sealed record LevelPack(string Title, string Author, IReadOnlyList<Level> Levels, string Id, IReadOnlyList<string> Problems)
 {
@@ -54,7 +56,7 @@ public sealed record LevelPack(string Title, string Author, IReadOnlyList<Level>
     /// <summary>Erlaubte Dateiendungen fuer Levelpakete auf Disketten.</summary>
     public static IReadOnlyList<string> Extensions { get; } = [".txt"];
 
-    private const string TileChars = "#@+$*. -_";
+    private const string TileChars = "#@+$*. -_RrBb123456789";
 
     public static LevelPack Load(string path)
     {
@@ -138,13 +140,15 @@ public sealed record LevelPack(string Title, string Author, IReadOnlyList<Level>
         { Code: "MANY_PLAYERS" } => "mehr als ein Spieler (@)",
         { Code: "NO_BOX" } => "keine Diskette ($)",
         { Code: "COUNT_MISMATCH" } p => $"{p.Args[0]} Disketten, aber {p.Args[1]} Laufwerke",
+        { Code: "RED_MISMATCH" } p => $"{p.Args[0]} rote Disketten, aber {p.Args[1]} rote Laufwerke",
+        { Code: "BLUE_MISMATCH" } p => $"{p.Args[0]} blaue Disketten, aber {p.Args[1]} blaue Laufwerke",
         _ => "ist schon geloest",
     };
 
     /// <summary>
     /// Warum das Level nicht spielbar ist, als Kennung fuer die Uebersetzung (<c>LEVEL_&lt;Code&gt;</c>):
     /// EMPTY, TOO_BIG (Breite, Hoehe), UNKNOWN_CHAR (Zeichen), NO_PLAYER, MANY_PLAYERS, NO_BOX,
-    /// COUNT_MISMATCH (Disketten, Laufwerke), SOLVED - oder <c>null</c>.
+    /// COUNT_MISMATCH/RED_MISMATCH/BLUE_MISMATCH (Disketten, Laufwerke je Art), SOLVED - oder <c>null</c>.
     /// </summary>
     public static LevelProblem? Check(IReadOnlyList<string> rows)
     {
@@ -152,6 +156,7 @@ public sealed record LevelPack(string Title, string Author, IReadOnlyList<Level>
         if (rows.Count > MaxHeight || rows.Any(r => r.Length > MaxWidth)) return new("TOO_BIG", [MaxWidth.ToString(), MaxHeight.ToString()]);
 
         int players = 0, boxes = 0, goals = 0, boxesOnGoal = 0;
+        int redBoxes = 0, redGoals = 0, blueBoxes = 0, blueGoals = 0;
         foreach (var row in rows)
         {
             foreach (var c in row)
@@ -164,13 +169,20 @@ public sealed record LevelPack(string Title, string Author, IReadOnlyList<Level>
                     case '$': boxes++; break;
                     case '.': goals++; break;
                     case '*': boxes++; goals++; boxesOnGoal++; break;
+                    case >= '1' and <= '9': boxes++; break;
+                    case 'R': redBoxes++; break;
+                    case 'r': redGoals++; break;
+                    case 'B': blueBoxes++; break;
+                    case 'b': blueGoals++; break;
                 }
             }
         }
         if (players != 1) return new(players == 0 ? "NO_PLAYER" : "MANY_PLAYERS", []);
-        if (boxes == 0) return new("NO_BOX", []);
+        if (boxes + redBoxes + blueBoxes == 0) return new("NO_BOX", []);
         if (boxes != goals) return new("COUNT_MISMATCH", [boxes.ToString(), goals.ToString()]);
-        if (boxesOnGoal == boxes) return new("SOLVED", []);
+        if (redBoxes != redGoals) return new("RED_MISMATCH", [redBoxes.ToString(), redGoals.ToString()]);
+        if (blueBoxes != blueGoals) return new("BLUE_MISMATCH", [blueBoxes.ToString(), blueGoals.ToString()]);
+        if (boxesOnGoal == boxes && redBoxes == 0 && blueBoxes == 0) return new("SOLVED", []);
         return null;
     }
 

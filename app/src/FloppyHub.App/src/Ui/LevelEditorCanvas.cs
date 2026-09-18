@@ -29,6 +29,9 @@ public partial class LevelEditorCanvas : Control
     public LevelDraft Draft { get; private set; } = new();
     public EditorTool Tool { get; set; } = EditorTool.Wall;
 
+    /// <summary>Schub-Reichweite (1-9) fuer <see cref="EditorTool.RangeBox"/>.</summary>
+    public int Range { get; set; } = 3;
+
     /// <summary>Etwas wurde gemalt.</summary>
     public event Action? Changed;
 
@@ -80,7 +83,7 @@ public partial class LevelEditorCanvas : Control
     private void PaintAt(Vector2 position)
     {
         if (CellAt(position) is not { } cell) return;
-        if (!Draft.Paint(cell.X, cell.Y, _strokeTool)) return;
+        if (!Draft.Paint(cell.X, cell.Y, _strokeTool, Range)) return;
         QueueRedraw();
         Changed?.Invoke();
     }
@@ -133,6 +136,9 @@ public partial class LevelEditorCanvas : Control
                 if (c == '$') DrawTextureRect(box, r, false);
                 if (c == '*') DrawTextureRect(boxDone, r, false);
                 if (c is '@' or '+') DrawTextureRect(player, r, false);
+                if (c is 'r' or 'b') { DrawTextureRect(goal, r, false); DrawKindBadge(r, tile, c == 'r' ? p.Error : p.Accent); }
+                if (c is 'R' or 'B') { DrawTextureRect(box, r, false); DrawKindBadge(r, tile, c == 'R' ? p.Error : p.Accent); }
+                if (c is >= '1' and <= '9') { DrawTextureRect(box, r, false); DrawRangeNumber(r, tile, c - '0'); }
             }
         }
 
@@ -144,5 +150,24 @@ public partial class LevelEditorCanvas : Control
 
         if (_hover is { } h)
             DrawRect(new Rect2(origin + new Vector2(h.X * tile, h.Y * tile), tile, tile), new Color("#ffe07a"), false, UiScale.Line * 2);
+    }
+
+    private void DrawKindBadge(Rect2 r, float tile, Color color)
+    {
+        var size = MathF.Max(6, tile * 0.3f);
+        var badge = new Rect2(r.Position.X + tile - size - 2, r.Position.Y + 2, size, size);
+        DrawRect(badge, new Color(0, 0, 0, 0.5f));
+        DrawRect(badge.Grow(-1.5f), color);
+    }
+
+    private void DrawRangeNumber(Rect2 r, float tile, int left)
+    {
+        var font = SkinBuilder.BoldFont;
+        var size = Math.Max(10, (int)(tile * 0.5f));
+        var text = left.ToString();
+        var textSize = font.GetStringSize(text, HorizontalAlignment.Center, -1, size);
+        var pos = new Vector2(r.Position.X + (tile - textSize.X) / 2, r.Position.Y + (tile + textSize.Y) / 2);
+        DrawString(font, pos + Vector2.One, text, HorizontalAlignment.Left, -1, size, Colors.Black);
+        DrawString(font, pos, text, HorizontalAlignment.Left, -1, size, Colors.White);
     }
 }

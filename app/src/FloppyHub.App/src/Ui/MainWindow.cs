@@ -84,6 +84,7 @@ public partial class MainWindow : PanelContainer, IAppHost
     private Floppy.Core.Chat.ChatSession? _seenChatSession;
     private int _seenChatLines;
     private string? _seenProposal;
+    private string? _seenChess;
 
     /// <summary>Statusleiste + Hinweis auf neue Nachrichten, wenn der Chat gerade nicht sichtbar ist.</summary>
     private void OnChatChanged()
@@ -115,6 +116,24 @@ public partial class MainWindow : PanelContainer, IAppHost
             }
         }
         _seenChatLines = lines.Count;
+
+        var chess = session?.Chess;
+        _status.SetVisible("chess", chess is { Stage: Floppy.Core.Chat.ChessGameStage.Active or Floppy.Core.Chat.ChessGameStage.Offering });
+        if (chess is { Stage: Floppy.Core.Chat.ChessGameStage.Active or Floppy.Core.Chat.ChessGameStage.Offering })
+            _status.Set("chess", Loc.T(chess.MyTurn ? "STATUS_CHESS_YOURTURN" : "STATUS_CHESS_WAITING"), chess.MyTurn ? "led_warn" : "led_on");
+
+        if (chess is null) { _seenChess = null; }
+        else if (_current != "chess")
+        {
+            var key = chess.Id + chess.Stage + chess.MyTurn;
+            if (key != _seenChess)
+            {
+                _seenChess = key;
+                var name = chat.NameOf(chess.OpponentFingerprint, chess.OpponentId);
+                if (chess is { Stage: Floppy.Core.Chat.ChessGameStage.Offering, IsMine: false }) SetStatusMessage(Loc.T("CHESS_NEW_CHALLENGE", name), "chess");
+                else if (chess is { Stage: Floppy.Core.Chat.ChessGameStage.Active, MyTurn: true }) SetStatusMessage(Loc.T("CHESS_NEW_TURN", name), "chess");
+            }
+        }
     }
 
     /// <summary>Nur fuer Bildschirmfotos der Easter Eggs.</summary>
@@ -141,6 +160,8 @@ public partial class MainWindow : PanelContainer, IAppHost
         _status.AddCell("message", 0, expand: true);
         _status.AddCell("chat", 150);
         _status.SetVisible("chat", false);
+        _status.AddCell("chess", 130);
+        _status.SetVisible("chess", false);
         _status.AddCell("library", 120);
 
         var layout = Ui.VBox(0, Ui.Panel("WindowPanel", menu), toolbar, _viewHost, _status);
@@ -166,6 +187,7 @@ public partial class MainWindow : PanelContainer, IAppHost
         AddView(new WriteView());
         AddView(new DrivesView());
         AddView(new ChatView());
+        AddView(new ChessView());
         AddView(new GameView());
         AddView(new LogView());
         AddView(new SettingsView());
@@ -194,6 +216,7 @@ public partial class MainWindow : PanelContainer, IAppHost
         Tool("drives", "drives");
         row.AddChild(new VSeparator());
         Tool("chat", "chat");
+        Tool("chess", "chess");
         Tool("game", "game");
         row.AddChild(new VSeparator());
         Tool("log", "log");
@@ -250,7 +273,7 @@ public partial class MainWindow : PanelContainer, IAppHost
             (203, "MENU_EXAMPLES", "folder", Key.None));
 
         _viewMenu = Menu("MENU_VIEW");
-        var views = new[] { "disc", "library", "write", "drives", "chat", "game", "log", "settings" };
+        var views = new[] { "disc", "library", "write", "drives", "chat", "chess", "game", "log", "settings" };
         for (var i = 0; i < views.Length; i++)
             _viewMenu.AddRadioCheckItem(Loc.T("VIEW_" + views[i].ToUpperInvariant()), 300 + i);
         _viewMenu.AddSeparator();
@@ -289,8 +312,8 @@ public partial class MainWindow : PanelContainer, IAppHost
                 var examples = System.IO.Path.Combine(Services.Paths.Home, "beispiele");
                 OS.ShellOpen(Directory.Exists(examples) ? examples : Services.Paths.Home);
                 break;
-            case >= 300 and < 308:
-                ShowView(new[] { "disc", "library", "write", "drives", "chat", "game", "log", "settings" }[id - 300]);
+            case >= 300 and < 309:
+                ShowView(new[] { "disc", "library", "write", "drives", "chat", "chess", "game", "log", "settings" }[id - 300]);
                 break;
             case 310: _applyTheme(AppSettings.ThemeSystem); break;
             case 311: _applyTheme(AppSettings.ThemeLight); break;
@@ -324,8 +347,8 @@ public partial class MainWindow : PanelContainer, IAppHost
         // SetPressedNoSignal kuemmert sich nicht um die ButtonGroup - alle selbst setzen
         foreach (var (k, tool) in _tools) tool.SetPressedNoSignal(k == key);
 
-        var index = Array.IndexOf(new[] { "disc", "library", "write", "drives", "chat", "game", "log", "settings" }, key);
-        for (var i = 0; i < 8; i++) _viewMenu.SetItemChecked(_viewMenu.GetItemIndex(300 + i), i == index);
+        var index = Array.IndexOf(new[] { "disc", "library", "write", "drives", "chat", "chess", "game", "log", "settings" }, key);
+        for (var i = 0; i < 9; i++) _viewMenu.SetItemChecked(_viewMenu.GetItemIndex(300 + i), i == index);
 
         _views[key].OnShown();
     }

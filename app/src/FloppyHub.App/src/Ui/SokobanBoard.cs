@@ -141,7 +141,11 @@ public partial class SokobanBoard : Control
                 if (g.IsInside(x, y))
                 {
                     DrawTextureRect(floor, r, false);
-                    if (g.IsGoal(x, y)) DrawTextureRect(goal, r, false);
+                    if (g.GoalKind(x, y) is { } gk)
+                    {
+                        DrawTextureRect(goal, r, false);
+                        if (gk != DiskKind.Universal) DrawKindBadge(r, tile, KindColor(gk, p));
+                    }
                 }
                 else if (g.IsWall(x, y) && TouchesInside(g, x, y))
                 {
@@ -151,7 +155,13 @@ public partial class SokobanBoard : Control
         }
 
         foreach (var (bx, by) in g.Boxes)
-            DrawTextureRect(g.IsGoal(bx, by) ? boxDone : box, new Rect2(origin + new Vector2(bx * tile, by * tile), tile, tile), false);
+        {
+            var state = g.Box(bx, by)!.Value;
+            var r = new Rect2(origin + new Vector2(bx * tile, by * tile), tile, tile);
+            DrawTextureRect(g.GoalKind(bx, by) == state.Kind ? boxDone : box, r, false);
+            if (state.Kind != DiskKind.Universal) DrawKindBadge(r, tile, KindColor(state.Kind, p));
+            if (state.RangeLeft is { } left) DrawRangeNumber(r, tile, left);
+        }
 
         var pr = new Rect2(origin + new Vector2(g.Player.X * tile, g.Player.Y * tile), tile, tile);
         if (g.Facing == Direction.Left)
@@ -167,6 +177,29 @@ public partial class SokobanBoard : Control
 
         if (g.IsSolved) DrawBanner(Loc.T("GAME_SOLVED_BANNER"));
         else if (!HasFocus()) DrawBanner(Loc.T("GAME_CLICK_TO_PLAY"), small: true);
+    }
+
+    private static Color KindColor(DiskKind kind, Palette p) => kind == DiskKind.Red ? p.Error : p.Accent;
+
+    /// <summary>Farbige Ecke: zeigt, dass Diskette/Laufwerk nur zueinander passen (nicht zu normalen).</summary>
+    private void DrawKindBadge(Rect2 r, float tile, Color color)
+    {
+        var size = MathF.Max(6, tile * 0.3f);
+        var badge = new Rect2(r.Position.X + tile - size - 2, r.Position.Y + 2, size, size);
+        DrawRect(badge, new Color(0, 0, 0, 0.5f));
+        DrawRect(badge.Grow(-1.5f), color);
+    }
+
+    /// <summary>Verbleibende Schub-Reichweite als Zahl auf der Diskette.</summary>
+    private void DrawRangeNumber(Rect2 r, float tile, int left)
+    {
+        var font = SkinBuilder.BoldFont;
+        var size = Math.Max(10, (int)(tile * 0.5f));
+        var text = left.ToString();
+        var textSize = font.GetStringSize(text, HorizontalAlignment.Center, -1, size);
+        var pos = new Vector2(r.Position.X + (tile - textSize.X) / 2, r.Position.Y + (tile + textSize.Y) / 2);
+        DrawString(font, pos + Vector2.One, text, HorizontalAlignment.Left, -1, size, Colors.Black);
+        DrawString(font, pos, text, HorizontalAlignment.Left, -1, size, Colors.White);
     }
 
     private static bool TouchesInside(SokobanGame g, int x, int y)

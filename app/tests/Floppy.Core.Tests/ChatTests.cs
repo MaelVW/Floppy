@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Floppy.Core.Chat;
+using Floppy.Core.Chess;
 
 namespace Floppy.Core.Tests;
 
@@ -598,5 +599,133 @@ public class ChatSessionTests
     {
         Assert.Equal("a b c", ChatSession.CleanText("a b\r\n\tc "));
         Assert.Equal("", ChatSession.CleanText(null));
+    }
+
+    // ------------------------------------------------------------------
+    // Schach im Chat
+    // ------------------------------------------------------------------
+
+    private static ChessMove ParseMove(string notation)
+    {
+        Assert.True(ChessMove.TryParse(notation, out var move));
+        return move;
+    }
+
+    [Fact]
+    public void Challenge_accept_and_play_a_move()
+    {
+        var (a, _) = Join();
+        var (b, _) = Join();
+        Advance(3);
+
+        Assert.Equal(ChatResult.Ok, a.ChallengeChess(b.Me.Id, _now));
+        Settle(() => b.Chess is { Stage: ChessGameStage.Offering });
+        Assert.False(b.Chess!.IsMine);
+
+        b.AnswerChessChallenge(true, _now);
+        Settle(() => a.Chess is { Stage: ChessGameStage.Active } && b.Chess is { Stage: ChessGameStage.Active });
+        Assert.Equal(ChessColor.White, a.Chess!.MyColor);
+        Assert.Equal(ChessColor.Black, b.Chess!.MyColor);
+
+        Assert.Equal(ChatResult.Ok, a.MakeChessMove(ParseMove("e2e4"), _now));
+        Settle(() => b.Chess!.Board.History.Count == 1);
+        Assert.Equal(new ChessPiece(ChessPieceKind.Pawn, ChessColor.White), b.Chess!.Board.At(new ChessSquare(4, 3)));
+        Assert.Equal(ChessColor.Black, b.Chess!.Board.Turn);
+    }
+
+    [Fact]
+    public void Declining_clears_the_offer_on_both_sides()
+    {
+        var (a, _) = Join();
+        var (b, _) = Join();
+        Advance(3);
+        a.ChallengeChess(b.Me.Id, _now);
+        Settle(() => b.Chess is not null);
+
+        b.AnswerChessChallenge(false, _now);
+        Assert.Null(b.Chess);
+        Settle(() => a.Chess is null);
+    }
+
+    [Fact]
+    public void Cannot_move_out_of_turn_or_challenge_while_a_match_is_running()
+    {
+        var (a, _) = Join();
+        var (b, _) = Join();
+        Advance(3);
+        a.ChallengeChess(b.Me.Id, _now);
+        Settle(() => b.Chess is not null);
+        b.AnswerChessChallenge(true, _now);
+        Settle(() => a.Chess is { Stage: ChessGameStage.Active });
+
+        Assert.Equal(ChatResult.WrongTurn, b.MakeChessMove(ParseMove("e7e5"), _now));   // schwarz ist noch nicht am Zug
+        Assert.Equal(ChatResult.Busy, a.ChallengeChess(b.Me.Id, _now));            // schon eine Partie am Laufen
+    }
+
+    [Fact]
+    public void Challenging_an_unknown_id_is_not_found()
+    {
+        var (a, _) = Join();
+        Advance(3);
+        Assert.Equal(ChatResult.NotFound, a.ChallengeChess("0000-0000-0000", _now));
+    }
+
+    [Fact]
+    public void Resigning_ends_the_match_for_both_sides()
+    {
+        var (a, _) = Join();
+        var (b, _) = Join();
+        Advance(3);
+        a.ChallengeChess(b.Me.Id, _now);
+        Settle(() => b.Chess is not null);
+        b.AnswerChessChallenge(true, _now);
+        Settle(() => a.Chess is { Stage: ChessGameStage.Active });
+
+        a.ResignChess(_now);
+        Assert.Equal(ChessGameStage.Ended, a.Chess!.Stage);
+        Assert.Equal(ChatNotice.ChessYouResigned, a.Chess!.EndReason);
+        Settle(() => b.Chess is { Stage: ChessGameStage.Ended });
+        Assert.Equal(ChatNotice.ChessOpponentResigned, b.Chess!.EndReason);
+    }
+
+    [Fact]
+    public void Fools_mate_over_chat_ends_the_match_with_the_right_winner_on_both_sides()
+    {
+        var (a, _) = Join();
+        var (b, _) = Join();
+        Advance(3);
+        a.ChallengeChess(b.Me.Id, _now);
+        Settle(() => b.Chess is not null);
+        b.AnswerChessChallenge(true, _now);
+        Settle(() => a.Chess is { Stage: ChessGameStage.Active });   // a = Weiss, b = Schwarz
+
+        a.MakeChessMove(ParseMove("f2f3"), _now);
+        Settle(() => b.Chess!.Board.History.Count == 1);
+        b.MakeChessMove(ParseMove("e7e5"), _now);
+        Settle(() => a.Chess!.Board.History.Count == 2);
+        a.MakeChessMove(ParseMove("g2g4"), _now);
+        Settle(() => b.Chess!.Board.History.Count == 3);
+        Assert.Equal(ChatResult.Ok, b.MakeChessMove(ParseMove("d8h4"), _now));
+
+        Assert.Equal(ChessGameStage.Ended, b.Chess!.Stage);
+        Assert.Equal(ChatNotice.ChessWon, b.Chess!.EndReason);
+        Settle(() => a.Chess is { Stage: ChessGameStage.Ended });
+        Assert.Equal(ChatNotice.ChessLost, a.Chess!.EndReason);
+    }
+
+    [Fact]
+    public void Opponent_leaving_the_room_ends_an_active_match()
+    {
+        var (a, _) = Join();
+        var (b, _) = Join();
+        Advance(3);
+        a.ChallengeChess(b.Me.Id, _now);
+        Settle(() => b.Chess is not null);
+        b.AnswerChessChallenge(true, _now);
+        Settle(() => a.Chess is { Stage: ChessGameStage.Active });
+
+        b.Leave(_now);
+        Settle(() => a.Chess is { Stage: ChessGameStage.Ended });
+        Assert.Equal(ChatNotice.ChessOpponentLeft, a.Chess!.EndReason);
     }
 }

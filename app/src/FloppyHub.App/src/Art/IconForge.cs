@@ -79,6 +79,7 @@ public static class IconForge
         ["pencil"] = new(16, false, (c, _) => Pencil16(c)),
         ["cloud"] = new(16, false, (c, _) => Cloud16(c)),
         ["door"] = new(16, false, (c, _) => Door16(c)),
+        ["chess"] = new(16, false, (c, _) => Chess16(c)),
 
         // ---- Minispiel-Kacheln (16) ----
         ["tile_floor"] = new(16, false, (c, _) => TileFloor(c)),
@@ -705,6 +706,18 @@ public static class IconForge
         c.Px(9, 8, C("#f2c230"));
         c.Polygon(C("#d64533"), new(12, 6), new(15, 8), new(12, 10));
         c.Outline(C("#3c2410"));
+    }
+
+    private static void Chess16(PixelCanvas c)
+    {
+        var piece = C("#4a4a52");
+        c.Rect(3, 13, 10, 2, piece);   // Sockel
+        c.Rect(5, 11, 6, 2, piece);    // Fuss
+        c.Rect(6, 8, 4, 3, piece);     // Stamm
+        c.Rect(5, 6, 6, 2, piece);     // Kragen
+        c.Disc(8, 4, 3f, piece);       // Kopf
+        c.HLine(6, 2, 3, C("#6f6f7a"));
+        c.Outline(C("#22222a"));
     }
 
     // ==================================================================

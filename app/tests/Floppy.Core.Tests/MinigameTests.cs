@@ -38,6 +38,8 @@ public class LevelPackTests
     [InlineData("#####\n#@..$#\n#####", "Laufwerke")]
     [InlineData("#####\n#@*#\n#####", "schon geloest")]
     [InlineData("#####\n#@$.X#\n#####", "unbekanntes Zeichen")]
+    [InlineData("######\n#@R  #\n######", "rote")]
+    [InlineData("######\n#@B  #\n######", "blaue")]
     public void Kaputte_Level_werden_mit_Grund_uebersprungen(string rows, string fragment)
     {
         var pack = LevelPack.Parse("[level] Kaputt\n" + rows + "\n\n[level] Gut\n#####\n#@$.#\n#####");
@@ -220,6 +222,40 @@ public class SokobanGameTests
         Assert.True(g.IsWall(-1, 0));
         Assert.True(g.IsWall(10, 10));
         Assert.True(g.IsGoal(3, 2));
+    }
+
+    [Fact]
+    public void Farbige_Diskette_passt_nur_ins_gleichfarbige_Laufwerk()
+    {
+        var g = Game("########", "#@R  r #", "########");
+        Assert.Equal(DiskKind.Red, g.Box(2, 1)!.Value.Kind);
+        Assert.Equal(DiskKind.Red, g.GoalKind(5, 1));
+        g.Move(Direction.Right);
+        g.Move(Direction.Right);
+        g.Move(Direction.Right);
+        Assert.True(g.IsSolved);
+    }
+
+    [Fact]
+    public void Falsche_Farbe_zaehlt_nicht_als_geloest()
+    {
+        var g = Game("########", "#@R  b #", "########");   // rote Diskette, blaues Laufwerk
+        for (var i = 0; i < 3; i++) g.Move(Direction.Right);
+        Assert.False(g.IsSolved);
+        Assert.Equal(0, g.BoxesOnGoal);
+    }
+
+    [Fact]
+    public void Diskette_mit_Reichweite_blockiert_nach_dem_Aufbrauchen()
+    {
+        var g = Game("########", "#@1   .#", "########");   // Reichweite 1
+        Assert.Equal(1, g.Box(2, 1)!.Value.RangeLeft);
+        Assert.Equal(MoveResult.Pushed, g.Move(Direction.Right));
+        Assert.Equal(0, g.Box(3, 1)!.Value.RangeLeft);
+        Assert.Equal(MoveResult.Blocked, g.Move(Direction.Right));   // Reichweite aufgebraucht, steht wie eine Wand
+
+        Assert.True(g.Undo());
+        Assert.Equal(1, g.Box(2, 1)!.Value.RangeLeft);   // Reichweite kommt beim Rueckgaengig zurueck
     }
 }
 

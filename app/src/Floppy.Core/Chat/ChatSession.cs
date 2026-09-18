@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
+using Floppy.Core.Chess;
 
 namespace Floppy.Core.Chat;
 
@@ -17,7 +18,7 @@ public enum ChatLineKind
     Theirs,
 }
 
-public enum ChatResult { Ok, Empty, TooLong, NotConnected, TooFast, Alone, NoNetwork, Busy, AlreadyLocal }
+public enum ChatResult { Ok, Empty, TooLong, NotConnected, TooFast, Alone, NoNetwork, Busy, AlreadyLocal, NotFound, WrongTurn }
 
 /// <summary>Schluessel fuer Hinweise im Chatverlauf (die App uebersetzt sie).</summary>
 public static class ChatNotice
@@ -53,6 +54,17 @@ public static class ChatNotice
     public const string LocalPeers = "local_peers";
     public const string Excluded = "excluded";
     public const string ScoresRequested = "scores_requested";
+    public const string ChessChallenged = "chess_challenged";
+    public const string ChessChallengeSent = "chess_challenge_sent";
+    public const string ChessAccepted = "chess_accepted";
+    public const string ChessYouDeclined = "chess_you_declined";
+    public const string ChessDeclined = "chess_declined";
+    public const string ChessWon = "chess_won";
+    public const string ChessLost = "chess_lost";
+    public const string ChessStalemate = "chess_stalemate";
+    public const string ChessYouResigned = "chess_you_resigned";
+    public const string ChessOpponentResigned = "chess_opponent_resigned";
+    public const string ChessOpponentLeft = "chess_opponent_left";
 }
 
 /// <param name="Text">Nachricht - oder bei Hinweisen der Schluessel aus <see cref="ChatNotice"/>.</param>
@@ -174,6 +186,7 @@ public sealed class ChatSession : IDisposable
     public IReadOnlyList<ChatLine> Lines => _lines;
     public IReadOnlyList<ChatMember> Members => _members.Values.OrderByDescending(m => m.IsSelf).ThenBy(m => m.Id, StringComparer.Ordinal).ToList();
     public ChatProposal? Proposal { get; private set; }
+    public ChessGame? Chess { get; private set; }
     public ChatLeaderboard Leaderboard { get; } = new();
     public int LocalPeers => _local?.PeerCount ?? 0;
 
@@ -302,6 +315,86 @@ public sealed class ChatSession : IDisposable
                 p.Stage = ProposalStage.Declined;
             }
         });
+    }
+
+    // ------------------------------------------------------------------
+    // Schach
+    // ------------------------------------------------------------------
+
+    /// <summary>Ein Mitglied (per ID) zum Schach herausfordern.</summary>
+    public ChatResult ChallengeChess(string opponentId, DateTimeOffset now)
+    {
+        if (State != ChatSessionState.Connected) return ChatResult.NotConnected;
+        if (Chess is { Stage: not ChessGameStage.Ended }) return ChatResult.Busy;
+        var target = _members.Values.FirstOrDefault(m => !m.IsSelf && m.Id == opponentId);
+        if (target is null) return ChatResult.NotFound;
+
+        var id = ChatFrame.NewId();
+        Chess = new ChessGame { Id = id, OpponentFingerprint = target.Fingerprint, OpponentId = target.Id, IsMine = true, Stage = ChessGameStage.Offering };
+        Send(now, new ChatPayload { Kind = ChatKinds.ChessOffer, ChessMatch = id, ChessOpponent = target.Id }, Mode);
+        Notice(now, ChatNotice.ChessChallengeSent, target.Fingerprint, target.Id);
+        return ChatResult.Ok;
+    }
+
+    /// <summary>Auf eine hereinkommende Herausforderung antworten.</summary>
+    public void AnswerChessChallenge(bool yes, DateTimeOffset now)
+    {
+        if (Chess is not { IsMine: false, Stage: ChessGameStage.Offering } c) return;
+        if (yes)
+        {
+            c.Stage = ChessGameStage.Active;
+            c.MyColor = ChessColor.Black;   // wer herausfordert, faengt an (Weiss)
+            Send(now, new ChatPayload { Kind = ChatKinds.ChessAccept, ChessMatch = c.Id }, Mode);
+            Notice(now, ChatNotice.ChessAccepted, c.OpponentFingerprint, c.OpponentId);
+        }
+        else
+        {
+            Send(now, new ChatPayload { Kind = ChatKinds.ChessDecline, ChessMatch = c.Id }, Mode);
+            Notice(now, ChatNotice.ChessYouDeclined, c.OpponentFingerprint, c.OpponentId);
+            Chess = null;
+        }
+    }
+
+    /// <summary>Einen Zug spielen (Notation z. B. "e2e4"), wenn man selbst am Zug ist.</summary>
+    public ChatResult MakeChessMove(ChessMove move, DateTimeOffset now)
+    {
+        if (Chess is not { Stage: ChessGameStage.Active } c) return ChatResult.NotConnected;
+        if (!c.MyTurn) return ChatResult.WrongTurn;
+        if (!c.Board.TryMove(move)) return ChatResult.WrongTurn;
+
+        Send(now, new ChatPayload { Kind = ChatKinds.ChessMove, ChessMatch = c.Id, ChessMove = move.Notation }, Mode);
+        Changed();
+        EndChessIfOver(c, now);
+        return ChatResult.Ok;
+    }
+
+    /// <summary>Die laufende oder angebotene Partie aufgeben/zurueckziehen.</summary>
+    public void ResignChess(DateTimeOffset now)
+    {
+        if (Chess is not { Stage: ChessGameStage.Active or ChessGameStage.Offering } c) return;
+        Send(now, new ChatPayload { Kind = ChatKinds.ChessResign, ChessMatch = c.Id }, Mode);
+        c.Stage = ChessGameStage.Ended;
+        c.EndReason = ChatNotice.ChessYouResigned;
+        Notice(now, ChatNotice.ChessYouResigned, c.OpponentFingerprint, c.OpponentId);
+        Changed();
+    }
+
+    private void EndChessIfOver(ChessGame c, DateTimeOffset now)
+    {
+        switch (c.Board.Status)
+        {
+            case ChessStatus.Checkmate:
+                c.Stage = ChessGameStage.Ended;
+                var iWon = c.Board.Turn != c.MyColor;   // wer am Zug ist (und keinen Zug mehr hat) hat verloren
+                c.EndReason = iWon ? ChatNotice.ChessWon : ChatNotice.ChessLost;
+                Notice(now, c.EndReason, c.OpponentFingerprint, c.OpponentId);
+                break;
+            case ChessStatus.Stalemate:
+                c.Stage = ChessGameStage.Ended;
+                c.EndReason = ChatNotice.ChessStalemate;
+                Notice(now, c.EndReason, c.OpponentFingerprint, c.OpponentId);
+                break;
+        }
     }
 
     /// <summary>Rangliste anfordern: alle schicken ihre besten Ergebnisse.</summary>
@@ -622,6 +715,12 @@ public sealed class ChatSession : IDisposable
                     CheckAllDeclined(now);
                 }
             }
+            if (Chess is { Stage: ChessGameStage.Active or ChessGameStage.Offering } game && game.OpponentFingerprint == fp)
+            {
+                game.Stage = ChessGameStage.Ended;
+                game.EndReason = ChatNotice.ChessOpponentLeft;
+                Notice(now, ChatNotice.ChessOpponentLeft, fp, e.SenderId);
+            }
             return;
         }
 
@@ -697,6 +796,41 @@ public sealed class ChatSession : IDisposable
                 if (Proposal is not { IsMine: false } theirs || theirs.Id != p.Proposal || theirs.Stage == ProposalStage.Countdown) break;
                 Proposal = null;
                 Notice(now, p.Reason == "timeout" ? ChatNotice.ProposalTimeout : ChatNotice.ProposalRejected, fp, e.SenderId);
+                break;
+
+            case ChatKinds.ChessOffer:
+                if (p.ChessOpponent != Me.Id || p.ChessMatch is not { } offerId) break;
+                if (Chess is { Stage: not ChessGameStage.Ended }) break;   // schon eine Partie am Laufen/Anfragen
+                Chess = new ChessGame { Id = offerId, OpponentFingerprint = fp, OpponentId = e.SenderId, IsMine = false, Stage = ChessGameStage.Offering };
+                Notice(now, ChatNotice.ChessChallenged, fp, e.SenderId);
+                break;
+
+            case ChatKinds.ChessAccept:
+                if (Chess is not { IsMine: true, Stage: ChessGameStage.Offering } myGame || myGame.Id != p.ChessMatch || fp != myGame.OpponentFingerprint) break;
+                myGame.Stage = ChessGameStage.Active;
+                myGame.MyColor = ChessColor.White;   // wer herausfordert, faengt an
+                Notice(now, ChatNotice.ChessAccepted, fp, e.SenderId);
+                break;
+
+            case ChatKinds.ChessDecline:
+                if (Chess is not { IsMine: true, Stage: ChessGameStage.Offering } declined || declined.Id != p.ChessMatch || fp != declined.OpponentFingerprint) break;
+                Notice(now, ChatNotice.ChessDeclined, fp, e.SenderId);
+                Chess = null;
+                break;
+
+            case ChatKinds.ChessMove:
+                if (Chess is not { Stage: ChessGameStage.Active } active || active.Id != p.ChessMatch || fp != active.OpponentFingerprint) break;
+                if (active.MyTurn) break;   // waere ich am Zug, kann es nicht ihr Zug gewesen sein
+                if (!ChessMove.TryParse(p.ChessMove, out var incoming) || !active.Board.TryMove(incoming)) break;
+                Changed();
+                EndChessIfOver(active, now);
+                break;
+
+            case ChatKinds.ChessResign:
+                if (Chess is not { Stage: ChessGameStage.Active or ChessGameStage.Offering } resigned || resigned.Id != p.ChessMatch || fp != resigned.OpponentFingerprint) break;
+                resigned.Stage = ChessGameStage.Ended;
+                resigned.EndReason = ChatNotice.ChessOpponentResigned;
+                Notice(now, ChatNotice.ChessOpponentResigned, fp, e.SenderId);
                 break;
 
             case ChatKinds.ScoreRequest:

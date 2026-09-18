@@ -51,6 +51,7 @@ public partial class ChatView : ViewBase
     private GroupBox _membersBox = null!;
     private Tree _members = null!;
     private Button _saveContact = null!;
+    private Button _challengeChess = null!;
     private Tree _contacts = null!;
     private Button _connectContact = null!;
     private Button _removeContact = null!;
@@ -131,7 +132,8 @@ public partial class ChatView : ViewBase
         _members.ItemSelected += UpdateButtons;
         _members.ItemActivated += SaveContactFromSelection;
         _saveContact = Ui.Button(Loc.T("CHAT_BTN_SAVE_CONTACT"), "contact", SaveContactFromSelection);
-        _membersBox = new GroupBox(Loc.T("CHAT_MEMBERS", 0), Ui.VBox(6, _members, _saveContact));
+        _challengeChess = Ui.Button(Loc.T("CHAT_BTN_CHALLENGE"), "chess", ChallengeSelectedMember);
+        _membersBox = new GroupBox(Loc.T("CHAT_MEMBERS", 0), Ui.VBox(6, _members, Ui.HBox(6, _saveContact, _challengeChess)));
         _membersBox.SizeFlagsVertical = SizeFlags.ExpandFill;
 
         _contacts = MakeTree(2);
@@ -416,9 +418,21 @@ public partial class ChatView : ViewBase
     {
         var member = _members.GetSelected()?.GetMetadata(0).AsString();
         _saveContact.Disabled = string.IsNullOrEmpty(member) || member == Chat.Identity.Fingerprint || Host.Services.ReadOnlyMode;
+        _challengeChess.Disabled = string.IsNullOrEmpty(member) || member == Chat.Identity.Fingerprint
+            || Chat.Session?.Chess is { Stage: not ChessGameStage.Ended };
         var contact = Chat.ContactOf(_contacts.GetSelected()?.GetMetadata(0).AsString());
         _connectContact.Disabled = contact is not { HasSecret: true };
         _removeContact.Disabled = contact is null;
+    }
+
+    private void ChallengeSelectedMember()
+    {
+        var id = _members.GetSelected()?.GetMetadata(1).AsString();
+        if (string.IsNullOrEmpty(id) || Chat.Session is not { } session) return;
+        var result = session.ChallengeChess(id, DateTimeOffset.UtcNow);
+        if (result == ChatResult.Ok) Host.ShowView("chess");
+        else ShowResult(result);
+        Refresh();
     }
 
     // ---- Wechsel-Vorschlag ----
@@ -516,6 +530,8 @@ public partial class ChatView : ViewBase
             ChatResult.Alone => Loc.T("CHAT_RESULT_ALONE"),
             ChatResult.NoNetwork => Loc.T("CHAT_RESULT_NONETWORK"),
             ChatResult.Busy => Loc.T("CHAT_RESULT_BUSY"),
+            ChatResult.NotFound => Loc.T("CHAT_RESULT_NOTFOUND"),
+            ChatResult.WrongTurn => Loc.T("CHAT_RESULT_WRONGTURN"),
             _ => Loc.T("CHAT_RESULT_NOTCONNECTED"),
         };
         Host.SetStatusMessage(text, "warn");

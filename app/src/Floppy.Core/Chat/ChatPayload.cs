@@ -32,7 +32,19 @@ public static class ChatKinds
     /// <summary>Eigene besten Minispiel-Ergebnisse (Antwort auf <see cref="ScoreRequest"/>).</summary>
     public const string Scores = "scores";
 
-    public static bool IsKnown(string kind) => kind is Join or Here or Leave or Text or Propose or Vote or Switched or Cancel or ScoreRequest or Scores;
+    /// <summary>Schach-Herausforderung an ein bestimmtes Mitglied.</summary>
+    public const string ChessOffer = "chessoffer";
+
+    public const string ChessAccept = "chessaccept";
+    public const string ChessDecline = "chessdecline";
+
+    /// <summary>Ein Halbzug (Notation z. B. "e2e4").</summary>
+    public const string ChessMove = "chessmove";
+
+    public const string ChessResign = "chessresign";
+
+    public static bool IsKnown(string kind) => kind is Join or Here or Leave or Text or Propose or Vote or Switched or Cancel or ScoreRequest or Scores
+        or ChessOffer or ChessAccept or ChessDecline or ChessMove or ChessResign;
 }
 
 /// <summary>Ein Minispiel-Ergebnis fuer die Rangliste im Chatraum.</summary>
@@ -90,6 +102,15 @@ public sealed record ChatPayload
     /// <summary>WLAN-Name des Vorschlagenden (nur eine Empfehlung, kann fehlen) - nur bei <see cref="ChatKinds.Propose"/>.</summary>
     [JsonPropertyName("w")] public string? Wifi { get; init; }
 
+    /// <summary>ID der Schachpartie - bei allen <c>Chess*</c>-Nachrichten dabei.</summary>
+    [JsonPropertyName("m")] public string? ChessMatch { get; init; }
+
+    /// <summary>Ziel-ID (die installationseigene ID des Herausgeforderten) - nur bei <see cref="ChatKinds.ChessOffer"/>.</summary>
+    [JsonPropertyName("o")] public string? ChessOpponent { get; init; }
+
+    /// <summary>Zugnotation, z. B. <c>e2e4</c> oder <c>e7e8q</c> - nur bei <see cref="ChatKinds.ChessMove"/>.</summary>
+    [JsonPropertyName("v")] public string? ChessMove { get; init; }
+
     /// <summary>Formal gueltig? (Fremde Nachrichten werden vor dem Anzeigen geprueft.)</summary>
     public bool IsWellFormed()
     {
@@ -98,6 +119,7 @@ public sealed record ChatPayload
         if (Text is { Length: > MaxTextLength }) return false;
         if (Proposal is { Length: > 32 } || Request is { Length: > 32 } || Reason is { Length: > 32 } || Mode is { Length: > 16 }) return false;
         if (Wifi is { Length: > 32 }) return false;
+        if (ChessMatch is { Length: > 32 } || ChessOpponent is { Length: > 16 } || ChessMove is { Length: > 8 }) return false;
         if (Endpoints is { Length: > MaxEndpoints } || Endpoints?.Any(e => e is null || e.Length > 64) == true) return false;
         if (Scores is { Length: > MaxScores }) return false;
         if (Scores?.Any(s => s is null || s.Game.Length > 24 || s.LevelId.Length > 24 || s.LevelName.Length > 40 ||
@@ -110,6 +132,9 @@ public sealed record ChatPayload
             ChatKinds.Cancel => Proposal is not null,
             ChatKinds.ScoreRequest => Request is not null,
             ChatKinds.Scores => Request is not null && Scores is not null,
+            ChatKinds.ChessOffer => ChessMatch is not null && ChessOpponent is not null,
+            ChatKinds.ChessAccept or ChatKinds.ChessDecline or ChatKinds.ChessResign => ChessMatch is not null,
+            ChatKinds.ChessMove => ChessMatch is not null && ChessMove is not null,
             _ => true,
         };
     }
