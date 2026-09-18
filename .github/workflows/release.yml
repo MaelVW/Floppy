@@ -48,7 +48,6 @@ jobs:
             if (-not $v -and (Get-Content app/src/FloppyHub.App/project.godot -Raw) -match 'config/version="([^"]+)"') { $v = $Matches[1] }
           }
           "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          "prerelease=$(if ($v -like '*-*') { 'true' } else { 'false' })" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           Write-Host "Version: $v"
 
       - name: .NET einrichten
@@ -203,9 +202,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.ver.outputs.version }}
           name: Floppy Hub ${{ steps.ver.outputs.version }}
           draft: false
-          prerelease: ${{ steps.ver.outputs.prerelease == 'true' }}
+          prerelease: ${{ contains(steps.ver.outputs.version, '-') }}
           body_path: ${{ steps.notes.outputs.path }}
           files: |
             dist/FloppyHubSetup-${{ steps.ver.outputs.version }}.exe

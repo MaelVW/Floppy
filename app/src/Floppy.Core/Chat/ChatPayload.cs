@@ -87,6 +87,9 @@ public sealed record ChatPayload
 
     [JsonPropertyName("s")] public ChatScore[]? Scores { get; init; }
 
+    /// <summary>WLAN-Name des Vorschlagenden (nur eine Empfehlung, kann fehlen) - nur bei <see cref="ChatKinds.Propose"/>.</summary>
+    [JsonPropertyName("w")] public string? Wifi { get; init; }
+
     /// <summary>Formal gueltig? (Fremde Nachrichten werden vor dem Anzeigen geprueft.)</summary>
     public bool IsWellFormed()
     {
@@ -94,6 +97,7 @@ public sealed record ChatPayload
         if (Id.Length is < 8 or > 32 || !Id.All(char.IsAsciiHexDigit)) return false;
         if (Text is { Length: > MaxTextLength }) return false;
         if (Proposal is { Length: > 32 } || Request is { Length: > 32 } || Reason is { Length: > 32 } || Mode is { Length: > 16 }) return false;
+        if (Wifi is { Length: > 32 }) return false;
         if (Endpoints is { Length: > MaxEndpoints } || Endpoints?.Any(e => e is null || e.Length > 64) == true) return false;
         if (Scores is { Length: > MaxScores }) return false;
         if (Scores?.Any(s => s is null || s.Game.Length > 24 || s.LevelId.Length > 24 || s.LevelName.Length > 40 ||

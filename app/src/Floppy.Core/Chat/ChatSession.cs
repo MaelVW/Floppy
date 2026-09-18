@@ -92,6 +92,9 @@ public sealed class ChatProposal
     public required string ProposerId { get; init; }
     public bool IsMine { get; init; }
     public IReadOnlyList<string> Endpoints { get; internal set; } = [];
+
+    /// <summary>WLAN-Name des Vorschlagenden, falls ermittelbar - nur eine Empfehlung fuer die anderen.</summary>
+    public string? Wifi { get; init; }
     public ProposalStage Stage { get; internal set; }
     public DateTimeOffset Deadline { get; internal set; }
     internal HashSet<string> Asked { get; init; } = [];
@@ -247,6 +250,7 @@ public sealed class ChatSession : IDisposable
             return ChatResult.NoNetwork;
         }
 
+        var wifi = WifiInfo.CurrentSsid();
         Proposal = new ChatProposal
         {
             Id = ChatFrame.NewId(),
@@ -254,11 +258,12 @@ public sealed class ChatSession : IDisposable
             ProposerId = Me.Id,
             IsMine = true,
             Endpoints = local.Endpoints.Take(ChatPayload.MaxEndpoints).ToList(),
+            Wifi = wifi,
             Stage = ProposalStage.Waiting,
             Deadline = now.AddSeconds(ProposalSeconds),
             Asked = others,
         };
-        Send(now, new ChatPayload { Kind = ChatKinds.Propose, Proposal = Proposal.Id, Endpoints = [.. Proposal.Endpoints] }, ChatMode.Online);
+        Send(now, new ChatPayload { Kind = ChatKinds.Propose, Proposal = Proposal.Id, Endpoints = [.. Proposal.Endpoints], Wifi = wifi }, ChatMode.Online);
         Notice(now, ChatNotice.ProposalSent);
         return ChatResult.Ok;
     }
@@ -654,6 +659,7 @@ public sealed class ChatSession : IDisposable
                     ProposerFingerprint = fp,
                     ProposerId = e.SenderId,
                     Endpoints = endpoints,
+                    Wifi = p.Wifi,
                     Stage = ProposalStage.Asking,
                     Deadline = now.AddSeconds(ProposalSeconds),
                 };

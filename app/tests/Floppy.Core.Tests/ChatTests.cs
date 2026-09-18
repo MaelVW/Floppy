@@ -426,6 +426,17 @@ public class ChatSessionTests
     }
 
     [Fact]
+    public void Wifi_hint_travels_from_proposer_to_the_others()
+    {
+        var (a, _) = Join();
+        var (b, _) = Join();
+        Advance(3);
+        a.ProposeLocal(_now);
+        Settle(() => b.Proposal is not null);
+        Assert.Equal(a.Proposal!.Wifi, b.Proposal!.Wifi);   // egal ob null oder ein Name - beide Seiten gleich
+    }
+
+    [Fact]
     public void Latecomer_can_still_follow_during_countdown()
     {
         var (a, _) = Join();
