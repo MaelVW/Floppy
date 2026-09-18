@@ -61,10 +61,7 @@ public sealed record DriveSnapshot(
     /// <summary>Volume-Seriennummer im Windows-Format "1A2B-3C4D".</summary>
     public string? SerialText => VolumeSerial is { } s ? $"{s >> 16:X4}-{s & 0xFFFF:X4}" : null;
 
-    /// <summary>
-    /// Nur LESEN, nie ueberwachen: Der Motor schaut weiterhin ausschliesslich auf A:.
-    /// Die App zeigt andere Datentraeger nur an, wenn man die Ansicht oeffnet.
-    /// </summary>
+    /// <summary>Nur eine Momentaufnahme zum Anzeigen - loest selbst kein Ueberwachen aus.</summary>
     public static DriveSnapshot Read(string root)
     {
         var normalized = PathRules.DriveRoot(root);

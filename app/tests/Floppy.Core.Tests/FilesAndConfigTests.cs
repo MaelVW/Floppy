@@ -52,6 +52,56 @@ public class IniAndOptionsTests
     }
 
     [Fact]
+    public void Extra_Laufwerke_werden_begrenzt_und_bereinigt()
+    {
+        var ini = IniDocument.Parse([
+            "[drive]",
+            "letter = A:",
+            "extra_letters = E:, a:, F:, F:, G:",   // eigenes Laufwerk raus, Duplikat raus, auf 2 begrenzt
+        ]);
+        var o = FloppyOptions.FromIni(ini);
+        Assert.Equal(["E:", "F:"], o.ExtraDriveLetters);
+        Assert.Equal([@"E:\", @"F:\"], o.ExtraDriveRoots);
+    }
+
+    [Fact]
+    public void SetValue_aendert_nur_den_einen_Schluessel()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "floppy-ini-" + Guid.NewGuid());
+        var path = Path.Combine(dir, "FloppyLauncher.ini");
+        try
+        {
+            Directory.CreateDirectory(dir);
+            File.WriteAllLines(path, [
+                "; Kommentar bleibt erhalten",
+                "[drive]",
+                "letter = A:",
+                "poll_seconds = 3",
+                "[ui]",
+                "theme = green",
+            ]);
+
+            IniDocument.SetValue(path, "drive", "extra_letters", "E:,F:");
+            var lines = File.ReadAllLines(path);
+            Assert.Contains("; Kommentar bleibt erhalten", lines);
+            Assert.Contains("theme = green", lines);
+            Assert.Contains("extra_letters = E:,F:", lines);
+
+            var o = FloppyOptions.FromIni(IniDocument.Load(path));
+            Assert.Equal(["E:", "F:"], o.ExtraDriveLetters);
+            Assert.Equal("green", o.Theme);   // unveraendert
+
+            IniDocument.SetValue(path, "drive", "extra_letters", "");   // wieder leeren
+            o = FloppyOptions.FromIni(IniDocument.Load(path));
+            Assert.Empty(o.ExtraDriveLetters);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
     public void Echte_FloppyLauncher_ini_aus_dem_Repo_ist_lesbar()
     {
         var path = FindRepoFile("FloppyLauncher.ini");

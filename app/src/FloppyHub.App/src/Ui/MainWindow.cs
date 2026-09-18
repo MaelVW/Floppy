@@ -428,10 +428,15 @@ public partial class MainWindow : PanelContainer, IAppHost
         OpenConfirm(p => p.SetupForProgram(Services, path, arguments, label));
     }
 
-    /// <summary>Rueckfrage fuer die Diskette (vom Motor ueber die Pipe angefordert).</summary>
+    /// <summary>
+    /// Rueckfrage fuer die Diskette (vom Motor ueber die Pipe angefordert). Die Pipe verraet nicht,
+    /// welches Laufwerk es war (siehe HubPipe) - also einmal ueber alle ueberwachten Laufwerke
+    /// nachsehen, welches gerade eine Rueckfrage braucht.
+    /// </summary>
     public void ConfirmDisc()
     {
-        var st = DiscState.Read(Services);
+        var st = Services.WatchedRoots.Select(r => DiscState.Read(Services, r))
+            .FirstOrDefault(s => s.Decision?.Action == GateAction.Ask) ?? DiscState.Read(Services);
         if (st.Decision?.Action == GateAction.Ask) OpenConfirm(p => p.SetupForDisc(Services, st, _library));
         else ShowView("disc");
     }

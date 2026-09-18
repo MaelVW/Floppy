@@ -7,6 +7,14 @@ namespace Floppy.Core;
 public sealed record FloppyOptions
 {
     public string DriveLetter { get; init; } = "A:";
+
+    /// <summary>
+    /// Bis zu zwei weitere Laufwerke, die die App zusaetzlich zu <see cref="DriveLetter"/>
+    /// ueberwacht (nur Wechseldatentraeger, z. B. USB-Stick) - fuer Freunde ohne echte
+    /// Floppy Disk. Nur die App/der Motor kennt das; die V1-Konsole bleibt bei DriveLetter allein.
+    /// </summary>
+    public IReadOnlyList<string> ExtraDriveLetters { get; init; } = [];
+
     public int PollSeconds { get; init; } = 3;
 
     public IReadOnlyList<string> ReferenceFileNames { get; init; } = ["game.txt", "floppy.txt", "launch.txt"];
@@ -34,15 +42,28 @@ public sealed record FloppyOptions
 
     public string DriveRoot => PathRules.DriveRoot(DriveLetter);
 
+    /// <summary>Normierte Laufwerkswurzeln der zusaetzlichen Laufwerke, siehe <see cref="ExtraDriveLetters"/>.</summary>
+    public IReadOnlyList<string> ExtraDriveRoots => ExtraDriveLetters.Select(PathRules.DriveRoot).ToArray();
+
     public static FloppyOptions Default { get; } = new();
 
     /// <summary>Werte aus einer FloppyLauncher.ini uebernehmen; Fehlendes bleibt Standard.</summary>
     public static FloppyOptions FromIni(IniDocument ini)
     {
         var d = Default;
+        var driveLetter = ini.Get("drive", "letter", d.DriveLetter)!;
+        var primaryRoot = SafeDriveRoot(driveLetter);
+        var extraDriveLetters = ini.GetList("drive", "extra_letters", d.ExtraDriveLetters)
+            .Select(l => (Letter: l, Root: SafeDriveRoot(l)))
+            .Where(x => x.Root is not null && x.Root != primaryRoot)
+            .Select(x => x.Letter)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(2)
+            .ToArray();
         return new FloppyOptions
         {
-            DriveLetter = ini.Get("drive", "letter", d.DriveLetter)!,
+            DriveLetter = driveLetter,
+            ExtraDriveLetters = extraDriveLetters,
             PollSeconds = Math.Clamp(ini.GetInt("drive", "poll_seconds", d.PollSeconds), 1, 3600),
 
             ReferenceFileNames = ini.GetList("reference", "file_names", d.ReferenceFileNames),
@@ -68,4 +89,11 @@ public sealed record FloppyOptions
     /// <summary>%Variablen% ersetzen und umschliessende Anfuehrungszeichen entfernen.</summary>
     public static string ExpandPath(string value) =>
         Environment.ExpandEnvironmentVariables(PathRules.StripQuotes(value));
+
+    /// <summary>Wie <see cref="PathRules.DriveRoot"/>, aber null statt Ausnahme bei kaputten INI-Eintraegen.</summary>
+    private static string? SafeDriveRoot(string letter)
+    {
+        try { return PathRules.DriveRoot(letter); }
+        catch { return null; }
+    }
 }

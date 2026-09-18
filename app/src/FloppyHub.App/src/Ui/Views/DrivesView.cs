@@ -8,8 +8,9 @@ namespace FloppyHub.App.Ui.Views;
 
 /// <summary>
 /// Wechseldatentraeger anzeigen: Disketten, USB-Sticks, Speicherkarten, externe
-/// Festplatten, CD/DVD/Blu-ray. Nur LESEN, nie ueberwachen - der Motor schaut
-/// weiterhin ausschliesslich auf A:. Rechts ein Eigenschaften-Bereich wie bei Windows XP.
+/// Festplatten, CD/DVD/Blu-ray. Ueberwacht wird nur, was in den Einstellungen als
+/// zusaetzliches Laufwerk gewaehlt wurde (siehe SettingsView) - alles andere ist reine
+/// Anzeige. Rechts ein Eigenschaften-Bereich wie bei Windows XP.
 /// </summary>
 public partial class DrivesView : ViewBase
 {
@@ -199,7 +200,7 @@ public partial class DrivesView : ViewBase
             if (d.ClusterBytes > 0) Row("SPEC_CLUSTER", Ui.Bytes(d.ClusterBytes));
             Row("SPEC_SERIAL", d.SerialText);
         }
-        if (d.Root.Equals(PathRules.DriveRoot(Host.Services.Options.DriveLetter), StringComparison.OrdinalIgnoreCase))
+        if (Host.Services.WatchedRoots.Contains(d.Root, StringComparer.OrdinalIgnoreCase))
             Row("SPEC_WATCHED", Loc.T("DRIVES_WATCHED", Host.Services.Options.PollSeconds));
 
         if (!d.Ready) return;

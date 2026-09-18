@@ -204,6 +204,29 @@ public class MotorEngineTests
     }
 
     [Fact]
+    public void Zweites_Laufwerk_wird_genauso_ausgewertet_wie_das_erste()
+    {
+        using var r = new Rig();
+        using var extra = new TempDisk();
+        var engine = new MotorEngine(FloppyOptions.Default, new LogFile(null) { Echo = r.LogLines.Add }, r.Trust, r.Actions,
+            watchers: [new DiscWatcher(r.Disk.Root), new DiscWatcher(extra.Root)]);
+
+        // nur die Diskette im zweiten Laufwerk hat etwas - das erste bleibt leer
+        extra.GameTxt("id=42");
+        engine.Tick();
+        Assert.Equal(["steam:42"], r.Actions.Calls);
+
+        // dieselbe Diskette bleibt beim naechsten Tick unbehandelt (schon gesehen)
+        engine.Tick();
+        Assert.Equal(["steam:42"], r.Actions.Calls);
+
+        // jetzt legt jemand auch im ersten Laufwerk etwas ein
+        r.Disk.GameTxt("id=7");
+        engine.Tick();
+        Assert.Equal(["steam:42", "steam:7"], r.Actions.Calls);
+    }
+
+    [Fact]
     public void Alte_oder_fremde_Notiz_wird_ignoriert()
     {
         using var data = new TempDisk();

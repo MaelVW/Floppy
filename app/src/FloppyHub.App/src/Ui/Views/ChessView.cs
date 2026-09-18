@@ -1,5 +1,6 @@
 using Floppy.Core.Chat;
 using Floppy.Core.Chess;
+using FloppyHub.App.Art;
 using FloppyHub.App.Core;
 using FloppyHub.App.Services;
 using Godot;
@@ -51,14 +52,14 @@ public partial class ChessView : ViewBase
                 {
                     CustomMinimumSize = new Vector2(48, 48),
                     FocusMode = FocusModeEnum.None,
-                    ClipText = true,
+                    IconAlignment = HorizontalAlignment.Center,
+                    VerticalIconAlignment = VerticalAlignment.Center,
                     AutoTranslateMode = AutoTranslateModeEnum.Disabled,
                 };
                 b.AddThemeStyleboxOverride("normal", style);
                 b.AddThemeStyleboxOverride("hover", style);
                 b.AddThemeStyleboxOverride("pressed", style);
                 b.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
-                b.AddThemeFontSizeOverride("font_size", 30);
                 b.Pressed += () => OnCellPressed(square);
                 _cells[file, rank] = b;
                 grid.AddChild(b);
@@ -125,9 +126,7 @@ public partial class ChessView : ViewBase
         var row = Ui.HBox(8);
         foreach (var kind in new[] { ChessPieceKind.Queen, ChessPieceKind.Rook, ChessPieceKind.Bishop, ChessPieceKind.Knight })
         {
-            var label = Glyph(new ChessPiece(kind, ChessColor.White));
-            var b = Ui.Button(label, null, () => PlayMove(new ChessMove(from, to, kind)));
-            b.AddThemeFontSizeOverride("font_size", 22);
+            var b = Ui.Button("", IconName(new ChessPiece(kind, ChessColor.White)), () => PlayMove(new ChessMove(from, to, kind)));
             row.AddChild(b);
         }
         d.Body.AddChild(row);
@@ -188,9 +187,7 @@ public partial class ChessView : ViewBase
                 var square = new ChessSquare(file, rank);
                 var btn = _cells[file, rank];
                 var piece = board?.At(square);
-                btn.Text = piece is { } p ? Glyph(p) : "";
-                btn.AddThemeColorOverride("font_color", piece?.Color == ChessColor.Black ? Colors.Black : Colors.White);
-                btn.AddThemeColorOverride("font_hover_color", piece?.Color == ChessColor.Black ? Colors.Black : Colors.White);
+                btn.Icon = piece is { } p ? Icons.Get(IconName(p), 1.15f) : null;
 
                 var baseColor = (file + rank) % 2 == 0 ? DarkSquare : LightSquare;
                 _cellStyle[file, rank].BgColor = square == _selected ? SelectColor : legal.Contains(square) ? TargetColor : baseColor;
@@ -198,19 +195,20 @@ public partial class ChessView : ViewBase
         }
     }
 
-    private static string Glyph(ChessPiece piece) => (piece.Kind, piece.Color) switch
+    /// <summary>Icon-Name in <see cref="IconForge"/> - eine Silhouette pro Figur, per body-Farbe fuer Weiss/Schwarz.</summary>
+    private static string IconName(ChessPiece piece) => (piece.Kind, piece.Color) switch
     {
-        (ChessPieceKind.King, ChessColor.White) => "♔",
-        (ChessPieceKind.Queen, ChessColor.White) => "♕",
-        (ChessPieceKind.Rook, ChessColor.White) => "♖",
-        (ChessPieceKind.Bishop, ChessColor.White) => "♗",
-        (ChessPieceKind.Knight, ChessColor.White) => "♘",
-        (ChessPieceKind.Pawn, ChessColor.White) => "♙",
-        (ChessPieceKind.King, ChessColor.Black) => "♚",
-        (ChessPieceKind.Queen, ChessColor.Black) => "♛",
-        (ChessPieceKind.Rook, ChessColor.Black) => "♜",
-        (ChessPieceKind.Bishop, ChessColor.Black) => "♝",
-        (ChessPieceKind.Knight, ChessColor.Black) => "♞",
-        _ => "♟",
+        (ChessPieceKind.King, ChessColor.White) => "chess_wk",
+        (ChessPieceKind.Queen, ChessColor.White) => "chess_wq",
+        (ChessPieceKind.Rook, ChessColor.White) => "chess_wr",
+        (ChessPieceKind.Bishop, ChessColor.White) => "chess_wb",
+        (ChessPieceKind.Knight, ChessColor.White) => "chess_wn",
+        (ChessPieceKind.Pawn, ChessColor.White) => "chess_wp",
+        (ChessPieceKind.King, ChessColor.Black) => "chess_bk",
+        (ChessPieceKind.Queen, ChessColor.Black) => "chess_bq",
+        (ChessPieceKind.Rook, ChessColor.Black) => "chess_br",
+        (ChessPieceKind.Bishop, ChessColor.Black) => "chess_bb",
+        (ChessPieceKind.Knight, ChessColor.Black) => "chess_bn",
+        _ => "chess_bp",
     };
 }
