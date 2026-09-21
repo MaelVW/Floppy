@@ -10,8 +10,8 @@
     <Product>Floppy Hub</Product>
     <Company>MaelVW</Company>
     <Copyright>Copyright (c) 2026 MaelVW</Copyright>
-    <Version>3.0.0</Version>
-    <InformationalVersion>3.0.0</InformationalVersion>
+    <Version>3.1.0</Version>
+    <InformationalVersion>3.1.0</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
