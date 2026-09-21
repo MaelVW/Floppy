@@ -123,14 +123,4 @@ public partial class RetroDialog : Control
         d.AddButton(Core.Loc.T("BTN_OK"), () => { });
         d.Open(host);
     }
-
-    /// <summary>Hinweis auf eine neuere Version: "Herunterladen" (Release-Seite im Browser) oder "Spaeter".</summary>
-    public static void Update(Control host, string version, string htmlUrl, Action onLater)
-    {
-        var d = new RetroDialog(Core.Loc.T("UPDATE_TITLE"), "cloud");
-        d.Body.AddChild(Ui.HBox(12, Icons.Rect("cloud", 2f), Ui.Label(Core.Loc.T("UPDATE_TEXT", version), wrap: true).Expand()));
-        d.AddButton(Core.Loc.T("UPDATE_BTN_GET"), () => OS.ShellOpen(htmlUrl), icon: "cloud");
-        d.AddButton(Core.Loc.T("UPDATE_BTN_LATER"), onLater);
-        d.Open(host);
-    }
 }

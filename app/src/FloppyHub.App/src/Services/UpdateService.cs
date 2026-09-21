@@ -5,14 +5,22 @@ using FloppyHub.App.Core;
 namespace FloppyHub.App.Services;
 
 /// <summary>
-/// Prueft einmal beim Start im Hintergrund, ob es eine neuere Version gibt. Laedt nichts herunter
-/// und aendert nichts von selbst - meldet nur (per Callback, im Godot-Hauptthread aufzurufen).
+/// Prueft im Hintergrund, ob es eine neuere Version gibt (beim Start und danach regelmaessig, weil die App
+/// oft tagelang laeuft). Laedt nichts herunter und aendert nichts von selbst - meldet nur (per Callback);
+/// Herunterladen und Installieren erst nach dem OK des Benutzers, siehe UpdateFlow.
 /// </summary>
 public sealed class UpdateService
 {
+    /// <summary>Wie oft hoechstens nachgefragt wird (GitHub erlaubt ohne Anmeldung 60 Anfragen pro Stunde).</summary>
+    private static readonly TimeSpan RecheckAfter = TimeSpan.FromMinutes(20);
+
+    /// <summary>Nach einem Fehlschlag (z. B. WLAN beim Autostart noch nicht da) frueher nochmal versuchen.</summary>
+    private static readonly TimeSpan RetryAfterFailure = TimeSpan.FromMinutes(5);
+
     private readonly AppServices _s;
     private readonly IUpdateFeed _feed;
     private int _ticket;
+    private long _nextCheckTicks;
 
     public UpdateService(AppServices services, IUpdateFeed? feed = null)
     {
@@ -24,9 +32,12 @@ public sealed class UpdateService
     /// <paramref name="onAvailable"/> wird auf einem Threadpool-Thread aufgerufen - der Aufrufer muss
     /// selbst auf den Godot-Hauptthread wechseln (z. B. <c>Callable.From(...).CallDeferred()</c>).
     /// </summary>
-    public void CheckInBackground(string currentVersion, Action<UpdateInfo> onAvailable)
+    /// <param name="force">Auch wenn gerade erst gefragt wurde (beim Programmstart).</param>
+    public void CheckInBackground(string currentVersion, Action<UpdateInfo> onAvailable, bool force = false)
     {
         if (_s.ReadOnlyMode || !AppVersion.TryParse(currentVersion, out var current)) return;
+        if (!force && DateTime.UtcNow.Ticks < Interlocked.Read(ref _nextCheckTicks)) return;
+        Interlocked.Exchange(ref _nextCheckTicks, DateTime.UtcNow.Add(RecheckAfter).Ticks);
         var ticket = ++_ticket;
 
         Task.Run(async () =>
@@ -35,6 +46,7 @@ public sealed class UpdateService
             try { found = await _feed.GetLatestAsync(CancellationToken.None); }
             catch { found = null; }   // kein Internet, Dienst nicht erreichbar o.ae. - einfach still bleiben
 
+            if (found is null) Interlocked.Exchange(ref _nextCheckTicks, DateTime.UtcNow.Add(RetryAfterFailure).Ticks);
             if (found is null || ticket != _ticket) return;
             if (found.Version == _s.Settings.SkippedUpdateVersion) return;
             if (!AppVersion.TryParse(found.Version, out var latest) || !latest.IsNewerThan(current)) return;

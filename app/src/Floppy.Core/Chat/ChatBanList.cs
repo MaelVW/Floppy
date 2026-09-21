@@ -46,6 +46,9 @@ public sealed class ChatBanList
         return true;
     }
 
+    /// <summary>Der Eintrag zu diesem Fingerabdruck - auch ein aufgehobener oder abgelaufener (null = nie gesperrt).</summary>
+    public ChatBan? Get(string? fingerprint) => fingerprint is not null && _bans.TryGetValue(fingerprint, out var b) ? b : null;
+
     /// <summary>Sperre eintragen. false = nichts geaendert (es gibt schon einen gleich neuen oder neueren Eintrag).</summary>
     public bool Apply(ChatBan entry)
     {

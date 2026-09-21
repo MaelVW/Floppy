@@ -134,7 +134,7 @@ public partial class SettingsView : ViewBase
             s.Updates.CheckManually(current, info => Callable.From(() =>
             {
                 if (info is null) Host.SetStatusMessage(Loc.T("UPDATE_NONE"), "ok");
-                else RetroDialog.Update(Host.DialogLayer, info.Version, info.HtmlUrl, () => s.Updates.Skip(info.Version));
+                else UpdateFlow.Offer(Host, info);
             }).CallDeferred());
         });
         var info = new GridContainer { Columns = 2 };

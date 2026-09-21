@@ -51,7 +51,7 @@ $presetFile  = Join-Path $project 'export_presets.cfg'
 $projectText = [IO.File]::ReadAllText($projectFile)
 $presetText  = [IO.File]::ReadAllText($presetFile)
 if (-not $Version) {
-    if ($projectText -match 'config/version="([^"]+)"') { $Version = $Matches[1] } else { $Version = '2.0.0' }
+    if ($projectText -match 'config/version="([^"]+)"') { $Version = $Matches[1] } else { $Version = '3.0.0' }
 }
 if ($Version -notmatch '^(\d+)\.(\d+)\.(\d+)(-[0-9A-Za-z.-]+)?$') { throw "Ungueltige Version: $Version (erwartet z. B. 2.0.0 oder 2.0.0-beta.1)" }
 $numeric = "$($Matches[1]).$($Matches[2]).$($Matches[3])"

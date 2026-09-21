@@ -1,6 +1,12 @@
 # Floppy Hub App – Plan
 
-Lebendes Dokument für die grafische Variante (v2). Stand: 2026-09-17, Branch `App`, Version **2.0.0-beta.1**.
+Lebendes Dokument für die grafische Variante. Stand: 2026-09-21, Version **3.0.0** (erster richtiger Release nach den Betas 2.0.0-beta.1 bis beta.6).
+Die Anleitung für Nutzer und die Entwickler-Doku stehen im [Wiki](https://github.com/MaelVW/Floppy/wiki); dieses Dokument hält die Planungs- und Entscheidungsgeschichte fest.
+
+> **Nachträge nach den Beta-Entscheidungen unten:** Der Motor überwacht neben `A:` bis zu zwei weitere Wechseldatenträger
+> (`[drive] extra_letters` in `FloppyLauncher.ini`, Auswahl in den Optionen; die Konsolen-Variante bleibt bei `A:`).
+> Dazu kamen Schach im Chat, Admin/Moderation im Offenen Chat (`ChatAdmins`, signierte Sperren) und das automatische
+> Update (`UpdateDownloader`, `UpdateFlow`, Setup-Schalter `/RELAUNCH=`). Details im Wiki.
 
 ## Ziel
 

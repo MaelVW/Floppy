@@ -52,8 +52,14 @@ public static class ChatKinds
     /// <summary>Admin: alle aktuellen Sperren - damit auch Neue im Raum sie kennen.</summary>
     public const string BanList = "banlist";
 
+    /// <summary>
+    /// Ein Gesperrter fragt (stumm, nur der Admin antwortet): "Bin ich noch gesperrt?" - so erfaehrt er auch
+    /// von einer Aufhebung, die kam, waehrend er nicht im Raum war.
+    /// </summary>
+    public const string BanCheck = "bancheck";
+
     public static bool IsKnown(string kind) => kind is Join or Here or Leave or Text or Propose or Vote or Switched or Cancel or ScoreRequest or Scores
-        or ChessOffer or ChessAccept or ChessDecline or ChessMove or ChessResign or Ban or Unban or BanList;
+        or ChessOffer or ChessAccept or ChessDecline or ChessMove or ChessResign or Ban or Unban or BanList or BanCheck;
 }
 
 /// <summary>Eine Sperre (oder deren Aufhebung) im Chat-Protokoll.</summary>

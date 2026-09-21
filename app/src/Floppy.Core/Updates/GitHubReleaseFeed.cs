@@ -37,17 +37,47 @@ public sealed class GitHubReleaseFeed : IUpdateFeed, IDisposable
         return Parse(doc.RootElement);
     }
 
+    /// <summary>
+    /// Waehlt die HOECHSTE Version der Liste (Entwuerfe zaehlen nicht) - nicht einfach den ersten Eintrag:
+    /// GitHub sortiert nach dem Datum des Commits, nicht nach Versionsnummer, ein spaeter neu getaggtes
+    /// aelteres Release kaeme sonst nach vorn.
+    /// </summary>
     internal static UpdateInfo? Parse(JsonElement root)
     {
-        if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() == 0) return null;
-        var first = root[0];
-        if (first.ValueKind != JsonValueKind.Object) return null;
-        if (!first.TryGetProperty("tag_name", out var tagProp) || tagProp.GetString() is not { Length: > 0 } tag) return null;
+        if (root.ValueKind != JsonValueKind.Array) return null;
 
-        var version = tag.Length > 0 && (tag[0] == 'v' || tag[0] == 'V') ? tag[1..] : tag;
-        var html = first.TryGetProperty("html_url", out var h) ? h.GetString() ?? "" : "";
-        var name = first.TryGetProperty("name", out var n) && n.GetString() is { Length: > 0 } s ? s : tag;
-        return new UpdateInfo(version, name, html);
+        UpdateInfo? best = null;
+        AppVersion bestVersion = default;
+        foreach (var release in root.EnumerateArray())
+        {
+            if (release.ValueKind != JsonValueKind.Object) continue;
+            if (release.TryGetProperty("draft", out var draft) && draft.ValueKind == JsonValueKind.True) continue;
+            if (!release.TryGetProperty("tag_name", out var tagProp) || tagProp.ValueKind != JsonValueKind.String ||
+                tagProp.GetString() is not { Length: > 0 } tag) continue;
+
+            var version = tag[0] is 'v' or 'V' ? tag[1..] : tag;
+            if (!AppVersion.TryParse(version, out var parsed)) continue;
+            if (best is not null && !parsed.IsNewerThan(bestVersion)) continue;
+
+            var html = release.TryGetProperty("html_url", out var h) && h.ValueKind == JsonValueKind.String ? h.GetString() ?? "" : "";
+            var name = release.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String && n.GetString() is { Length: > 0 } s ? s : tag;
+            var installerName = $"FloppyHubSetup-{version}.exe";
+            best = new UpdateInfo(version, name, html, AssetUrl(release, installerName), AssetUrl(release, installerName + ".sha256.txt"));
+            bestVersion = parsed;
+        }
+        return best;
+    }
+
+    private static string? AssetUrl(JsonElement release, string assetName)
+    {
+        if (!release.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array) return null;
+        foreach (var asset in assets.EnumerateArray())
+        {
+            if (asset.ValueKind != JsonValueKind.Object) continue;
+            if (!asset.TryGetProperty("name", out var n) || n.GetString() != assetName) continue;
+            if (asset.TryGetProperty("browser_download_url", out var u) && u.ValueKind == JsonValueKind.String) return u.GetString();
+        }
+        return null;
     }
 
     public void Dispose() => _http.Dispose();
