@@ -31,13 +31,36 @@ public static class LibraryCsv
             .ToList();
     }
 
+    /// <summary>
+    /// Schreibt die Datei erst nebenan und tauscht sie dann ein: Bricht etwas mitten im Schreiben ab
+    /// (Absturz, voller Datentraeger), bleibt die alte Bibliothek unversehrt.
+    /// </summary>
     public static void Write(string path, IEnumerable<LibraryEntry> entries)
     {
         var sb = new StringBuilder();
         sb.Append(string.Join(",", Columns.Select(Quote))).Append("\r\n");
         foreach (var e in entries)
             sb.Append(string.Join(",", new[] { e.Label, e.Kind, e.Value, e.Added, e.Notes }.Select(Quote))).Append("\r\n");
-        File.WriteAllText(path, sb.ToString(), FileEncoding);
+
+        var temp = path + ".tmp";
+        try
+        {
+            File.WriteAllText(temp, sb.ToString(), FileEncoding);
+            File.Move(temp, path, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(temp); } catch { /* Aufraeumen ist nur ein Versuch */ }
+            throw;
+        }
+    }
+
+    /// <summary>Sicherung der bestehenden Datei als <c>library.csv.bak</c> (die vorige Sicherung wird ersetzt). false = es gab nichts zu sichern.</summary>
+    public static bool Backup(string path)
+    {
+        if (!File.Exists(path)) return false;
+        File.Copy(path, path + ".bak", overwrite: true);
+        return true;
     }
 
     /// <summary>Eintrag hinzufuegen; gleicher Kind+Value (ohne Gross-/Kleinschreibung) wird ersetzt statt doppelt.</summary>

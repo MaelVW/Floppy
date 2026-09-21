@@ -1,6 +1,6 @@
 # Floppy Hub App – Plan
 
-Lebendes Dokument für die grafische Variante. Stand: 2026-09-21, Version **3.1.0** (nach dem ersten richtigen Release 3.0.0 und den Betas 2.0.0-beta.1 bis beta.6).
+Lebendes Dokument für die grafische Variante. Stand: 2026-09-21, Version **3.2.0** (nach dem ersten richtigen Release 3.0.0 und den Betas 2.0.0-beta.1 bis beta.6).
 Die Anleitung für Nutzer und die Entwickler-Doku stehen im [Wiki](https://github.com/MaelVW/Floppy/wiki); dieses Dokument hält die Planungs- und Entscheidungsgeschichte fest.
 
 > **Nachträge nach den Beta-Entscheidungen unten:** Der Motor überwacht neben `A:` bis zu zwei weitere Wechseldatenträger
@@ -170,6 +170,25 @@ Fünf bis zehn kleine Easter Eggs in der App (Freundeskreis hat Spaß daran). Ab
   unsichtbaren Zeichen, „Admin“, „Moderator“, „System“, „Floppy Hub“ nur für Admins bzw. die App) – die
   Admin-Kennzeichnung hängt weiter nur am Fingerabdruck. Regeln: `Floppy.Core/Chat/ChatProfile.cs` (mit Tests),
   Einstellungen in `app.ini` unter `[chat]` (`alias`, `color`, `notify`, `highlight_mentions`, `font`).
+- **Steam-Bibliothek durchsuchen (umgesetzt, Zweig `Feature-Erweiterungen`):** In der Bibliothek füllt der Knopf
+  **„Steam durchsuchen…“** die Liste automatisch mit den installierten Steam-Spielen, statt jedes einzeln
+  einzutragen. Es werden nur Dateien gelesen, die Steam selbst anlegt – **kein Konto, kein Internet, an Steam
+  wird nichts verändert**: `steamapps\libraryfolders.vdf` (alle Bibliotheksordner/Laufwerke, alte und neue
+  Schreibweise) und je Spiel `steamapps\appmanifest_<AppID>.acf` (Name, AppID, Größe, Zustand). Den Steam-Ordner
+  findet die App über die Registrierung (danach Standardordner); sonst kann man ihn im Fenster selbst wählen
+  (`[library] steam_path` in `app.ini`). Ein Fenster zeigt die Treffer: **Neues ist vorausgewählt**, schon
+  Vorhandenes (nach AppID, auch als Store-Link eingetragen) abgeblendet, Spiele, die Steam noch lädt, sind
+  nicht vorausgewählt; Steam-Laufzeiten („Steamworks Common Redistributables“, Proton, Linux Runtime) werden
+  ausgelassen. „Hinzufügen“ hängt nur an, was fehlt – bestehende Einträge (auch selbst geänderte Namen/
+  Notizen) bleiben unangetastet; die Datei wird frisch gelesen, atomar geschrieben (erst nebenan, dann
+  getauscht) und vorher als `library.csv.bak` gesichert. Gestartet wird wie bisher über `steam://rungameid/`.
+  Bewusst **nicht** enthalten: Spiele, die man nur besitzt, aber nicht installiert hat (stehen in keiner
+  Steam-Datei; dafür wäre ein Web-API-Schlüssel oder eine Anmeldung nötig), und ein stilles Abgleichen beim
+  Start (würde Zeilen, die man bewusst aus `library.csv` gelöscht hat, immer wieder anlegen; dafür bräuchte es
+  erst eine „Ausgeblendet“-Liste). Einträge lassen sich in der App weiterhin nicht löschen – die Vorauswahl im
+  Fenster und `library.csv.bak` fangen Fehlgriffe auf. Regeln: `Floppy.Core/Vdf.cs` (Parser für Valves Textformat,
+  hart gegen kaputte Dateien), `Floppy.Core/SteamScanner.cs`, Dialog `Ui/SteamScanDialog.cs`; Tests in
+  `SteamScannerTests.cs`.
 - **Code-Duell (Bot-Arena, noch nicht umgesetzt):** wird ein **Unterspiel im Bereich „Minispiel“** und
   **kein eigener Reiter** in der Werkzeugleiste. Die Ansicht „Minispiel“ bekommt dafür eine
   Spielauswahl (Diskettenlager, Code-Duell, …). Skizze vom 2026-09-18: Arena-Regeln in `Floppy.Core`
