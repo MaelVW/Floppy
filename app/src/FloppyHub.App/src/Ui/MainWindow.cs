@@ -30,6 +30,7 @@ public partial class MainWindow : PanelContainer, IAppHost
     private Action<string> _applyTheme = _ => { };
     private Action<float> _applyScale = _ => { };
     private Action<string> _applyLanguage = _ => { };
+    private Action _quit = () => { };
 
     public AppServices Services { get; private set; } = null!;
     public CoverCache Covers { get; private set; } = null!;
@@ -37,13 +38,14 @@ public partial class MainWindow : PanelContainer, IAppHost
     public IReadOnlyList<LibraryEntry> Library => _library;
     public string CurrentView => _current;
 
-    public void Setup(AppServices services, CoverCache covers, string startView, Action<string> applyTheme, Action<float> applyScale, Action<string> applyLanguage)
+    public void Setup(AppServices services, CoverCache covers, string startView, Action<string> applyTheme, Action<float> applyScale, Action<string> applyLanguage, Action? quit = null)
     {
         Services = services;
         Covers = covers;
         _applyTheme = applyTheme;
         _applyScale = applyScale;
         _applyLanguage = applyLanguage;
+        if (quit is not null) _quit = quit;
         ThemeTypeVariation = "WindowPanel";
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
 
@@ -507,6 +509,7 @@ public partial class MainWindow : PanelContainer, IAppHost
         ((ChatView)_views["chat"]).OpenBanDialog(fingerprint, memberId);
     }
 
+    public void QuitApp() => _quit();
     public void ApplyTheme(string theme) => _applyTheme(theme);
     public void ApplyScale(float scale) => _applyScale(scale);
     public void ApplyLanguage(string language) => _applyLanguage(language);

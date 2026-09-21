@@ -37,4 +37,7 @@ public interface IAppHost
     /// <summary>Sprache wechseln (de/en) - die Oberflaeche wird neu aufgebaut.</summary>
     void ApplyLanguage(string language);
     void ApplyScale(float scale);
+
+    /// <summary>App sauber beenden (der Chat verabschiedet sich) - z. B. damit ein Update installiert werden kann.</summary>
+    void QuitApp();
 }

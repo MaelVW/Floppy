@@ -22,7 +22,7 @@
 #define AppName        "Floppy Hub"
 ; Version: per Kommandozeile ueberschreibbar (ISCC /DAppVersion=1.2.3).
 #ifndef AppVersion
-  #define AppVersion   "2.0.0-beta.5"
+  #define AppVersion   "2.0.0-beta.6"
 #endif
 ; Windows-Dateiversion braucht Zahlen: "2.0.0-beta.1" -> "2.0.0"
 #if Pos("-", AppVersion) > 0
@@ -243,6 +243,10 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; \
 ; --- App ---
 Filename: "{app}\FloppyLauncher.exe"; Description: "{cm:TaskStartNow}"; Flags: postinstall nowait skipifsilent; Check: IsApp
 Filename: "{app}\FloppyHub.exe";      Description: "{cm:RunHub}";       Flags: postinstall nowait skipifsilent; Check: IsApp
+; Automatisches Update: die App startet dieses Setup mit /RELAUNCH=hub[,motor], beendet sich selbst und
+; wird hier wieder gestartet (auch unbeaufsichtigt). Der Motor nur, wenn er vorher lief.
+Filename: "{app}\FloppyLauncher.exe"; WorkingDir: "{app}"; Flags: nowait runhidden; Check: IsApp and Relaunch('motor')
+Filename: "{app}\FloppyHub.exe";      WorkingDir: "{app}"; Flags: nowait; Check: IsApp and Relaunch('hub')
 ; --- Konsole ---
 Filename: "{sys}\wscript.exe"; Parameters: """{app}\StartLauncherHidden.vbs"""; \
     Description: "{cm:TaskStartNow}"; Flags: postinstall nowait skipifsilent; Check: IsConsole
@@ -284,6 +288,12 @@ end;
 function PowerShellPath(): String;
 begin
   Result := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
+end;
+
+{ /RELAUNCH=hub,motor (vom automatischen Update der App): was nach dem Setup wieder starten soll }
+function Relaunch(Name: String): Boolean;
+begin
+  Result := Pos(',' + Name + ',', ',' + LowerCase(ExpandConstant('{param:RELAUNCH|}')) + ',') > 0;
 end;
 
 function UninstallIcon(Param: String): String;

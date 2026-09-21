@@ -60,7 +60,12 @@ public partial class Main : Control
         if (_s.OptionsProblem is not null) _s.Log.Write(LogLevel.Warn, "App: " + _s.OptionsProblem);
 
         if (!_compact && (!_s.Settings.FirstRunDone || args.FirstRun)) Callable.From(ShowFirstRun).CallDeferred();
-        else if (!_compact && !_s.ReadOnlyMode) CheckForUpdate();
+        else if (!_compact && !_s.ReadOnlyMode) CheckForUpdate(force: true);
+        if (!_compact && !_s.ReadOnlyMode)
+        {
+            _ = Task.Run(Floppy.Core.Updates.UpdateInstaller.CleanUp);   // Setup vom letzten Update aufraeumen
+            ScheduleUpdateChecks();
+        }
         if (args.Screenshot is not null) TakeScreenshotLater(args.Screenshot, args.View);
     }
 
@@ -89,6 +94,7 @@ public partial class Main : Control
     {
         if (_quitting) return;
         BringToFront(command == HubPipe.Confirm);
+        if (command != HubPipe.Confirm && !_compact && !_s.ReadOnlyMode) CheckForUpdate();   // Fenster wird geoeffnet: gleich nach Neuem schauen
         switch (command)
         {
             case HubPipe.Hub:
@@ -182,7 +188,7 @@ public partial class Main : Control
 
         _main = new MainWindow();
         AddChild(_main);
-        _main.Setup(_s, _covers, IsViewKey(view) ? view : "disc", t => ApplyTheme(t), ApplyScale, ApplyLanguage);
+        _main.Setup(_s, _covers, IsViewKey(view) ? view : "disc", t => ApplyTheme(t), ApplyScale, ApplyLanguage, Quit);
     }
 
     private static bool IsViewKey(string v) => v is "disc" or "library" or "write" or "drives" or "chat" or "game" or "log" or "settings" or "help";
@@ -277,16 +283,39 @@ public partial class Main : Control
     // Update-Pruefung
     // ------------------------------------------------------------------
 
-    private void CheckForUpdate()
+    /// <summary>Wie oft die laufende App von sich aus nach einer neuen Version schaut (der Dienst bremst zusaetzlich).</summary>
+    private const double UpdateCheckIntervalSeconds = 45 * 60;
+
+    /// <summary>Diese Version wurde in dieser Sitzung schon angeboten - nicht alle 45 Minuten erneut.</summary>
+    private string? _offeredUpdate;
+
+    private void CheckForUpdate(bool force = false)
     {
         var current = (string)ProjectSettings.GetSetting("application/config/version");
-        _s.Updates.CheckInBackground(current, info => Callable.From(() => ShowUpdateDialog(info)).CallDeferred());
+        _s.Updates.CheckInBackground(current, info => Callable.From(() => ShowUpdateDialog(info)).CallDeferred(), force);
     }
 
     private void ShowUpdateDialog(Floppy.Core.Updates.UpdateInfo info)
     {
-        if (_main is null || _quitting) return;
-        RetroDialog.Update(_main.DialogLayer, info.Version, info.HtmlUrl, () => _s.Updates.Skip(info.Version));
+        if (_main is null || _quitting || _offeredUpdate == info.Version) return;
+        _offeredUpdate = info.Version;
+        UpdateFlow.Offer(_main, info);
+    }
+
+    /// <summary>
+    /// Die App laeuft oft tagelang (auch nach "App oeffnen" ist es dieselbe Instanz): nur beim Start zu
+    /// pruefen wuerde jedes spaeter erschienene Update verpassen. Deshalb alle 45 Minuten und beim
+    /// Nach-vorn-Holen des Fensters erneut. (Nicht ueber einen Knoten der Oberflaeche - die wird bei
+    /// Farbschema-/Sprachwechsel komplett neu gebaut.)
+    /// </summary>
+    private void ScheduleUpdateChecks()
+    {
+        GetTree().CreateTimer(UpdateCheckIntervalSeconds).Timeout += () =>
+        {
+            if (_quitting) return;
+            CheckForUpdate();
+            ScheduleUpdateChecks();
+        };
     }
 
     // ------------------------------------------------------------------
@@ -381,6 +410,12 @@ public partial class Main : Control
             case "editor":
                 _main?.ShowView("game");
                 _main?.OpenLevelEditor();
+                break;
+            case "update" or "update-progress" when _main is not null:
+                var fake = new Floppy.Core.Updates.UpdateInfo("2.0.0-beta.6", "Floppy Hub 2.0.0-beta.6",
+                    "https://github.com/MaelVW/Floppy/releases/tag/v2.0.0-beta.6");
+                if (view == "update") UpdateFlow.Offer(_main, fake, previewAuto: true);
+                else UpdateFlow.PreviewProgress(_main, fake);
                 break;
             case "chat-open":
                 _main?.ShowView("chat");
