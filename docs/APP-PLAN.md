@@ -149,6 +149,24 @@ den Wechsel ins lokale Netz. Für viele Nutzer später: eigener ntfy-Server.
 Fünf bis zehn kleine Easter Eggs in der App (Freundeskreis hat Spaß daran). Abschaltbar
 über `[ui] easter_eggs` in der INI. **Nie** in Sicherheits-Rückfragen.
 
+### 8. Nach Version 3.0 (entschieden 2026-09-21)
+
+- **Sofort beenden (umgesetzt, Zweig `Feature-Erweiterungen`):** In den Optionen legt man eine
+  Tastenkombination fest, die die App **ohne Rückfrage sofort schließt** (`[app] quit_hotkey` in
+  `app.ini`, Vorgabe: keine). Sie wirkt überall im Fenster, auch im Chat-Eingabefeld und mit offenem
+  Dialog, solange das Fenster im Vordergrund ist; der Motor läuft weiter. **Nicht wählbar:** Alt+F4,
+  Kombinationen mit der Windows-Taste, was Windows selbst belegt (Alt+Tab, Strg+Esc, …), einzelne
+  Zeichentasten (würden beim Tippen schließen), Strg+Alt+Zeichentaste (das ist AltGr, z. B. für @)
+  und die Kürzel der App (F1, F5). Regeln: `Floppy.Core/KeyChord.cs` (mit Tests), Kürzel der App:
+  `AppShortcuts.InUse`.
+- **Code-Duell (Bot-Arena, noch nicht umgesetzt):** wird ein **Unterspiel im Bereich „Minispiel“** und
+  **kein eigener Reiter** in der Werkzeugleiste. Die Ansicht „Minispiel“ bekommt dafür eine
+  Spielauswahl (Diskettenlager, Code-Duell, …). Skizze vom 2026-09-18: Arena-Regeln in `Floppy.Core`
+  wie bei den anderen Spielen, Darstellung in 2D-Pixel-Art, Arena gemeinsam bauen (Editor wie beim
+  Diskettenlager); Bots hinter einer gemeinsamen Schnittstelle, die je Runde denselben JSON-Zug
+  liefert – entweder als **externes Programm** (beliebige Sprache) oder über einen **Block-Editor**
+  (kleine, spielspezifische Blocksprache ohne Prozessstart).
+
 ### Vorschläge für später (noch nicht entschieden)
 
 - **Minispiel (umgesetzt):** Das Spiel ist in die App eingebaut, die Diskette bringt nur

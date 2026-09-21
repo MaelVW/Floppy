@@ -335,7 +335,35 @@ public partial class Main : Control
 
     public override void _Notification(int what)
     {
-        if (what == NotificationWMCloseRequest) Quit();
+        if (what != NotificationWMCloseRequest) return;
+
+        // Beim Festlegen der Sofort-beenden-Taste soll Alt+F4 nicht die ganze App zumachen, sondern (im Dialog) abgelehnt werden.
+        if (HotkeyInput.Capturing && Input.IsKeyPressed(Key.Alt) && Input.IsKeyPressed(Key.F4)) return;
+        Quit();
+    }
+
+    /// <summary>
+    /// "Sofort beenden": die Tastenkombination aus den Einstellungen. Wirkt ueberall im Fenster, auch im
+    /// Chat-Eingabefeld oder mit offenem Dialog (dieser Aufruf kommt vor der Oberflaeche).
+    /// </summary>
+    public override void _Input(InputEvent e)
+    {
+        if (_s is null || _quitting || HotkeyInput.Capturing || _s.Settings.QuitHotkey is not { } hotkey) return;
+        if (e is not InputEventKey { Pressed: true, Echo: false } key || !hotkey.Equals(HotkeyInput.FromEvent(key))) return;
+
+        GetViewport().SetInputAsHandled();
+        InstantQuit();
+    }
+
+    /// <summary>
+    /// Das Fenster geht auf der Stelle weg (das Hauptfenster laesst sich nicht verstecken, also in die Taskleiste),
+    /// dann wird ganz normal beendet (der Chat verabschiedet sich kurz) - ohne Rueckfrage, egal was offen ist.
+    /// Es gibt bewusst keinen Log-Eintrag. Der Motor laeuft weiter.
+    /// </summary>
+    private void InstantQuit()
+    {
+        GetWindow().Mode = Window.ModeEnum.Minimized;
+        Quit();
     }
 
     private void Quit()
@@ -416,6 +444,41 @@ public partial class Main : Control
                     "https://github.com/MaelVW/Floppy/releases/tag/v3.1.0");
                 if (view == "update") UpdateFlow.Offer(_main, fake, previewAuto: true);
                 else UpdateFlow.PreviewProgress(_main, fake);
+                break;
+            case "hotkey-dialog":
+                _main?.ShowView("settings");
+                if (_main is not null) HotkeyDialog.Capture(_main.DialogLayer, _ => { });
+                break;
+            case "hotkey-set-f5" or "hotkey-set-ok" when _main is not null:
+                // Echter Ablauf: "Festlegen…" druecken, dann eine Taste simulieren (F5 = schon belegt -> Hinweis, Strg+F12 -> gespeichert)
+                _main.ShowView("settings");
+                await ToSignal(GetTree().CreateTimer(0.4), SceneTreeTimer.SignalName.Timeout);
+                foreach (var node in _main.FindChildren("*", "Button", true, false))
+                {
+                    if (node is not Button b || b.Text != Loc.T("BTN_PANIC_SET")) continue;
+                    b.EmitSignal(BaseButton.SignalName.Pressed);
+                    break;
+                }
+                await ToSignal(GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
+                var (tryKey, tryCtrl) = view == "hotkey-set-f5" ? (Key.F5, false) : (Key.F12, true);
+                Input.ParseInputEvent(new InputEventKey { Keycode = tryKey, CtrlPressed = tryCtrl, Pressed = true });
+                Input.ParseInputEvent(new InputEventKey { Keycode = tryKey, CtrlPressed = tryCtrl, Pressed = false });
+                break;
+            case "settings-panic" when _main is not null:
+                // Einstellungen mit gesetzter Sofort-beenden-Taste, ganz nach unten gescrollt
+                _s.Settings.QuitHotkey = KeyChord.Create(true, false, false, false, "F12");
+                _main.ShowView("settings");
+                await ToSignal(GetTree().CreateTimer(0.4), SceneTreeTimer.SignalName.Timeout);
+                foreach (var node in _main.FindChildren("*", "ScrollContainer", true, false))
+                    if (node is ScrollContainer scroll && scroll.IsVisibleInTree()) scroll.ScrollVertical = 100000;
+                break;
+            case "quit-hotkey":
+                // Test: Sofort beenden per simulierter Tastatur. Klappt es, beendet sich die App vor dem Bildschirmfoto.
+                _s.Settings.QuitHotkey = KeyChord.Create(true, false, false, false, "F12");
+                await ToSignal(GetTree().CreateTimer(0.4), SceneTreeTimer.SignalName.Timeout);
+                Input.ParseInputEvent(new InputEventKey { Keycode = Key.F12, CtrlPressed = true, Pressed = true });
+                await ToSignal(GetTree().CreateTimer(0.6), SceneTreeTimer.SignalName.Timeout);
+                GD.Print("HOTKEY FAIL: App laeuft noch");
                 break;
             case "chat-open":
                 _main?.ShowView("chat");

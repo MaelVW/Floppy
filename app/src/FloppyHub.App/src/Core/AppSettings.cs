@@ -32,6 +32,12 @@ public sealed class AppSettings
     /// <summary>Diese Version wurde per "Spaeter" abgelehnt - nicht nochmal vorschlagen.</summary>
     public string SkippedUpdateVersion { get; set; } = "";
 
+    /// <summary>
+    /// "Sofort beenden": Tastenkombination, die die App ohne Rueckfrage schliesst. null = nicht festgelegt.
+    /// Nur, was <see cref="KeyChord.Validate"/> durchlaesst (nie Alt+F4) - eine von Hand kaputt editierte INI ergibt null.
+    /// </summary>
+    public KeyChord? QuitHotkey { get; set; }
+
     public static AppSettings Load(string file)
     {
         var s = new AppSettings();
@@ -54,6 +60,8 @@ public sealed class AppSettings
             s.ChatServer = (ini.Get("chat", "server", "") ?? "").Trim();
             s.UpdateFeedUrl = (ini.Get("update", "feed_url", "") ?? "").Trim();
             s.SkippedUpdateVersion = (ini.Get("update", "skipped_version", "") ?? "").Trim();
+            s.QuitHotkey = KeyChord.TryParse(ini.Get("app", "quit_hotkey", ""), out var hotkey) &&
+                           hotkey.Validate(AppShortcuts.InUse) == KeyChordProblem.None ? hotkey : null;
         }
         catch
         {
@@ -74,6 +82,8 @@ public sealed class AppSettings
             .AppendLine($"load_covers = {(LoadCovers ? "true" : "false")}")
             .AppendLine("[app]")
             .AppendLine($"first_run_done = {(FirstRunDone ? "true" : "false")}")
+            .AppendLine("; Sofort beenden: z. B. Ctrl+F12 (nie Alt+F4). Leer = nicht festgelegt.")
+            .AppendLine($"quit_hotkey = {QuitHotkey}")
             .AppendLine("[game]")
             .AppendLine($"player = {PlayerName}")
             .AppendLine("[chat]")
