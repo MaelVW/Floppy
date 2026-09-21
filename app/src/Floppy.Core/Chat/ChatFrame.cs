@@ -109,11 +109,22 @@ public static class ChatFrame
         {
             return false;
         }
-        if (payload is null || !payload.IsWellFormed()) return false;
+        if (payload is null || !IsWellFormedSafe(payload)) return false;
 
         var keyBytes = key.ToArray();
         envelope = new ChatEnvelope(payload, keyBytes, ChatIdentity.FingerprintOf(keyBytes), ChatIdentity.IdOf(keyBytes));
         return true;
+    }
+
+    /// <summary>
+    /// Jeder, der den Raumschluessel kennt (im offenen Chat: jeder), kann Nachrichten mit
+    /// beliebigem JSON schicken - z. B. <c>null</c> statt Text. Das darf nie zu einer Ausnahme
+    /// im Empfaenger fuehren, sondern nur dazu, dass die Nachricht verworfen wird.
+    /// </summary>
+    private static bool IsWellFormedSafe(ChatPayload payload)
+    {
+        try { return payload.IsWellFormed(); }
+        catch (NullReferenceException) { return false; }
     }
 
     /// <summary>Textform fuer den Dienst.</summary>

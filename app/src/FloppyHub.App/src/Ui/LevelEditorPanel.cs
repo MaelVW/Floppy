@@ -70,6 +70,11 @@ public partial class LevelEditorPanel : VBoxContainer
                      (EditorTool.Goal, "EDITOR_TOOL_GOAL", "tile_goal"),
                      (EditorTool.Box, "EDITOR_TOOL_BOX", "tile_box"),
                      (EditorTool.Player, "EDITOR_TOOL_PLAYER", "tile_player"),
+                     (EditorTool.RedBox, "EDITOR_TOOL_RED_BOX", "tile_box"),
+                     (EditorTool.RedGoal, "EDITOR_TOOL_RED_GOAL", "tile_goal"),
+                     (EditorTool.BlueBox, "EDITOR_TOOL_BLUE_BOX", "tile_box"),
+                     (EditorTool.BlueGoal, "EDITOR_TOOL_BLUE_GOAL", "tile_goal"),
+                     (EditorTool.RangeBox, "EDITOR_TOOL_RANGE_BOX", "tile_box"),
                      (EditorTool.Erase, "EDITOR_TOOL_ERASE", "remove"),
                  })
         {
@@ -81,6 +86,9 @@ public partial class LevelEditorPanel : VBoxContainer
             b.FocusMode = FocusModeEnum.None;
             tools.AddChild(b);
         }
+        var range = new SpinBox { MinValue = 1, MaxValue = 9, Value = 3, Step = 1, TooltipText = Loc.T("EDITOR_RANGE_TIP") };
+        range.ValueChanged += v => _canvas.Range = (int)v;
+        tools.AddChild(Ui.HBox(6, Ui.Dim(Loc.T("EDITOR_RANGE")), range));
 
         _list = new Tree { HideRoot = true, SelectMode = Tree.SelectModeEnum.Row, CustomMinimumSize = new Vector2(0, 120), AutoTranslateMode = AutoTranslateModeEnum.Disabled };
         _list.SizeFlagsVertical = SizeFlags.ExpandFill;

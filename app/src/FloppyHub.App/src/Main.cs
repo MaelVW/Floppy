@@ -6,7 +6,6 @@ using FloppyHub.App.Services;
 using FloppyHub.App.Skin;
 using FloppyHub.App.Ui;
 using Godot;
-using UiKit = FloppyHub.App.Ui.Ui;
 
 namespace FloppyHub.App;
 
@@ -186,7 +185,7 @@ public partial class Main : Control
         _main.Setup(_s, _covers, IsViewKey(view) ? view : "disc", t => ApplyTheme(t), ApplyScale, ApplyLanguage);
     }
 
-    private static bool IsViewKey(string v) => v is "disc" or "library" or "write" or "drives" or "chat" or "game" or "log" or "settings";
+    private static bool IsViewKey(string v) => v is "disc" or "library" or "write" or "drives" or "chat" or "game" or "log" or "settings" or "help";
 
     /// <summary>Nur die Rueckfrage - fuer den Motor, wenn die App nicht offen ist.</summary>
     private void BuildCompact()
@@ -287,11 +286,7 @@ public partial class Main : Control
     private void ShowUpdateDialog(Floppy.Core.Updates.UpdateInfo info)
     {
         if (_main is null || _quitting) return;
-        var d = new RetroDialog(Loc.T("UPDATE_TITLE"), "cloud", 460);
-        d.Body.AddChild(UiKit.HBox(12, Icons.Rect("cloud", 2f), UiKit.Label(Loc.T("UPDATE_TEXT", info.Version), wrap: true).Expand()));
-        d.AddButton(Loc.T("UPDATE_BTN_GET"), () => OS.ShellOpen(info.HtmlUrl), icon: "cloud");
-        d.AddButton(Loc.T("UPDATE_BTN_LATER"), () => _s.Updates.Skip(info.Version));
-        d.Open(_main.DialogLayer);
+        RetroDialog.Update(_main.DialogLayer, info.Version, info.HtmlUrl, () => _s.Updates.Skip(info.Version));
     }
 
     // ------------------------------------------------------------------
@@ -408,9 +403,57 @@ public partial class Main : Control
     }
 
     /// <summary>Chat-Vorschau ohne Netzwerk: zwei Mitspieler im Speicher.</summary>
+    /// <summary>
+    /// Vorschau fuer Admin/Sperren im Offenen Chat: diese (Vorschau-)Installation ist Admin,
+    /// Tom und Lea sitzen mit im Raum. Gibt es nur fuer Bildschirmfotos - echte Admins stehen fest in ChatAdmins.
+    /// </summary>
+    private async Task RunAdminDemo(string scenario)
+    {
+        if (_main is null) return;
+        _main.ShowView("chat");
+        var me = _s.Chat.Identity.Fingerprint;
+        _s.Chat.AdminCheck = fp => fp == me;
+
+        var demo = new ChatDemo();
+        _chatDemo = demo;
+        demo.Attach(_s.Chat);
+        await demo.StartBotsAsync(open: true, isAdmin: fp => fp == me);
+        _s.Chat.ConnectOpen();
+        await WaitUntil(() => _s.Chat.Session is { State: Floppy.Core.Chat.ChatSessionState.Connected }, 10);
+        demo.StartBots(DateTimeOffset.UtcNow);
+        await WaitUntil(() => _s.Chat.Session!.Members.Count == 3, 10);
+        await Seconds(0.3);
+
+        var session = _s.Chat.Session!;
+        demo.Tom!.SendText("Hallo zusammen!", DateTimeOffset.UtcNow);
+        await Seconds(0.3);
+        session.SendText("Willkommen im Offenen Chat – bitte freundlich bleiben.", DateTimeOffset.UtcNow);
+        await Seconds(0.3);
+        demo.Lea!.SendText("Das hier ist eine Beispiel-Nachricht, die gleich ausgeblendet wird.", DateTimeOffset.UtcNow);
+        await Seconds(0.5);
+
+        if (scenario == "chat-ban-dialog")
+        {
+            _main.OpenChatBan(demo.Lea.Me.Fingerprint, demo.Lea.Me.Id);
+            return;
+        }
+        if (scenario is "chat-ban" or "chat-moderation")
+        {
+            session.BanMember(demo.Lea.Me.Fingerprint, "Regelverstoß", TimeSpan.FromDays(1), DateTimeOffset.UtcNow);
+            await WaitUntil(() => demo.Lea.State == Floppy.Core.Chat.ChatSessionState.Ended, 5);
+            await Seconds(0.3);
+        }
+        if (scenario == "chat-moderation") _main.OpenChatModeration();
+    }
+
     private async Task RunChatDemo(string scenario)
     {
         if (_main is null) return;
+        if (scenario is "chat-admin" or "chat-ban" or "chat-ban-dialog" or "chat-moderation")
+        {
+            await RunAdminDemo(scenario);
+            return;
+        }
         _main.ShowView("chat");
         if (scenario == "chat-prompt") return;
 
@@ -453,6 +496,19 @@ public partial class Main : Control
                 await Seconds(0.5);
                 demo.Tom.SendText("Jetzt ohne Dienst und ohne Limit.", DateTimeOffset.UtcNow);
                 await Seconds(0.3);
+                break;
+            case "chat-chess":
+                _s.Chat.Session!.ChallengeChess(demo.Tom!.Me.Id, DateTimeOffset.UtcNow);
+                await WaitUntil(() => demo.Tom.Chess is not null, 5);
+                demo.Tom.AnswerChessChallenge(true, DateTimeOffset.UtcNow);
+                await WaitUntil(() => _s.Chat.Session!.Chess is { Stage: Floppy.Core.Chat.ChessGameStage.Active }, 5);
+                Floppy.Core.Chess.ChessMove.TryParse("e2e4", out var wm1); _s.Chat.Session!.MakeChessMove(wm1, DateTimeOffset.UtcNow);
+                await WaitUntil(() => demo.Tom.Chess!.Board.History.Count == 1, 5);
+                Floppy.Core.Chess.ChessMove.TryParse("e7e5", out var bm1); demo.Tom.MakeChessMove(bm1, DateTimeOffset.UtcNow);
+                await WaitUntil(() => _s.Chat.Session!.Chess!.Board.History.Count == 2, 5);
+                Floppy.Core.Chess.ChessMove.TryParse("g1f3", out var wm2); _s.Chat.Session!.MakeChessMove(wm2, DateTimeOffset.UtcNow);
+                await WaitUntil(() => demo.Tom.Chess!.Board.History.Count == 3, 5);
+                _main.ShowView("chess");
                 break;
             case "chat-scores":
                 _main.OpenChatScores();

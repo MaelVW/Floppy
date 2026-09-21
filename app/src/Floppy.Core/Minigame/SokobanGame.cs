@@ -4,14 +4,20 @@ public enum Direction { Up, Down, Left, Right }
 
 public enum MoveResult { Blocked, Moved, Pushed }
 
-/// <summary>Spiellogik "Diskettenlager": Disketten ($) in Laufwerke (.) schieben.</summary>
+/// <summary>Diskettenart: normal (passt in jedes Laufwerk), oder eine Farbe (nur ins gleichfarbige Laufwerk).</summary>
+public enum DiskKind { Universal, Red, Blue }
+
+/// <summary>Eine Diskette auf dem Feld: Art plus verbleibende Schub-Reichweite (null = unbegrenzt).</summary>
+public readonly record struct BoxState(DiskKind Kind, int? RangeLeft);
+
+/// <summary>Spiellogik "Diskettenlager": Disketten in die passenden Laufwerke schieben.</summary>
 public sealed class SokobanGame
 {
     private readonly bool[,] _walls;
-    private readonly bool[,] _goals;
+    private readonly DiskKind?[,] _goals;
     private readonly bool[,] _inside;
-    private readonly HashSet<(int X, int Y)> _boxes = [];
-    private readonly Stack<(int PX, int PY, (int X, int Y)? BoxFrom, (int X, int Y)? BoxTo, Direction Facing)> _history = new();
+    private readonly Dictionary<(int X, int Y), BoxState> _boxes = [];
+    private readonly Stack<(int PX, int PY, (int X, int Y)? BoxFrom, (int X, int Y)? BoxTo, Direction Facing, BoxState PushedBox)> _history = new();
     private readonly Level _level;
 
     public SokobanGame(Level level)
@@ -20,7 +26,7 @@ public sealed class SokobanGame
         Width = level.Width;
         Height = level.Height;
         _walls = new bool[Width, Height];
-        _goals = new bool[Width, Height];
+        _goals = new DiskKind?[Width, Height];
         _inside = new bool[Width, Height];
         Reset();
 
@@ -47,17 +53,19 @@ public sealed class SokobanGame
     public Direction Facing { get; private set; } = Direction.Down;
     public int Moves { get; private set; }
     public int Pushes { get; private set; }
-    public IReadOnlyCollection<(int X, int Y)> Boxes => _boxes;
+    public IReadOnlyCollection<(int X, int Y)> Boxes => _boxes.Keys;
     public bool CanUndo => _history.Count > 0;
 
-    public bool IsSolved => _boxes.All(b => _goals[b.X, b.Y]);
-    public int BoxesOnGoal => _boxes.Count(b => _goals[b.X, b.Y]);
+    public bool IsSolved => _boxes.All(kv => _goals[kv.Key.X, kv.Key.Y] == kv.Value.Kind);
+    public int BoxesOnGoal => _boxes.Count(kv => _goals[kv.Key.X, kv.Key.Y] == kv.Value.Kind);
 
     /// <summary>Ausserhalb des Spielfelds zaehlt als Wand.</summary>
     public bool IsWall(int x, int y) => x < 0 || y < 0 || x >= Width || y >= Height || _walls[x, y];
-    public bool IsGoal(int x, int y) => !IsWall(x, y) && _goals[x, y];
+    public bool IsGoal(int x, int y) => GoalKind(x, y) is not null;
+    public DiskKind? GoalKind(int x, int y) => IsWall(x, y) ? null : _goals[x, y];
     public bool IsInside(int x, int y) => x >= 0 && y >= 0 && x < Width && y < Height && _inside[x, y];
-    public bool HasBox(int x, int y) => _boxes.Contains((x, y));
+    public bool HasBox(int x, int y) => _boxes.ContainsKey((x, y));
+    public BoxState? Box(int x, int y) => _boxes.TryGetValue((x, y), out var b) ? b : null;
 
     public void Reset()
     {
@@ -72,8 +80,11 @@ public sealed class SokobanGame
             {
                 var c = x < row.Length ? row[x] : ' ';
                 _walls[x, y] = c == '#';
-                _goals[x, y] = c is '.' or '*' or '+';
-                if (c is '$' or '*') _boxes.Add((x, y));
+                _goals[x, y] = c switch { '.' or '*' or '+' => DiskKind.Universal, 'r' => DiskKind.Red, 'b' => DiskKind.Blue, _ => null };
+                if (c is '$' or '*') _boxes[(x, y)] = new BoxState(DiskKind.Universal, null);
+                else if (c is >= '1' and <= '9') _boxes[(x, y)] = new BoxState(DiskKind.Universal, c - '0');
+                else if (c == 'R') _boxes[(x, y)] = new BoxState(DiskKind.Red, null);
+                else if (c == 'B') _boxes[(x, y)] = new BoxState(DiskKind.Blue, null);
                 if (c is '@' or '+') Player = (x, y);
             }
         }
@@ -88,21 +99,22 @@ public sealed class SokobanGame
         var target = (X: Player.X + dx, Y: Player.Y + dy);
         if (IsWall(target.X, target.Y)) return MoveResult.Blocked;
 
-        if (HasBox(target.X, target.Y))
+        if (_boxes.TryGetValue(target, out var box))
         {
             var beyond = (X: target.X + dx, Y: target.Y + dy);
-            if (IsWall(beyond.X, beyond.Y) || HasBox(beyond.X, beyond.Y)) return MoveResult.Blocked;
+            if (IsWall(beyond.X, beyond.Y) || _boxes.ContainsKey(beyond)) return MoveResult.Blocked;
+            if (box.RangeLeft == 0) return MoveResult.Blocked;   // Reichweite aufgebraucht: steht fest wie eine Wand
 
-            _history.Push((Player.X, Player.Y, target, beyond, direction));
+            _history.Push((Player.X, Player.Y, target, beyond, direction, box));
             _boxes.Remove(target);
-            _boxes.Add(beyond);
+            _boxes[beyond] = box.RangeLeft is { } left ? box with { RangeLeft = left - 1 } : box;
             Player = target;
             Moves++;
             Pushes++;
             return MoveResult.Pushed;
         }
 
-        _history.Push((Player.X, Player.Y, null, null, direction));
+        _history.Push((Player.X, Player.Y, null, null, direction, default));
         Player = target;
         Moves++;
         return MoveResult.Moved;
@@ -115,7 +127,7 @@ public sealed class SokobanGame
         if (step is { BoxFrom: { } from, BoxTo: { } to })
         {
             _boxes.Remove(to);
-            _boxes.Add(from);
+            _boxes[from] = step.PushedBox;   // stellt auch die Reichweite von vor dem Schub wieder her
             Pushes--;
         }
         Player = (step.PX, step.PY);

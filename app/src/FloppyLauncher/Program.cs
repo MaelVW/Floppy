@@ -48,7 +48,6 @@ internal static class Program
         try
         {
             using var stop = new EventWaitHandle(false, EventResetMode.AutoReset, StopEventName);
-            var root = args.Drive ?? options.DriveRoot;
 
             var mode = new List<string>();
             if (args.DryRun) mode.Add("DryRun");
@@ -57,15 +56,17 @@ internal static class Program
             if (args.Drive is not null) mode.Add("Testordner");
             var modeText = mode.Count > 0 ? $" [{string.Join(", ", mode)}]" : "";
 
-            log.Write(LogLevel.Info, $"Floppy Launcher (Motor) gestartet. Warte auf Diskette in {root} ...{modeText}");
+            var trust = new TrustStore(paths.TrustFile);
+            var engine = new MotorEngine(options, log, trust, new SystemActions(paths, args, log), args.Drive, args.DryRun,
+                guardDir: paths.UserData);
+
+            log.Write(LogLevel.Info, $"Floppy Launcher (Motor) gestartet. Warte auf Diskette in " +
+                $"{string.Join(", ", engine.Watchers.Select(w => w.Root))} ...{modeText}");
             log.Write(LogLevel.Info, $"Motor {Version} | .NET {Environment.Version} | Programmordner: {paths.Home}");
             if (iniProblem is not null) log.Write(LogLevel.Warn, iniProblem);
             foreach (var problem in args.Problems) log.Write(LogLevel.Warn, problem);
             foreach (var problem in CheckRootLists(options)) log.Write(LogLevel.Warn, problem);
 
-            var trust = new TrustStore(paths.TrustFile);
-            var engine = new MotorEngine(options, log, trust, new SystemActions(paths, args, log), root, args.DryRun,
-                guardDir: paths.UserData);
             engine.Run(stop, args.Once);
 
             log.Write(LogLevel.Info, "Floppy Launcher (Motor) beendet.");

@@ -79,6 +79,21 @@ public static class IconForge
         ["pencil"] = new(16, false, (c, _) => Pencil16(c)),
         ["cloud"] = new(16, false, (c, _) => Cloud16(c)),
         ["door"] = new(16, false, (c, _) => Door16(c)),
+        ["chess"] = new(32, true, (c, p) => ChessTool(c, p)),
+
+        // ---- Schachfiguren (32, eine Silhouette pro Figur, zwei Farben) ----
+        ["chess_wk"] = new(32, false, (c, _) => ChessKing(c, ChessWhite)),
+        ["chess_wq"] = new(32, false, (c, _) => ChessQueen(c, ChessWhite)),
+        ["chess_wr"] = new(32, false, (c, _) => ChessRook(c, ChessWhite)),
+        ["chess_wb"] = new(32, false, (c, _) => ChessBishop(c, ChessWhite)),
+        ["chess_wn"] = new(32, false, (c, _) => ChessKnight(c, ChessWhite)),
+        ["chess_wp"] = new(32, false, (c, _) => ChessPawn(c, ChessWhite)),
+        ["chess_bk"] = new(32, false, (c, _) => ChessKing(c, ChessBlack)),
+        ["chess_bq"] = new(32, false, (c, _) => ChessQueen(c, ChessBlack)),
+        ["chess_br"] = new(32, false, (c, _) => ChessRook(c, ChessBlack)),
+        ["chess_bb"] = new(32, false, (c, _) => ChessBishop(c, ChessBlack)),
+        ["chess_bn"] = new(32, false, (c, _) => ChessKnight(c, ChessBlack)),
+        ["chess_bp"] = new(32, false, (c, _) => ChessPawn(c, ChessBlack)),
 
         // ---- Minispiel-Kacheln (16) ----
         ["tile_floor"] = new(16, false, (c, _) => TileFloor(c)),
@@ -705,6 +720,102 @@ public static class IconForge
         c.Px(9, 8, C("#f2c230"));
         c.Polygon(C("#d64533"), new(12, 6), new(15, 8), new(12, 10));
         c.Outline(C("#3c2410"));
+    }
+
+    // ==================================================================
+    // Schachfiguren (32) - gemeinsamer Sockel, pro Figur eigene Silhouette.
+    // Beide Farben werden IDENTISCH gezeichnet (nur body wechselt) und bekommen
+    // denselben Umriss/Schatten - damit wirkt Weiss genauso solide wie Schwarz
+    // (anders als bei den Unicode-Glyphen davor, die nur bei Schwarz gefuellt waren).
+    // ==================================================================
+
+    private static readonly Color ChessWhite = C("#f4f0e3");
+    private static readonly Color ChessBlack = C("#33343c");
+
+    private static void ChessBase(PixelCanvas c, Color body)
+    {
+        c.Polygon(body, new(4, 30), new(28, 30), new(25, 26), new(7, 26));
+        c.Rect(11, 21, 10, 6, body);
+    }
+
+    private static void ChessKing(PixelCanvas c, Color body)
+    {
+        ChessBase(c, body);
+        c.Rect(9, 15, 14, 7, body);
+        c.Rect(14, 4, 4, 11, body);
+        c.Rect(11, 7, 10, 3, body);
+        c.Outline(Ink);
+        c.DropShadow(Shade);
+    }
+
+    private static void ChessQueen(PixelCanvas c, Color body)
+    {
+        ChessBase(c, body);
+        c.Rect(9, 15, 14, 7, body);
+        for (var i = 0; i < 5; i++)
+        {
+            var x = 9 + i * 3;   // Breite 2, Abstand 3 -> 1 Pixel Luecke zwischen den Zacken
+            c.Rect(x, 9, 2, 7, body);
+            c.Disc(x + 1f, 8, 1.4f, body);
+        }
+        c.Outline(Ink);
+        c.DropShadow(Shade);
+    }
+
+    private static void ChessRook(PixelCanvas c, Color body)
+    {
+        ChessBase(c, body);
+        c.Rect(9, 10, 14, 12, body);
+        c.Rect(9, 6, 4, 5, body);
+        c.Rect(14, 6, 4, 5, body);
+        c.Rect(19, 6, 4, 5, body);
+        c.Outline(Ink);
+        c.DropShadow(Shade);
+    }
+
+    private static void ChessBishop(PixelCanvas c, Color body)
+    {
+        ChessBase(c, body);
+        c.Polygon(body, new(16, 5), new(22, 13), new(20, 21), new(12, 21), new(10, 13));
+        c.Disc(16, 4, 2.1f, body);
+        c.Outline(Ink);
+        c.DropShadow(Shade);
+    }
+
+    private static void ChessKnight(PixelCanvas c, Color body)
+    {
+        ChessBase(c, body);
+        c.Polygon(body,
+            new(10, 21), new(10, 14), new(9, 12), new(12, 8), new(11, 5), new(15, 5), new(15, 8),
+            new(21, 6), new(24, 9), new(22, 12), new(18, 11), new(18, 21));
+        c.Outline(Ink);
+        c.DropShadow(Shade);
+    }
+
+    private static void ChessPawn(PixelCanvas c, Color body)
+    {
+        ChessBase(c, body);
+        c.Rect(12, 15, 8, 7, body);
+        c.Disc(16, 11, 5.5f, body);
+        c.Outline(Ink);
+        c.DropShadow(Shade);
+    }
+
+    /// <summary>
+    /// Werkzeugleisten-Symbol fuer die Schach-Ansicht - 32 px wie die anderen Werkzeugknoepfe
+    /// (ToolButton zeigt Icons immer in ihrer Grundgroesse, ein 16-px-Icon wirkte daneben zu
+    /// klein und "schwebte" wegen der oben ausgerichteten Icons hoeher als die anderen).
+    /// Haengt vom Farbschema ab (wie arrow_down/check_off), damit die Figur im Dunkelmodus
+    /// hell und im Hellmodus dunkel bleibt, statt immer schwarz auf dunklem Grund zu verschwinden.
+    /// </summary>
+    private static void ChessTool(PixelCanvas c, Palette p)
+    {
+        var piece = p.Text;
+        c.Rect(6, 26, 20, 4, piece);    // Sockel
+        c.Rect(10, 22, 12, 4, piece);   // Fuss
+        c.Rect(12, 16, 8, 6, piece);    // Stamm
+        c.Rect(10, 12, 12, 4, piece);   // Kragen
+        c.Disc(16, 8, 6f, piece);       // Kopf
     }
 
     // ==================================================================

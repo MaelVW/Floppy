@@ -16,6 +16,10 @@ public partial class SettingsView : ViewBase
     private Label _coverSize = null!;
     private TextureRect _motorLed = null!;
     private Label _motorText = null!;
+    private OptionButton _extraDrive1 = null!;
+    private OptionButton _extraDrive2 = null!;
+    private readonly List<string> _extraDrive1Options = [];
+    private readonly List<string> _extraDrive2Options = [];
 
     protected override void Build()
     {
@@ -96,6 +100,22 @@ public partial class SettingsView : ViewBase
             _trust,
             Ui.HBox(6, remove))));
 
+        // ---- Zusaetzliche Laufwerke ----
+        _extraDrive1 = new OptionButton();
+        _extraDrive2 = new OptionButton();
+        _extraDrive1.ItemSelected += _ => OnExtraDriveChanged();
+        _extraDrive2.ItemSelected += _ => OnExtraDriveChanged();
+        var extraGrid = new GridContainer { Columns = 2 };
+        extraGrid.AddChild(Ui.Label(Loc.T("SET_EXTRA_DRIVE_1")));
+        extraGrid.AddChild(_extraDrive1);
+        extraGrid.AddChild(Ui.Label(Loc.T("SET_EXTRA_DRIVE_2")));
+        extraGrid.AddChild(_extraDrive2);
+        RefreshExtraDrives(s.Options.ExtraDriveLetters);
+        column.AddChild(new GroupBox(Loc.T("SET_EXTRA_DRIVES"), Ui.VBox(6,
+            Ui.IconLine("info", Loc.T("SET_EXTRA_DRIVES_HINT"), "DimLabel"),
+            extraGrid,
+            Ui.Dim(Loc.T("SET_EXTRA_DRIVES_RESTART"), wrap: true))));
+
         // ---- Motor ----
         _motorLed = Icons.Rect("led_off");
         _motorText = Ui.Label("");
@@ -105,6 +125,17 @@ public partial class SettingsView : ViewBase
         {
             FloppyPaths.EnsureDirectory(s.Paths.UserData);
             OS.ShellOpen(s.Paths.UserData);
+        });
+        var checkUpdate = Ui.Button(Loc.T("BTN_CHECK_UPDATE"), "cloud", () =>
+        {
+            if (s.ReadOnlyMode) return;
+            Host.SetStatusMessage(Loc.T("UPDATE_CHECKING"), "cloud");
+            var current = (string)ProjectSettings.GetSetting("application/config/version");
+            s.Updates.CheckManually(current, info => Callable.From(() =>
+            {
+                if (info is null) Host.SetStatusMessage(Loc.T("UPDATE_NONE"), "ok");
+                else RetroDialog.Update(Host.DialogLayer, info.Version, info.HtmlUrl, () => s.Updates.Skip(info.Version));
+            }).CallDeferred());
         });
         var info = new GridContainer { Columns = 2 };
         void Row(string key, string value)
@@ -125,7 +156,7 @@ public partial class SettingsView : ViewBase
         column.AddChild(new GroupBox(Loc.T("SET_MOTOR"), Ui.VBox(8,
             Ui.HBox(6, _motorLed, _motorText),
             info,
-            Ui.HBox(6, configure, folder, data))));
+            Ui.HBox(6, configure, folder, data, checkUpdate))));
 
         var scroll = new ScrollContainer { HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled }.Expand(vertical: true);
         scroll.AddChild(Ui.Margin(column.Expand(), 0, 0, 8, 0).Expand());
@@ -139,13 +170,66 @@ public partial class SettingsView : ViewBase
         UpdateMotor();
     }
 
-    public override void OnTick() => UpdateMotor();
+    public override void OnTick()
+    {
+        UpdateMotor();
+        RefreshExtraDrives(SelectedExtraDrives());
+    }
 
     private void UpdateMotor()
     {
         var running = MotorProbe.IsRunning();
         _motorLed.Texture = Icons.Get(running ? "led_on" : "led_off");
         _motorText.Text = running ? Loc.T("MOTOR_RUNNING") : Loc.T("MOTOR_STOPPED");
+    }
+
+    /// <summary>
+    /// Fuellt beide Dropdowns mit den aktuell angeschlossenen Wechseldatentraegern (ausser dem
+    /// Hauptlaufwerk) plus den gerade gewaehlten Buchstaben, auch wenn deren Laufwerk gerade
+    /// nicht angeschlossen ist - sonst wuerde die Auswahl beim Neuaufbau verschwinden.
+    /// </summary>
+    private void RefreshExtraDrives(IReadOnlyList<string> selected)
+    {
+        var primary = Host.Services.Options.DriveLetter;
+        var present = DriveSnapshot.RemovableDrives()
+            .Select(d => d.Root.TrimEnd('\\'))
+            .Where(l => !l.Equals(primary, StringComparison.OrdinalIgnoreCase))
+            .Concat(selected)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(l => l, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        void Fill(OptionButton box, List<string> options, string? own, string? other)
+        {
+            options.Clear();
+            box.Clear();
+            box.AddItem(Loc.T("SET_EXTRA_DRIVE_NONE"));
+            var selectIndex = 0;
+            foreach (var letter in present)
+            {
+                if (other is not null && letter.Equals(other, StringComparison.OrdinalIgnoreCase)) continue;
+                options.Add(letter);
+                box.AddItem(letter);
+                if (own is not null && letter.Equals(own, StringComparison.OrdinalIgnoreCase)) selectIndex = options.Count;
+            }
+            box.Select(selectIndex);
+        }
+
+        Fill(_extraDrive1, _extraDrive1Options, selected.ElementAtOrDefault(0), selected.ElementAtOrDefault(1));
+        Fill(_extraDrive2, _extraDrive2Options, selected.ElementAtOrDefault(1), selected.ElementAtOrDefault(0));
+    }
+
+    private List<string> SelectedExtraDrives() =>
+        [.. new[] { (_extraDrive1, _extraDrive1Options), (_extraDrive2, _extraDrive2Options) }
+            .Select(t => t.Item1.Selected > 0 && t.Item1.Selected <= t.Item2.Count ? t.Item2[t.Item1.Selected - 1] : "")
+            .Where(l => l.Length > 0)];
+
+    private void OnExtraDriveChanged()
+    {
+        var selected = SelectedExtraDrives();
+        RefreshExtraDrives(selected);
+        if (!Host.Services.ReadOnlyMode)
+            IniDocument.SetValue(Host.Services.Paths.ConfigFile, "drive", "extra_letters", string.Join(",", selected));
     }
 
     private void UpdateCoverSize() =>

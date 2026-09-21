@@ -16,6 +16,9 @@ public sealed class AppServices
         Trust = new TrustStore(paths.TrustFile);
         Log = new LogFile(paths.ResolveLogFile(Options), Options.LogMaxKb);
         DriveRoot = args.Drive ?? Options.DriveRoot;
+        WatchedRoots = args.Drive is not null
+            ? [DriveRoot]
+            : new[] { DriveRoot }.Concat(Options.ExtraDriveRoots).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
     public AppArgs Args { get; }
@@ -26,8 +29,15 @@ public sealed class AppServices
     public TrustStore Trust { get; }
     public LogFile Log { get; }
 
-    /// <summary>Das eine beobachtete Laufwerk (Standard A:\).</summary>
+    /// <summary>Das Hauptlaufwerk, das die meisten Ansichten (Diskette, Bespielen, Chat, ...) zeigen (Standard A:\).</summary>
     public string DriveRoot { get; }
+
+    /// <summary>
+    /// Alle Laufwerke, die der Motor fuer diese App ueberwacht: <see cref="DriveRoot"/> plus die
+    /// gewaehlten Extras (siehe <see cref="FloppyOptions.ExtraDriveLetters"/>). Nur fuer die
+    /// Rueckfrage bei einer neuen Diskette gebraucht - die restlichen Ansichten bleiben bei DriveRoot.
+    /// </summary>
+    public IReadOnlyList<string> WatchedRoots { get; }
 
     /// <summary>Testbetrieb (Bildschirmfoto): nichts dauerhaft veraendern.</summary>
     public bool ReadOnlyMode => Args.Screenshot is not null;

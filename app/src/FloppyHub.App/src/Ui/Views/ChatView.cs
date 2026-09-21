@@ -51,6 +51,10 @@ public partial class ChatView : ViewBase
     private GroupBox _membersBox = null!;
     private Tree _members = null!;
     private Button _saveContact = null!;
+    private Button _challengeChess = null!;
+    private Button _ban = null!;
+    private Button _moderation = null!;
+    private HBoxContainer _adminRow = null!;
     private Tree _contacts = null!;
     private Button _connectContact = null!;
     private Button _removeContact = null!;
@@ -112,7 +116,7 @@ public partial class ChatView : ViewBase
         _send.CustomMinimumSize = new Vector2(100, 0);
         _inputHint = Ui.Dim("", wrap: true);
 
-        var open = Ui.Button(Loc.T("CHAT_BTN_OPEN"), "warn", () => Chat.ConnectOpen());
+        var open = Ui.Button(Loc.T("CHAT_BTN_OPEN"), "warn", () => ShowBanned(Chat.ConnectOpen()));
         open.TooltipText = Loc.T("CHAT_OPEN_HINT");
         open.Visible = ChatRoomKey.OpenRoomAvailable;
         _keyTools = Ui.HBox(6,
@@ -131,7 +135,12 @@ public partial class ChatView : ViewBase
         _members.ItemSelected += UpdateButtons;
         _members.ItemActivated += SaveContactFromSelection;
         _saveContact = Ui.Button(Loc.T("CHAT_BTN_SAVE_CONTACT"), "contact", SaveContactFromSelection);
-        _membersBox = new GroupBox(Loc.T("CHAT_MEMBERS", 0), Ui.VBox(6, _members, _saveContact));
+        _challengeChess = Ui.Button(Loc.T("CHAT_BTN_CHALLENGE"), "chess", ChallengeSelectedMember);
+        _ban = Ui.Button(Loc.T("CHAT_BTN_BAN"), "error", BanSelectedMember);
+        _ban.TooltipText = Loc.T("CHAT_BTN_BAN_TIP");
+        _moderation = Ui.Button(Loc.T("CHAT_BTN_MODERATION"), "trust", OpenModeration);
+        _adminRow = Ui.HBox(6, _ban, _moderation);
+        _membersBox = new GroupBox(Loc.T("CHAT_MEMBERS", 0), Ui.VBox(6, _members, Ui.HBox(6, _saveContact, _challengeChess), _adminRow));
         _membersBox.SizeFlagsVertical = SizeFlags.ExpandFill;
 
         _contacts = MakeTree(2);
@@ -241,7 +250,8 @@ public partial class ChatView : ViewBase
         _send.Disabled = !(asking || connected);
         SetHint(asking ? Loc.T("CHAT_PROMPT_HINT") : Chat.IsOpenRoom ? Loc.T("CHAT_OPEN_HINT") : "", warn: Chat.IsOpenRoom && !asking);
 
-        _myId.Text = Chat.Identity.Id;
+        _myId.Text = Chat.IAmAdmin ? $"{Loc.T("CHAT_ADMIN_TAG")} {Chat.Identity.Id}" : Chat.Identity.Id;
+        _adminRow.Visible = Chat.IAmAdmin;
         RenderLog();
         FillMembers();
         FillContacts();
@@ -416,9 +426,140 @@ public partial class ChatView : ViewBase
     {
         var member = _members.GetSelected()?.GetMetadata(0).AsString();
         _saveContact.Disabled = string.IsNullOrEmpty(member) || member == Chat.Identity.Fingerprint || Host.Services.ReadOnlyMode;
+        _challengeChess.Disabled = string.IsNullOrEmpty(member) || member == Chat.Identity.Fingerprint
+            || Chat.Session?.Chess is { Stage: not ChessGameStage.Ended };
+        _ban.Disabled = Chat.Session is not { State: ChatSessionState.Connected, Mode: ChatMode.Online, CanModerate: true }
+            || string.IsNullOrEmpty(member) || member == Chat.Identity.Fingerprint || Chat.IsAdmin(member);
+        _moderation.Disabled = !Chat.IAmAdmin;
         var contact = Chat.ContactOf(_contacts.GetSelected()?.GetMetadata(0).AsString());
         _connectContact.Disabled = contact is not { HasSecret: true };
         _removeContact.Disabled = contact is null;
+    }
+
+    private void ChallengeSelectedMember()
+    {
+        var id = _members.GetSelected()?.GetMetadata(1).AsString();
+        if (string.IsNullOrEmpty(id) || Chat.Session is not { } session) return;
+        var result = session.ChallengeChess(id, DateTimeOffset.UtcNow);
+        if (result == ChatResult.Ok) Host.ShowView("chess");
+        else ShowResult(result);
+        Refresh();
+    }
+
+    // ---- Moderation (nur Admin) ----
+
+    private void BanSelectedMember()
+    {
+        var item = _members.GetSelected();
+        var fingerprint = item?.GetMetadata(0).AsString();
+        if (string.IsNullOrEmpty(fingerprint)) return;
+        OpenBanDialog(fingerprint, item!.GetMetadata(1).AsString());
+    }
+
+    public void OpenBanDialog(string fingerprint, string memberId)
+    {
+        if (Chat.Session is not { CanModerate: true } session) return;
+        var name = Chat.NameOf(fingerprint, memberId);
+
+        TimeSpan?[] lengths = [TimeSpan.FromHours(1), TimeSpan.FromDays(1), TimeSpan.FromDays(7), null];
+        var duration = new OptionButton();
+        foreach (var key in new[] { "CHAT_BAN_1H", "CHAT_BAN_24H", "CHAT_BAN_7D", "CHAT_BAN_PERMANENT" }) duration.AddItem(Loc.T(key));
+        duration.Select(1);
+        var reason = new LineEdit { MaxLength = ChatPayload.MaxBanReasonLength, PlaceholderText = Loc.T("CHAT_BAN_REASON_HINT") };
+
+        var d = new RetroDialog(Loc.T("CHAT_BAN_TITLE"), "warn", 500);
+        d.Body.AddChild(Ui.HBox(12, Icons.Rect("warn", 2f), Ui.VBox(8,
+            Ui.Label(Loc.T("CHAT_BAN_TEXT", name), wrap: true),
+            Ui.HBox(8, Ui.Label(Loc.T("CHAT_BAN_REASON")), reason.Expand()),
+            Ui.HBox(8, Ui.Label(Loc.T("CHAT_BAN_DURATION")), duration.Expand()),
+            Ui.Dim(Loc.T("CHAT_BAN_NOTE"), wrap: true)).Expand()));
+        d.AddButton(Loc.T("CHAT_BAN_CONFIRM"), () =>
+        {
+            var result = session.BanMember(fingerprint, reason.Text, lengths[duration.Selected], DateTimeOffset.UtcNow);
+            if (result == ChatResult.Ok) Host.SetStatusMessage(Loc.T("CHAT_BAN_DONE", name), "ok");
+            else ShowResult(result);
+            _renderedSession = null;   // ausgeblendete Nachrichten: Verlauf neu zeichnen
+            Refresh();
+        }, icon: "error");
+        d.AddButton(Loc.T("BTN_CANCEL"), () => { });
+        d.Open(Host.DialogLayer);
+        Callable.From(() => reason.GrabFocus()).CallDeferred();
+    }
+
+    public void OpenModeration()
+    {
+        if (!Chat.IAmAdmin) return;
+        var tree = new Tree
+        {
+            Columns = 3,
+            HideRoot = true,
+            ColumnTitlesVisible = true,
+            SelectMode = Tree.SelectModeEnum.Row,
+            CustomMinimumSize = new Vector2(0, 190),
+            AutoTranslateMode = AutoTranslateModeEnum.Disabled,
+        };
+        tree.SetColumnTitle(0, Loc.T("CHAT_MOD_COL_ID"));
+        tree.SetColumnTitle(1, Loc.T("CHAT_MOD_COL_REASON"));
+        tree.SetColumnTitle(2, Loc.T("CHAT_MOD_COL_UNTIL"));
+        tree.SetColumnExpand(0, false);
+        tree.SetColumnCustomMinimumWidth(0, 130);
+        tree.SetColumnExpand(1, true);
+        tree.SetColumnExpand(2, false);
+        tree.SetColumnCustomMinimumWidth(2, 130);
+
+        void Fill()
+        {
+            tree.Clear();
+            var root = tree.CreateItem();
+            var bans = Chat.Bans.Active(DateTimeOffset.UtcNow);
+            foreach (var b in bans.OrderByDescending(b => b.At))
+            {
+                var item = tree.CreateItem(root);
+                item.SetText(0, b.MemberId.Length > 0 ? b.MemberId : $"{b.Fingerprint[..8]}…");
+                item.SetText(1, b.Reason);
+                item.SetText(2, b.Until == 0
+                    ? Loc.T("CHAT_BAN_PERMANENT")
+                    : DateTimeOffset.FromUnixTimeMilliseconds(b.Until).ToLocalTime().ToString("yyyy-MM-dd HH:mm"));
+                item.SetTooltipText(0, $"{Loc.T("CHAT_ID", b.MemberId)}\n{b.Fingerprint}");
+                item.SetMetadata(0, b.Fingerprint);
+            }
+            if (bans.Count == 0)
+            {
+                var none = tree.CreateItem(root);
+                none.SetText(0, Loc.T("CHAT_MOD_EMPTY"));
+                none.SetSelectable(0, false);
+                none.SetSelectable(1, false);
+                none.SetSelectable(2, false);
+            }
+        }
+        Fill();
+
+        var d = new RetroDialog(Loc.T("CHAT_MOD_TITLE"), "trust", 640);
+        d.Body.AddChild(Ui.IconLine("info", Loc.T("CHAT_MOD_HINT"), "DimLabel"));
+        d.Body.AddChild(tree);
+        d.AddButton(Loc.T("CHAT_MOD_UNBAN"), () =>
+        {
+            var fingerprint = tree.GetSelected()?.GetMetadata(0).AsString();
+            if (string.IsNullOrEmpty(fingerprint)) return;
+            if (Chat.Session is not { CanModerate: true, State: ChatSessionState.Connected, Mode: ChatMode.Online } session)
+            {
+                Host.SetStatusMessage(Loc.T("CHAT_MOD_NEEDS_OPEN"), "warn");   // aufheben heisst: allen im offenen Chat Bescheid sagen
+                return;
+            }
+            var result = session.UnbanMember(fingerprint, DateTimeOffset.UtcNow);
+            if (result == ChatResult.Ok)
+            {
+                Host.SetStatusMessage(Loc.T("CHAT_MOD_UNBANNED"), "ok");
+                Fill();
+                Refresh();
+            }
+            else
+            {
+                ShowResult(result);
+            }
+        }, closes: false, icon: "ok");
+        d.AddButton(Loc.T("BTN_OK"), () => { });
+        d.Open(Host.DialogLayer);
     }
 
     // ---- Wechsel-Vorschlag ----
@@ -496,8 +637,21 @@ public partial class ChatView : ViewBase
     {
         if (ChatRoomKey.IsWeak(secret)) Host.SetStatusMessage(Loc.T("CHAT_WEAK_KEY"), "warn");
         _input.Text = "";
-        Chat.Connect(secret, label ?? LabelFor(secret));
+        ShowBanned(Chat.Connect(secret, label ?? LabelFor(secret)));
         _input.CallDeferred(Control.MethodName.GrabFocus);
+    }
+
+    /// <summary>Du bist aus dem offenen Chat gesperrt - Grund und Ende zeigen (bei null passiert nichts).</summary>
+    private void ShowBanned(ChatBan? ban)
+    {
+        if (ban is null) return;
+        var until = ban.Until == 0
+            ? Loc.T("CHAT_BAN_PERMANENT")
+            : DateTimeOffset.FromUnixTimeMilliseconds(ban.Until).ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        var text = ban.Reason.Length > 0
+            ? Loc.T("CHAT_BANNED_TEXT_REASON", ban.Reason, until)
+            : Loc.T("CHAT_BANNED_TEXT", until);
+        RetroDialog.Message(Host.DialogLayer, Loc.T("CHAT_BANNED_TITLE"), text, "warn");
     }
 
     /// <summary>Gehoert die Verschluesselung zu einem Kontakt? Dann dessen Name als Raumname.</summary>
@@ -516,6 +670,9 @@ public partial class ChatView : ViewBase
             ChatResult.Alone => Loc.T("CHAT_RESULT_ALONE"),
             ChatResult.NoNetwork => Loc.T("CHAT_RESULT_NONETWORK"),
             ChatResult.Busy => Loc.T("CHAT_RESULT_BUSY"),
+            ChatResult.NotFound => Loc.T("CHAT_RESULT_NOTFOUND"),
+            ChatResult.WrongTurn => Loc.T("CHAT_RESULT_WRONGTURN"),
+            ChatResult.NotAllowed => Loc.T("CHAT_RESULT_NOTALLOWED"),
             _ => Loc.T("CHAT_RESULT_NOTCONNECTED"),
         };
         Host.SetStatusMessage(text, "warn");

@@ -1,6 +1,6 @@
 namespace Floppy.Core.Minigame;
 
-public enum EditorTool { Wall, Floor, Goal, Box, Player, Erase }
+public enum EditorTool { Wall, Floor, Goal, Box, Player, Erase, RedGoal, RedBox, BlueGoal, BlueBox, RangeBox }
 
 /// <summary>
 /// Ein Level im Editor: ein Raster, auf dem man Waende, Laufwerke, Disketten und den Spieler
@@ -41,8 +41,11 @@ public sealed class LevelDraft
 
     public char Get(int x, int y) => x >= 0 && y >= 0 && x < Width && y < Height ? _cells[x, y] : ' ';
 
-    /// <summary>Werkzeug auf ein Feld anwenden. true = etwas hat sich geaendert.</summary>
-    public bool Paint(int x, int y, EditorTool tool)
+    /// <summary>
+    /// Werkzeug auf ein Feld anwenden. true = etwas hat sich geaendert.
+    /// <paramref name="range"/> gilt nur fuer <see cref="EditorTool.RangeBox"/> (1-9 Schuesse, dann steht die Diskette fest).
+    /// </summary>
+    public bool Paint(int x, int y, EditorTool tool, int range = 3)
     {
         if (x < 0 || y < 0 || x >= Width || y >= Height) return false;
         var old = _cells[x, y];
@@ -54,6 +57,11 @@ public sealed class LevelDraft
             EditorTool.Goal => old switch { '$' or '*' => '*', '@' or '+' => '+', _ => '.' },
             EditorTool.Box => goal ? '*' : '$',
             EditorTool.Player => goal ? '+' : '@',
+            EditorTool.RedGoal => 'r',
+            EditorTool.RedBox => 'R',
+            EditorTool.BlueGoal => 'b',
+            EditorTool.BlueBox => 'B',
+            EditorTool.RangeBox => (char)('0' + Math.Clamp(range, 1, 9)),
             _ => ' ',
         };
         if (tool == EditorTool.Player && next != old)

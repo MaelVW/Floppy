@@ -48,6 +48,14 @@ public sealed class ChatLeaderboard
         Version++;
     }
 
+    /// <summary>Alle Ergebnisse eines Teilnehmers entfernen (z. B. nach einer Sperre - Levelnamen sind freier Text).</summary>
+    public void Remove(string fingerprint)
+    {
+        foreach (var key in _levels.Keys.ToList())
+            if (_levels[key].Remove(fingerprint) && _levels[key].Count == 0) _levels.Remove(key);
+        Version++;
+    }
+
     /// <summary>Mehr Punkte gewinnt; bei Gleichstand weniger Zuege, dann weniger Zeit.</summary>
     public static bool IsBetter(ChatScore a, ChatScore b) =>
         a.Points != b.Points ? a.Points > b.Points :

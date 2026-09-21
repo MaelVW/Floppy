@@ -18,9 +18,11 @@ public sealed class ChatDemo
 
     public void Attach(ChatService chat) => chat.NetworkOverride = new InMemoryChatNetwork(_hub);
 
-    public async Task StartBotsAsync()
+    /// <param name="open">Die Mitspieler sitzen im Offenen Chat (fuer die Admin-Vorschau) statt im Beispielraum.</param>
+    /// <param name="isAdmin">Wer in dieser Vorschau Admin ist.</param>
+    public async Task StartBotsAsync(bool open = false, Func<string, bool>? isAdmin = null)
     {
-        var key = await Task.Run(() => ChatRoomKey.Derive(Secret)).ConfigureAwait(false);
+        var key = open ? ChatRoomKey.Open : await Task.Run(() => ChatRoomKey.Derive(Secret)).ConfigureAwait(false);
         ChatScore Score(string id, string name, int moves, int pushes, long ms, int points) =>
             new() { Game = "diskettenlager", LevelId = id, LevelName = name, Moves = moves, Pushes = pushes, Millis = ms, Points = points };
 
@@ -29,12 +31,12 @@ public sealed class ChatDemo
             Score("5D1A0C7E22B4", "Erste Diskette", 3, 1, 2400, 976),
             Score("9F3B61C0DA17", "Zwei Laufwerke", 19, 4, 21000, 1838),
             Score("C4E2197A5B30", "Tims Turm", 44, 9, 71000, 2593),
-        ]);
+        ], isAdmin: isAdmin);
         Lea = new ChatSession(ChatIdentity.CreateNew(), key, new InMemoryChatNetwork(_hub), () =>
         [
             Score("5D1A0C7E22B4", "Erste Diskette", 3, 1, 1900, 978),
             Score("9F3B61C0DA17", "Zwei Laufwerke", 23, 5, 18000, 1834),
-        ]);
+        ], isAdmin: isAdmin);
         _bots.Add(Tom);
         _bots.Add(Lea);
     }

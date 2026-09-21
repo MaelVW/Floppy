@@ -71,4 +71,48 @@ public sealed class IniDocument
         var items = v.Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return items.Length == 0 ? fallback : items;
     }
+
+    /// <summary>
+    /// Einen einzelnen Schluessel in einer INI-Datei setzen, ohne den Rest der Datei zu
+    /// veraendern - Kommentare, andere Abschnitte und die Reihenfolge bleiben erhalten.
+    /// Fehlt die Datei oder der Abschnitt, wird beides neu angelegt. Fuer FloppyLauncher.ini,
+    /// die auch von Hand und von der V1-Konsole gelesen wird - deshalb kein voller Neuaufbau.
+    /// </summary>
+    public static void SetValue(string path, string section, string key, string value)
+    {
+        var lines = File.Exists(path) ? File.ReadAllLines(path).ToList() : [];
+        var sectionStart = -1;
+        var sectionEnd = lines.Count;
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var trimmed = lines[i].Trim();
+            if (trimmed.Length < 2 || trimmed[0] != '[' || trimmed[^1] != ']') continue;
+            if (sectionStart >= 0) { sectionEnd = i; break; }
+            if (string.Equals(trimmed[1..^1].Trim(), section, StringComparison.OrdinalIgnoreCase)) sectionStart = i;
+        }
+
+        var line = $"{key} = {value}";
+        if (sectionStart < 0)
+        {
+            if (lines.Count > 0 && lines[^1].Trim().Length > 0) lines.Add("");
+            lines.Add($"[{section}]");
+            lines.Add(line);
+        }
+        else
+        {
+            var keyLine = -1;
+            for (var i = sectionStart + 1; i < sectionEnd; i++)
+            {
+                var eq = lines[i].IndexOf('=');
+                if (eq <= 0) continue;
+                if (string.Equals(lines[i][..eq].Trim(), key, StringComparison.OrdinalIgnoreCase)) { keyLine = i; break; }
+            }
+            if (keyLine >= 0) lines[keyLine] = line;
+            else lines.Insert(sectionEnd, line);
+        }
+
+        var dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+        File.WriteAllLines(path, lines, new System.Text.UTF8Encoding(true));
+    }
 }

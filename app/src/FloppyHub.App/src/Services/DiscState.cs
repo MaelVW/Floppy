@@ -16,9 +16,12 @@ public sealed record DiscState(
 {
     public LaunchPlan? Plan => Result?.Plan;
 
-    public static DiscState Read(AppServices s)
+    public static DiscState Read(AppServices s) => Read(s, s.DriveRoot);
+
+    /// <summary>Wie <see cref="Read(AppServices)"/>, aber fuer ein bestimmtes Laufwerk - z. B. eines
+    /// der zusaetzlichen Laufwerke aus <see cref="AppServices.WatchedRoots"/> bei einer Rueckfrage.</summary>
+    public static DiscState Read(AppServices s, string root)
     {
-        var root = s.DriveRoot;
         if (!DiscWatcher.IsReady(root))
             return new DiscState(root, false, IsDriveRoot(root) ? DriveSnapshot.Read(root) : null, null, null, [], null, DiskSignature.Empty);
 

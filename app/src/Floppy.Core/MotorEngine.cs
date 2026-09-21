@@ -14,8 +14,9 @@ public interface IMotorActions
 }
 
 /// <summary>
-/// Herz von FloppyLauncher.exe: schaut alle PollSeconds auf das EINE Laufwerk
-/// (Standard A:), wertet neue Disketten aus und entscheidet ueber die Vertrauensliste.
+/// Herz von FloppyLauncher.exe: schaut alle PollSeconds auf Laufwerk A: (Standard) und,
+/// nur in der App, auf bis zu zwei weitere ausgewaehlte Laufwerke (<see cref="FloppyOptions.ExtraDriveLetters"/>),
+/// wertet neue Disketten aus und entscheidet ueber die Vertrauensliste.
 /// Meldungen im selben Wortlaut wie V1, damit Logs vergleichbar bleiben.
 /// </summary>
 public sealed class MotorEngine
@@ -28,9 +29,11 @@ public sealed class MotorEngine
     private readonly bool _dryRun;
     private readonly string? _guardDir;
 
+    /// <param name="rootOverride">Nur EIN Testordner statt der echten Laufwerke (z. B. --drive, Tests).</param>
+    /// <param name="watchers">Fertige Watcher statt aus <paramref name="rootOverride"/>/options gebaut (Tests mit mehreren Laufwerken).</param>
     /// <param name="guardDir">Ordner fuer <see cref="WriteGuard"/>-Notizen der App (meist <see cref="FloppyPaths.UserData"/>).</param>
     public MotorEngine(FloppyOptions options, LogFile log, TrustStore trust, IMotorActions actions,
-        string? rootOverride = null, bool dryRun = false, DiscWatcher? watcher = null, string? guardDir = null)
+        string? rootOverride = null, bool dryRun = false, IReadOnlyList<DiscWatcher>? watchers = null, string? guardDir = null)
     {
         _options = options;
         _log = log;
@@ -39,10 +42,21 @@ public sealed class MotorEngine
         _dryRun = dryRun;
         _guardDir = guardDir;
         _planner = new LaunchPlanner(options);
-        Watcher = watcher ?? new DiscWatcher(rootOverride ?? options.DriveRoot);
+        Watchers = watchers ?? BuildWatchers(rootOverride, options);
     }
 
-    public DiscWatcher Watcher { get; }
+    /// <summary>Ein Watcher pro ueberwachtem Laufwerk - normalerweise A: plus die gewaehlten Extras.</summary>
+    public IReadOnlyList<DiscWatcher> Watchers { get; }
+
+    private static IReadOnlyList<DiscWatcher> BuildWatchers(string? rootOverride, FloppyOptions options)
+    {
+        if (rootOverride is not null) return [new DiscWatcher(rootOverride)];
+
+        var roots = new List<string> { options.DriveRoot };
+        foreach (var root in options.ExtraDriveRoots)
+            if (!roots.Contains(root, StringComparer.OrdinalIgnoreCase)) roots.Add(root);
+        return roots.Select(r => new DiscWatcher(r)).ToArray();
+    }
 
     /// <summary>Laeuft, bis <paramref name="stop"/> gesetzt wird (oder genau einmal).</summary>
     public void Run(WaitHandle stop, bool once = false)
@@ -56,12 +70,15 @@ public sealed class MotorEngine
         while (!stop.WaitOne(interval));
     }
 
-    /// <summary>Ein Durchgang der Hauptschleife. Wirft nie.</summary>
+    /// <summary>Ein Durchgang der Hauptschleife ueber alle Watcher. Wirft nie.</summary>
     public GateDecision? Tick()
     {
         try
         {
-            return Watcher.Poll() ? HandleDisc() : null;
+            GateDecision? last = null;
+            foreach (var watcher in Watchers)
+                if (watcher.Poll()) last = HandleDisc(watcher);
+            return last;
         }
         catch (Exception ex)
         {
@@ -70,12 +87,12 @@ public sealed class MotorEngine
         }
     }
 
-    public GateDecision HandleDisc()
+    public GateDecision HandleDisc(DiscWatcher watcher)
     {
-        switch (_guardDir is null ? GuardState.None : WriteGuard.Check(_guardDir, Watcher.LastSignature))
+        switch (_guardDir is null ? GuardState.None : WriteGuard.Check(_guardDir, watcher.LastSignature))
         {
             case GuardState.Pending:
-                Watcher.Forget();   // App schreibt noch - beim naechsten Durchgang erneut ansehen
+                watcher.Forget();   // App schreibt noch - beim naechsten Durchgang erneut ansehen
                 return new GateDecision(GateAction.None, null, null, TrustState.Unknown, "App schreibt gerade");
             case GuardState.Written:
                 _log.Write(LogLevel.Info, "Diskette wurde gerade von der Floppy Hub App beschrieben - wird nicht gestartet.");
@@ -85,7 +102,7 @@ public sealed class MotorEngine
         PlanResult result;
         try
         {
-            result = _planner.Plan(Watcher.Root);
+            result = _planner.Plan(watcher.Root);
         }
         catch (Exception ex)
         {
