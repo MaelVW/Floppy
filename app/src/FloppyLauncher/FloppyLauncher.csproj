@@ -16,8 +16,8 @@
     <Description>Floppy Launcher (Motor): ueberwacht Laufwerk A: (und optional weitere) und startet Disketten.</Description>
     <Company>MaelVW</Company>
     <Copyright>Copyright (c) 2026 MaelVW</Copyright>
-    <Version>3.1.0</Version>
-    <InformationalVersion>3.1.0</InformationalVersion>
+    <Version>3.2.0</Version>
+    <InformationalVersion>3.2.0</InformationalVersion>
     <ApplicationIcon>..\FloppyHub.App\assets\app\icon.ico</ApplicationIcon>
 
     <!-- Sparsam: keine ICU-Sprachdaten, keine Hintergrund-GC-Threads. -->

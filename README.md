@@ -13,7 +13,8 @@ darauf startet von selbst. Floppy Hub gibt es als **App mit grafischer Oberfläc
 - **Disketten starten** – Steam-Spiele (`id=220`), Programme von der Diskette (`run=`) oder vom PC (`pcrun=`),
   das Hub-Menü oder ein Minispiel. Neues wird einmal nachgefragt, Bekanntes startet sofort (Vertrauensliste mit
   Prüfsumme, `C:\Windows` bleibt immer gesperrt).
-- **Bibliothek mit Covern** und **Disketten bespielen** mit Vorschau und Prüfung.
+- **Bibliothek mit Covern** – mit **„Steam durchsuchen“** füllt sie sich auf Knopfdruck mit deinen installierten
+  Steam-Spielen (ohne Konto, ohne Internet) – und **Disketten bespielen** mit Vorschau und Prüfung.
 - **Laufwerke-Ansicht** für Disketten, USB-Sticks, Speicherkarten, externe Festplatten und CD/DVD/Blu-ray.
   Neben `A:` können bis zu zwei weitere Wechseldatenträger überwacht werden – für alle ohne echtes Diskettenlaufwerk.
 - **Chat** – Ende-zu-Ende verschlüsselt, nichts wird gespeichert; online über einen Gratis-Dienst oder direkt im lokalen

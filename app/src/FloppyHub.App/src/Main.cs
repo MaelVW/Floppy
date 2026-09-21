@@ -440,8 +440,8 @@ public partial class Main : Control
                 _main?.OpenLevelEditor();
                 break;
             case "update" or "update-progress" when _main is not null:
-                var fake = new Floppy.Core.Updates.UpdateInfo("3.1.0", "Floppy Hub 3.1.0",
-                    "https://github.com/MaelVW/Floppy/releases/tag/v3.1.0");
+                var fake = new Floppy.Core.Updates.UpdateInfo("3.3.0", "Floppy Hub 3.3.0",
+                    "https://github.com/MaelVW/Floppy/releases/tag/v3.3.0");
                 if (view == "update") UpdateFlow.Offer(_main, fake, previewAuto: true);
                 else UpdateFlow.PreviewProgress(_main, fake);
                 break;

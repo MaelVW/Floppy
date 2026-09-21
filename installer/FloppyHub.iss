@@ -22,7 +22,7 @@
 #define AppName        "Floppy Hub"
 ; Version: per Kommandozeile ueberschreibbar (ISCC /DAppVersion=1.2.3).
 #ifndef AppVersion
-  #define AppVersion   "3.1.0"
+  #define AppVersion   "3.2.0"
 #endif
 ; Windows-Dateiversion braucht Zahlen: "2.0.0-beta.1" -> "2.0.0"
 #if Pos("-", AppVersion) > 0
