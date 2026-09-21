@@ -1,0 +1,30 @@
+# Floppy Chat (Handy) - deutsche Texte, die es nur auf dem Handy gibt.
+# Alles andere (CHAT_*) kommt aus der Desktop-Datei app/src/FloppyHub.App/lang/de.lang.
+# Format:  SCHLUESSEL = Text      {0}, {1} = Platzhalter      \n = neue Zeile
+
+M_APP_TITLE = Floppy Chat
+M_LOADING = Lade …
+M_BTN_ENTER_OPEN = Offenen Chat betreten
+M_PRIVATE_ROOM = Privater Raum
+M_PRIVATE_HINT = Wer dieselbe Verschlüsselung eingibt, landet im selben Raum – am PC genauso wie hier. Gib sie nur Leuten weiter, die mitlesen dürfen.
+M_BTN_SHARE = Teilen
+M_BTN_HIDE_SECRET = Verbergen
+M_KEY_CREATED = Neue Verschlüsselung erstellt. Gib sie den anderen weiter – am besten nicht öffentlich.
+M_SETTINGS = Einstellungen
+M_BTN_SAVE = Speichern
+M_BTN_MEMBERS = Personen ({0})
+M_LEAVE_TITLE = Raum verlassen?
+M_LEAVE_TEXT = Der Verlauf verschwindet – es wird nichts gespeichert.
+M_BTN_STAY = Bleiben
+M_HINT_DISMISS = Antippen zum Ausblenden
+M_KEEP_SCREEN = Bildschirm im Chat anlassen
+M_KEEP_SCREEN_HINT = Sonst schläft das Handy irgendwann ein und die Verbindung ruht.
+M_SERVER = Chat-Dienst (ntfy)
+M_SERVER_HINT = Leer lassen für ntfy.sh. Erlaubt sind nur https-Adressen.
+M_SERVER_INVALID = Diese Adresse geht nicht – es wird ntfy.sh genutzt.
+M_ID_UNSAFE = Die Chat-ID konnte nicht sicher gespeichert werden und gilt nur, solange die App läuft.
+M_ABOUT = Über Floppy Chat
+M_ABOUT_TEXT = Version {0}. Der Chat aus Floppy Hub fürs Handy: Ende-zu-Ende verschlüsselt und unterschrieben, nichts wird gespeichert. Am PC und hier dieselbe Verschlüsselung eingeben – dann seid ihr im selben Raum.
+M_SAVED = Gespeichert.
+M_ROOM_ENDED = Der Raum ist zu. Tippe auf „Verlassen“, um zurückzukommen.
+M_ALIAS_HINT = Erlaubt: Buchstaben, Ziffern und - _ . ' ! ? + * ~

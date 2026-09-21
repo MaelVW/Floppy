@@ -1,0 +1,30 @@
+# Floppy Chat (phone) - English texts that only exist on the phone.
+# Everything else (CHAT_*) comes from the desktop file app/src/FloppyHub.App/lang/en.lang.
+# Format:  KEY = text      {0}, {1} = placeholders      \n = new line
+
+M_APP_TITLE = Floppy Chat
+M_LOADING = Loading …
+M_BTN_ENTER_OPEN = Join the open chat
+M_PRIVATE_ROOM = Private room
+M_PRIVATE_HINT = Anyone who enters the same encryption ends up in the same room – on the PC just like here. Only share it with people who may read along.
+M_BTN_SHARE = Share
+M_BTN_HIDE_SECRET = Hide
+M_KEY_CREATED = New encryption created. Pass it on to the others – preferably not in public.
+M_SETTINGS = Settings
+M_BTN_SAVE = Save
+M_BTN_MEMBERS = People ({0})
+M_LEAVE_TITLE = Leave room?
+M_LEAVE_TEXT = The history disappears – nothing is stored.
+M_BTN_STAY = Stay
+M_HINT_DISMISS = Tap to hide
+M_KEEP_SCREEN = Keep the screen on in the chat
+M_KEEP_SCREEN_HINT = Otherwise the phone falls asleep at some point and the connection rests.
+M_SERVER = Chat service (ntfy)
+M_SERVER_HINT = Leave empty for ntfy.sh. Only https addresses are allowed.
+M_SERVER_INVALID = This address does not work – ntfy.sh is used instead.
+M_ID_UNSAFE = The chat ID could not be stored safely and only lasts while the app is running.
+M_ABOUT = About Floppy Chat
+M_ABOUT_TEXT = Version {0}. The chat from Floppy Hub for your phone: end-to-end encrypted and signed, nothing is stored. Enter the same encryption on the PC and here – then you are in the same room.
+M_SAVED = Saved.
+M_ROOM_ENDED = The room is closed. Tap "Leave" to go back.
+M_ALIAS_HINT = Allowed: letters, digits and - _ . ' ! ? + * ~

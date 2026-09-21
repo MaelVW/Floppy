@@ -39,13 +39,15 @@ public sealed class ChatIdentity : IDisposable
     /// neu anlegen. Ist die Datei nicht lesbar (anderes Konto, kaputt), wird sie als
     /// <c>.kaputt</c> gesichert und eine neue Identitaet erzeugt.
     /// </summary>
-    public static ChatIdentity LoadOrCreate(string file)
+    /// <param name="protector">Anderer Schutz als Windows-Datenschutz (Handy-App); null = <see cref="LocalSecret.Windows"/>.</param>
+    public static ChatIdentity LoadOrCreate(string file, ISecretProtector? protector = null)
     {
+        protector ??= LocalSecret.Windows;
         if (File.Exists(file))
         {
             try
             {
-                var plain = LocalSecret.Unprotect(File.ReadAllBytes(file));
+                var plain = protector.Unprotect(File.ReadAllBytes(file));
                 if (plain is not null)
                 {
                     try
@@ -69,18 +71,18 @@ public sealed class ChatIdentity : IDisposable
         }
 
         var identity = CreateNew();
-        identity.Save(file);
+        identity.Save(file, protector);
         return identity;
     }
 
-    public void Save(string file)
+    public void Save(string file, ISecretProtector? protector = null)
     {
         FloppyPaths.EnsureDirectory(Path.GetDirectoryName(Path.GetFullPath(file))!);
         var plain = _key.ExportPkcs8PrivateKey();
         try
         {
             var temp = file + ".tmp";
-            File.WriteAllBytes(temp, LocalSecret.Protect(plain));
+            File.WriteAllBytes(temp, (protector ?? LocalSecret.Windows).Protect(plain));
             File.Move(temp, file, overwrite: true);
         }
         finally

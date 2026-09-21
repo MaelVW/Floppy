@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Floppy Chat: der Chat aus Floppy Hub als Handy-App (.NET MAUI).
+    Sie nutzt denselben Chat-Kern wie der PC (Floppy.Core) und dieselben Texte - also sind Handy und PC im selben Raum,
+    wenn beide dieselbe Verschluesselung eingeben.
+
+    Bauen (Android, braucht die .NET-Workload "maui-android" + Android-SDK, siehe docs/HANDY-PORT.md):
+        dotnet publish app/src/FloppyChat.Mobile -f net10.0-android -c Release
+    Die APK liegt danach unter bin/Release/net10.0-android/publish/.
+
+    iOS folgt danach (baut nur auf einem Mac bzw. dem macOS-Runner von GitHub).
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net10.0-android</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>FloppyChat.Mobile</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Name und Kennung: die Kennung ist der "Personalausweis" der App - sie zu aendern macht eine neue App daraus. -->
+    <ApplicationTitle>Floppy Chat</ApplicationTitle>
+    <ApplicationId>io.github.maelvw.floppychat</ApplicationId>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
+
+    <!-- APK statt AAB: laesst sich direkt aufs Handy installieren (AAB ist nur fuer den Play Store). -->
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <!-- Echte Handys (arm64) und Emulatoren/Chromebooks (x64); aeltere 32-Bit-Handys sind bewusst nicht dabei (spart Platz). -->
+    <RuntimeIdentifiers Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">android-arm64;android-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- App-Symbol: Vordergrund + Hintergrundfarbe (Farbe = "Window" der hellen Oberflaeche) -->
+    <MauiIcon Include="Resources\AppIcon\appicon.png" ForegroundFile="Resources\AppIcon\appiconfg.png" Color="#d8d5cf" />
+    <MauiSplashScreen Include="Resources\Splash\splash.png" Color="#d8d5cf" BaseSize="128,128" />
+    <!-- Pixel-Icons (mit app\tools\Make-MobileAssets.ps1 aus den Desktop-Icons erzeugt) -->
+    <MauiImage Include="Resources\Images\*.png" Resize="True" BaseSize="24,24" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Floppy.Core\Floppy.Core.csproj" />
+    <ProjectReference Include="..\Floppy.Chat.Client\Floppy.Chat.Client.csproj" />
+  </ItemGroup>
+
+</Project>

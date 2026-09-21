@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Floppy.Chat.Client</RootNamespace>
+    <IsAotCompatible>true</IsAotCompatible>
+    <Description>Chat-Logik fuer Oberflaechen ohne Godot (Handy-App): Sitzung, Namen, Verlaufszeilen, Texte.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Floppy.Core\Floppy.Core.csproj" />
+    <InternalsVisibleTo Include="Floppy.Chat.Client.Tests" />
+  </ItemGroup>
+
+  <!--
+    Texte: dieselben Dateien wie die Desktop-App (ein Wortlaut fuer alle) plus die Handy-eigenen.
+    WithCulture="false": sonst haelt MSBuild "mobile.de.lang" fuer eine deutsche Satelliten-Ressource
+    und legt sie in eine eigene DLL statt in die Bibliothek.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\FloppyHub.App\lang\de.lang" LogicalName="lang.de.lang" WithCulture="false" />
+    <EmbeddedResource Include="..\FloppyHub.App\lang\en.lang" LogicalName="lang.en.lang" WithCulture="false" />
+    <EmbeddedResource Include="Lang\mobile.de.lang" LogicalName="lang.mobile.de.lang" WithCulture="false" />
+    <EmbeddedResource Include="Lang\mobile.en.lang" LogicalName="lang.mobile.en.lang" WithCulture="false" />
+  </ItemGroup>
+
+</Project>
