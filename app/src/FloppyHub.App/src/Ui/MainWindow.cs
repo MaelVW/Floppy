@@ -69,6 +69,7 @@ public partial class MainWindow : PanelContainer, IAppHost
         if (EasterEggs.StartupFact(new Random()) is { } fact) SetStatusMessage(fact, "info");
 
         services.Chat.Changed += OnChatChanged;
+        services.Chat.MessageReceived += OnChatMessage;
         _seenChatSession = services.Chat.Session;
         _seenChatLines = services.Chat.Session?.Lines.Count ?? 0;
         OnChatChanged();
@@ -76,7 +77,21 @@ public partial class MainWindow : PanelContainer, IAppHost
 
     public override void _ExitTree()
     {
-        if (Services is not null) Services.Chat.Changed -= OnChatChanged;
+        if (Services is null) return;
+        Services.Chat.Changed -= OnChatChanged;
+        Services.Chat.MessageReceived -= OnChatMessage;
+    }
+
+    /// <summary>
+    /// "Chat anpassen" -> Benachrichtigung: ein Ton und blinkende Taskleiste, wenn die Nachricht kommt,
+    /// waehrend der Chat nicht im Blick ist (anderes Fenster oder eine andere Ansicht).
+    /// </summary>
+    private void OnChatMessage(Floppy.Core.Chat.ChatLine line, bool mention)
+    {
+        if (Services.ReadOnlyMode) return;
+        if (DisplayServer.WindowIsFocused() && _current == "chat") return;
+        ChatSound.Play(this);
+        DisplayServer.WindowRequestAttention();
     }
 
     // ------------------------------------------------------------------
