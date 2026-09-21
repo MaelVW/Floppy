@@ -151,6 +151,16 @@ public sealed record ChatPayload
     /// <summary>Sperren - nur bei <see cref="ChatKinds.Ban"/>, <see cref="ChatKinds.Unban"/> und <see cref="ChatKinds.BanList"/>.</summary>
     [JsonPropertyName("b")] public ChatBanEntry[]? Bans { get; init; }
 
+    /// <summary>
+    /// Selbstgewaehlter Anzeigename des Absenders - bei <see cref="ChatKinds.Join"/>, <see cref="ChatKinds.Here"/> und
+    /// <see cref="ChatKinds.Text"/> dabei. Nur ein Vorschlag: der Empfaenger prueft ihn mit <see cref="ChatProfile.Clean"/>.
+    /// Aeltere Versionen kennen das Feld nicht und ignorieren es.
+    /// </summary>
+    [JsonPropertyName("a")] public string? Alias { get; init; }
+
+    /// <summary>Gewaehlte Namensfarbe (1 bis <see cref="ChatProfile.ColorCount"/>); fehlt = automatisch.</summary>
+    [JsonPropertyName("c")] public int? Color { get; init; }
+
     private static bool IsValidBan(ChatBanEntry? b) =>
         b is { Fingerprint: { Length: 64 } fingerprint, MemberId: { Length: <= 16 } memberId } &&
         fingerprint.All(char.IsAsciiHexDigit) && !memberId.Any(char.IsControl) &&
@@ -165,6 +175,7 @@ public sealed record ChatPayload
         if (Text is { Length: > MaxTextLength }) return false;
         if (Proposal is { Length: > 32 } || Request is { Length: > 32 } || Reason is { Length: > 32 } || Mode is { Length: > 16 }) return false;
         if (Wifi is { Length: > 32 }) return false;
+        if (Alias is { Length: > 32 } || Alias?.Any(char.IsControl) == true) return false;
         if (ChessMatch is { Length: > 32 } || ChessOpponent is { Length: > 16 } || ChessMove is { Length: > 8 }) return false;
         if (Endpoints is { Length: > MaxEndpoints } || Endpoints?.Any(e => e is null || e.Length > 64) == true) return false;
         if (Scores is { Length: > MaxScores }) return false;

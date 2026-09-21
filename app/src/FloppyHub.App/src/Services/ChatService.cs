@@ -56,6 +56,18 @@ public sealed class ChatService : IDisposable
     /// <summary>Etwas hat sich geaendert (im UI-Thread).</summary>
     public event Action? Changed;
 
+    /// <summary>
+    /// Eine Nachricht von jemand anderem ist da, die laut Einstellung melden soll (Ton/Taskleiste).
+    /// Zweiter Wert: der eigene Name kommt darin vor.
+    /// </summary>
+    public event Action<ChatLine, bool>? MessageReceived;
+
+    /// <summary>Mein Anzeigename aus den Einstellungen (gesaeubert; Admins duerfen "Admin" im Namen tragen) - null = keiner.</summary>
+    public string? MyAlias => ChatProfile.Clean(_s.Settings.ChatAlias, allowReserved: IAmAdmin);
+
+    /// <summary>Meine Namensfarbe: 0 = automatisch, 1 bis 8.</summary>
+    public int MyColor => ChatProfile.CleanColor(_s.Settings.ChatColor);
+
     public ChatIdentity Identity => _identity ??= LoadIdentity();
 
     public IReadOnlyList<ChatContact> Contacts => _contacts ??= Book.Load();
@@ -126,9 +138,26 @@ public sealed class ChatService : IDisposable
     {
         var network = NetworkOverride ?? new DefaultChatNetwork(DefaultChatNetwork.ParseServer(_s.Settings.ChatServer));
         if (RoomLabel.Length == 0) RoomLabel = Loc.T("CHAT_ROOM_CHECK", key.Check);
-        Session = new ChatSession(Identity, key, network, OwnScores, Bans, fingerprint => AdminCheck(fingerprint));
+        var session = new ChatSession(Identity, key, network, OwnScores, Bans, fingerprint => AdminCheck(fingerprint));
+        Session = session;
         _lastVersion = -1;
-        Session.Start(DateTimeOffset.UtcNow);
+        session.SetProfile(MyAlias, MyColor, DateTimeOffset.UtcNow);   // schon der Beitritt traegt Name und Farbe
+        session.LineAdded += line => OnLineAdded(session, line);
+        session.Start(DateTimeOffset.UtcNow);
+    }
+
+    private void OnLineAdded(ChatSession session, ChatLine line)
+    {
+        if (!ReferenceEquals(session, Session) || line.Kind != ChatLineKind.Theirs) return;
+        var mention = ChatProfile.Mentions(line.Text, MyAlias, Identity.Id);
+        if (ChatProfile.ShouldNotify(_s.Settings.ChatNotify, mention)) MessageReceived?.Invoke(line, mention);
+    }
+
+    /// <summary>Anzeigename/Farbe aus den Einstellungen in den laufenden Chat uebernehmen (die anderen erfahren es sofort).</summary>
+    public void ApplyProfile()
+    {
+        Session?.SetProfile(MyAlias, MyColor, DateTimeOffset.UtcNow);
+        Raise();
     }
 
     /// <summary>Raum verlassen - der Verlauf bleibt sichtbar, bis ein neuer Raum betreten wird.</summary>
@@ -194,14 +223,25 @@ public sealed class ChatService : IDisposable
     /// <summary>Diese Installation ist Admin.</summary>
     public bool IAmAdmin => IsAdmin(Identity.Fingerprint);
 
-    /// <summary>"Du", Kontaktname oder die ID-Nummer - bei Admins mit vorangestelltem "(Admin)".</summary>
+    /// <summary>
+    /// "Du", Kontaktname (den ich selbst vergeben habe), der Anzeigename des anderen mit ID-Endung ("Tom #1417")
+    /// oder die ID-Nummer - bei Admins mit vorangestelltem "(Admin)".
+    /// </summary>
     public string NameOf(string? fingerprint, string? memberId)
     {
-        var name = fingerprint is not null && fingerprint == Identity.Fingerprint
-            ? Loc.T("CHAT_YOU")
-            : ContactOf(fingerprint)?.Name ?? Loc.T("CHAT_ID", memberId ?? "?");
+        string name;
+        if (fingerprint is not null && fingerprint == Identity.Fingerprint) name = Loc.T("CHAT_YOU");
+        else if (ContactOf(fingerprint) is { } contact) name = contact.Name;
+        else if (Session?.ProfileOf(fingerprint).Alias is { } alias) name = $"{alias} {ChatProfile.IdTag(memberId)}";
+        else name = Loc.T("CHAT_ID", memberId ?? "?");
         return IsAdmin(fingerprint) ? $"{Loc.T("CHAT_ADMIN_TAG")} {name}" : name;
     }
+
+    /// <summary>Die gewaehlte Namensfarbe (1 bis 8) eines Mitglieds - 0 = automatisch. Meine eigene kommt aus den Einstellungen.</summary>
+    public int ChosenColorOf(string? fingerprint) =>
+        fingerprint is null ? 0
+        : fingerprint == Identity.Fingerprint ? MyColor
+        : Session?.ProfileOf(fingerprint).Color ?? 0;
 
     public void SaveContact(string name, string memberId, string fingerprint, bool withSecret)
     {

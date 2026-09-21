@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Floppy.Core;
+using Floppy.Core.Chat;
 
 namespace FloppyHub.App.Core;
 
@@ -38,6 +39,22 @@ public sealed class AppSettings
     /// </summary>
     public KeyChord? QuitHotkey { get; set; }
 
+    // ---- Chat persoenlich machen ("Chat anpassen") ----
+
+    /// <summary>Selbstgewaehlter Anzeigename im Chat (schon gesaeubert, siehe <see cref="ChatProfile.Clean"/>); leer = keiner.</summary>
+    public string ChatAlias { get; set; } = "";
+
+    /// <summary>Namensfarbe im Chat: 0 = automatisch, 1 bis 8 = gewaehlt.</summary>
+    public int ChatColor { get; set; }
+
+    /// <summary>Ton und blinkende Taskleiste bei neuen Nachrichten, wenn der Chat nicht im Blick ist.</summary>
+    public ChatNotifyMode ChatNotify { get; set; } = ChatNotifyMode.Off;
+
+    /// <summary>Nachrichten, in denen der eigene Name vorkommt, bekommen einen farbigen Hintergrund.</summary>
+    public bool ChatHighlightMentions { get; set; } = true;
+
+    public ChatFontSize ChatFont { get; set; } = ChatFontSize.Normal;
+
     public static AppSettings Load(string file)
     {
         var s = new AppSettings();
@@ -58,6 +75,11 @@ public sealed class AppSettings
             s.FirstRunDone = ini.GetBool("app", "first_run_done", false);
             s.PlayerName = Floppy.Core.Minigame.ScoreBoard.CleanName(ini.Get("game", "player", ""));
             s.ChatServer = (ini.Get("chat", "server", "") ?? "").Trim();
+            s.ChatAlias = ChatProfile.Clean(ini.Get("chat", "alias", ""), allowReserved: true) ?? "";   // Admin-Namen bleiben erhalten, die Sitzung prueft nochmal
+            s.ChatColor = ChatProfile.CleanColor(ini.GetInt("chat", "color", 0));
+            s.ChatNotify = ChatProfile.ParseNotify(ini.Get("chat", "notify", ""));
+            s.ChatHighlightMentions = ini.GetBool("chat", "highlight_mentions", true);
+            s.ChatFont = ChatProfile.ParseFontSize(ini.Get("chat", "font", ""));
             s.UpdateFeedUrl = (ini.Get("update", "feed_url", "") ?? "").Trim();
             s.SkippedUpdateVersion = (ini.Get("update", "skipped_version", "") ?? "").Trim();
             s.QuitHotkey = KeyChord.TryParse(ini.Get("app", "quit_hotkey", ""), out var hotkey) &&
@@ -89,6 +111,14 @@ public sealed class AppSettings
             .AppendLine("[chat]")
             .AppendLine("; leer = https://ntfy.sh (oder eigener ntfy-Server, nur https)")
             .AppendLine($"server = {ChatServer}")
+            .AppendLine("; Anzeigename und Namensfarbe (0 = automatisch, 1-8) - beides sehen alle im Raum")
+            .AppendLine($"alias = {ChatAlias}")
+            .AppendLine($"color = {ChatColor}")
+            .AppendLine("; Ton + blinkende Taskleiste, wenn der Chat nicht im Blick ist: off | mentions | all")
+            .AppendLine($"notify = {ChatNotify.ToString().ToLowerInvariant()}")
+            .AppendLine($"highlight_mentions = {(ChatHighlightMentions ? "true" : "false")}")
+            .AppendLine("; Schrift im Chatverlauf: small | normal | large | huge")
+            .AppendLine($"font = {ChatFont.ToString().ToLowerInvariant()}")
             .AppendLine("[update]")
             .AppendLine("; leer = eingebauter GitHub-Feed")
             .AppendLine($"feed_url = {UpdateFeedUrl}")

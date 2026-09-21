@@ -159,6 +159,17 @@ Fünf bis zehn kleine Easter Eggs in der App (Freundeskreis hat Spaß daran). Ab
   Zeichentasten (würden beim Tippen schließen), Strg+Alt+Zeichentaste (das ist AltGr, z. B. für @)
   und die Kürzel der App (F1, F5). Regeln: `Floppy.Core/KeyChord.cs` (mit Tests), Kürzel der App:
   `AppShortcuts.InUse`.
+- **Chat anpassen (umgesetzt, Zweig `Chat`):** Im Chat rechts bei „Deine ID“ → „Anpassen…“ gibt es fünf
+  Kleinigkeiten. Für **alle im Raum sichtbar:** (1) **Anzeigename** und (2) **Namensfarbe** (8 Farben, hell/dunkel
+  getrennt). Im Chat steht immer die ID-Endung dahinter („Tom #1417“), selbst benannte Kontakte gehen vor. Nur
+  **für einen selbst:** (3) **Benachrichtigung** (Ton + blinkende Taskleiste, wenn der Chat nicht im Blick ist:
+  aus / nur Erwähnungen / jede Nachricht), (4) **Erwähnungen hervorheben** (Nachricht mit dem eigenen Namen
+  bekommt einen Hintergrund) und (5) **Schriftgröße** im Verlauf. Name und Farbe reisen als Felder `a`/`c`
+  in Beitritt, Lebenszeichen und Text mit (ältere Versionen ignorieren sie); fremde Namen werden beim Empfang
+  streng geprüft (nur Buchstaben, Ziffern und ` -_.'!?+*~`, höchstens 20 Zeichen, keine Klammern/Emojis/
+  unsichtbaren Zeichen, „Admin“, „Moderator“, „System“, „Floppy Hub“ nur für Admins bzw. die App) – die
+  Admin-Kennzeichnung hängt weiter nur am Fingerabdruck. Regeln: `Floppy.Core/Chat/ChatProfile.cs` (mit Tests),
+  Einstellungen in `app.ini` unter `[chat]` (`alias`, `color`, `notify`, `highlight_mentions`, `font`).
 - **Code-Duell (Bot-Arena, noch nicht umgesetzt):** wird ein **Unterspiel im Bereich „Minispiel“** und
   **kein eigener Reiter** in der Werkzeugleiste. Die Ansicht „Minispiel“ bekommt dafür eine
   Spielauswahl (Diskettenlager, Code-Duell, …). Skizze vom 2026-09-18: Arena-Regeln in `Floppy.Core`

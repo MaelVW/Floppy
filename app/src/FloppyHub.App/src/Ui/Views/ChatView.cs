@@ -16,9 +16,6 @@ public partial class ChatView : ViewBase
 {
     public override string Key => "chat";
 
-    private static readonly string[] LightColors = ["#546e7a", "#b33a3a", "#2e8b3e", "#8e44ad", "#b86200", "#00838f", "#6d4c41", "#ad1457"];
-    private static readonly string[] DarkColors = ["#9fb3c8", "#ff7a7a", "#6fd37f", "#c38bff", "#ffae4a", "#4fd6e0", "#d4ae98", "#ff7ab0"];
-
     private ChatService Chat => Host.Services.Chat;
 
     private TextureRect _led = null!;
@@ -59,6 +56,9 @@ public partial class ChatView : ViewBase
     private Button _connectContact = null!;
     private Button _removeContact = null!;
     private Label _myId = null!;
+    private Label _myAlias = null!;
+    private int _baseLogFont;
+    private int _baseInputFont;
 
     private FileDialog? _dialog;
 
@@ -161,7 +161,14 @@ public partial class ChatView : ViewBase
             DisplayServer.ClipboardSet(Chat.Identity.Id);
             Host.SetStatusMessage(Loc.T("CHAT_COPIED"), "ok");
         });
-        var idBox = new GroupBox(Loc.T("CHAT_MY_ID"), Ui.HBox(6, Icons.Rect("contact"), _myId.Expand(), copy));
+        _myAlias = Ui.Dim("");
+        _myAlias.ClipText = true;
+        _myAlias.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        var customize = Ui.Button(Loc.T("CHAT_BTN_CUSTOMIZE"), null, OpenCustomize);
+        customize.TooltipText = Loc.T("CHAT_CUSTOMIZE_TIP");
+        var idBox = new GroupBox(Loc.T("CHAT_MY_ID"), Ui.VBox(6,
+            Ui.HBox(6, Icons.Rect("contact"), _myId.Expand(), copy),
+            Ui.HBox(6, _myAlias.Expand(), customize)));
 
         var right = Ui.VBox(8, _membersBox, contactsBox, idBox);
         right.CustomMinimumSize = new Vector2(270, 0);
@@ -182,9 +189,34 @@ public partial class ChatView : ViewBase
 
     public override void OnShown()
     {
+        if (_baseLogFont == 0)
+        {
+            // Die Schrift der Oberflaeche merken, bevor eine eigene Groesse draufkommt
+            _baseLogFont = _log.GetThemeFontSize("normal_font_size");
+            _baseInputFont = _input.GetThemeFontSize("font_size");
+        }
+        ApplyLook();
         Refresh();
         _input.CallDeferred(Control.MethodName.GrabFocus);
     }
+
+    /// <summary>Schriftgroesse im Chat (Verlauf und Eingabe) nach der persoenlichen Einstellung.</summary>
+    private void ApplyLook()
+    {
+        if (_baseLogFont == 0) return;
+        var scale = ChatProfile.FontScale(Host.Services.Settings.ChatFont);
+        int Scaled(int size) => Math.Max(8, Mathf.RoundToInt(size * scale));
+        _log.AddThemeFontSizeOverride("normal_font_size", Scaled(_baseLogFont));
+        _log.AddThemeFontSizeOverride("bold_font_size", Scaled(_baseLogFont));
+        _input.AddThemeFontSizeOverride("font_size", Scaled(_baseInputFont));
+    }
+
+    private void OpenCustomize() => ChatCustomizeDialog.Open(Host, () =>
+    {
+        ApplyLook();
+        _renderedSession = null;   // Verlauf neu zeichnen: Namen, Farben, Hervorhebung
+        Refresh();
+    });
 
     private void OnChatChanged()
     {
@@ -254,6 +286,7 @@ public partial class ChatView : ViewBase
             : Chat.IsOpenRoom ? Loc.T("CHAT_OPEN_HINT") : "", warn: (Chat.IsOpenRoom && !asking) || banned);
 
         _myId.Text = Chat.IAmAdmin ? $"{Loc.T("CHAT_ADMIN_TAG")} {Chat.Identity.Id}" : Chat.Identity.Id;
+        UpdateMyAlias();
         _adminRow.Visible = Chat.IAmAdmin;
         RenderLog();
         FillMembers();
@@ -323,12 +356,17 @@ public partial class ChatView : ViewBase
         switch (line.Kind)
         {
             case ChatLineKind.Mine or ChatLineKind.Theirs:
+                // Wer mich erwaehnt (mein Anzeigename als Wort oder meine ID), faellt mit einem Hintergrund auf
+                var mention = line.Kind == ChatLineKind.Theirs && Host.Services.Settings.ChatHighlightMentions &&
+                              ChatProfile.Mentions(line.Text, Chat.MyAlias, Chat.Identity.Id);
+                if (mention) _log.PushBgcolor(new Color(p.Accent, 0.24f));
                 _log.PushColor(ColorOf(line.Fingerprint));
                 _log.PushBold();
                 _log.AddText(Chat.NameOf(line.Fingerprint, line.MemberId));
                 _log.Pop();
                 _log.Pop();
                 _log.AddText(": " + line.Text);   // AddText: kein BBCode, fremder Text kann nichts formatieren
+                if (mention) _log.Pop();
                 break;
             case ChatLineKind.Warning:
                 _log.PushColor(p.Warn);
@@ -366,13 +404,22 @@ public partial class ChatView : ViewBase
         return Loc.T("CHAT_N_" + line.Text.ToUpperInvariant(), args.ToArray());
     }
 
+    /// <summary>Namensfarbe: die gewaehlte, sonst (wie bisher) meine Akzentfarbe bzw. eine aus dem Fingerabdruck.</summary>
     private Color ColorOf(string? fingerprint)
     {
         var p = Palette.Current;
+        var chosen = Chat.ChosenColorOf(fingerprint);
+        if (chosen > 0) return ChatColors.Get(chosen, p.Dark);
         if (fingerprint is null || fingerprint == Chat.Identity.Fingerprint) return p.Accent;
-        var colors = p.Dark ? DarkColors : LightColors;
-        var index = Convert.ToInt32(fingerprint[..2], 16) % colors.Length;
-        return new Color(colors[index]);
+        return ChatColors.Auto(fingerprint, p.Dark);
+    }
+
+    private void UpdateMyAlias()
+    {
+        var alias = Chat.MyAlias;
+        _myAlias.Text = alias is null ? Loc.T("CHAT_ALIAS_NONE") : $"{alias} {ChatProfile.IdTag(Chat.Identity.Id)}";
+        if (alias is null) _myAlias.RemoveThemeColorOverride("font_color");
+        else _myAlias.AddThemeColorOverride("font_color", ColorOf(Chat.Identity.Fingerprint));
     }
 
     // ---- Teilnehmer + Kontakte ----
@@ -702,7 +749,9 @@ public partial class ChatView : ViewBase
         var existing = Chat.ContactOf(fingerprint);
 
         var d = new RetroDialog(Loc.T("CHAT_CONTACT_TITLE"), "contact", 460);
-        var name = new LineEdit { Text = existing?.Name ?? "", MaxLength = ChatContact.MaxNameLength, PlaceholderText = Loc.T("CHAT_ID", memberId) };
+        // Hat sich die Person einen Anzeigenamen gegeben, ist er schon vorausgefuellt (ohne ID-Endung)
+        var suggestion = existing?.Name ?? Chat.Session?.ProfileOf(fingerprint).Alias ?? "";
+        var name = new LineEdit { Text = suggestion, MaxLength = ChatContact.MaxNameLength, PlaceholderText = Loc.T("CHAT_ID", memberId) };
         var withKey = new CheckBox
         {
             Text = Loc.T("CHAT_CONTACT_WITH_KEY"),

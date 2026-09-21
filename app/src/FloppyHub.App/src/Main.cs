@@ -445,6 +445,14 @@ public partial class Main : Control
                 if (view == "update") UpdateFlow.Offer(_main, fake, previewAuto: true);
                 else UpdateFlow.PreviewProgress(_main, fake);
                 break;
+            case "chat-sound":
+                // Test: der Benachrichtigungston wird erzeugt und abgespielt (auch ohne Tonausgabe fehlerfrei)
+                ChatSound.Play(this);
+                await ToSignal(GetTree().CreateTimer(0.7), SceneTreeTimer.SignalName.Timeout);
+                GD.Print($"SOUND OK {ChatSound.Ping.Data.Length} Bytes, {ChatSound.Ping.GetLength():0.00} s");
+                _quitting = true;
+                GetTree().Quit();
+                return;
             case "hotkey-dialog":
                 _main?.ShowView("settings");
                 if (_main is not null) HotkeyDialog.Capture(_main.DialogLayer, _ => { });
@@ -552,6 +560,17 @@ public partial class Main : Control
             await RunAdminDemo(scenario);
             return;
         }
+        var personal = scenario is "chat-profile" or "chat-customize";
+        if (personal)
+        {
+            // Vorschau "Chat anpassen": eigener Name + Farbe, Erwaehnungen hervorgehoben, groessere Schrift (vor dem Zeigen der Ansicht)
+            _s.Settings.ChatAlias = "Mael";
+            _s.Settings.ChatColor = 4;
+            _s.Settings.ChatNotify = Floppy.Core.Chat.ChatNotifyMode.Mentions;
+            _s.Settings.ChatHighlightMentions = true;
+            _s.Settings.ChatFont = scenario == "chat-profile" ? Floppy.Core.Chat.ChatFontSize.Large : Floppy.Core.Chat.ChatFontSize.Normal;
+        }
+
         _main.ShowView("chat");
         if (scenario == "chat-prompt") return;
 
@@ -559,6 +578,11 @@ public partial class Main : Control
         _chatDemo = demo;
         demo.Attach(_s.Chat);
         await demo.StartBotsAsync();
+        if (personal)
+        {
+            demo.Tom!.SetProfile("Tom", 2, DateTimeOffset.UtcNow);
+            demo.Lea!.SetProfile("Lea", 6, DateTimeOffset.UtcNow);
+        }
         _s.Chat.Connect(ChatDemo.Secret, "Schulhof");
         await WaitUntil(() => _s.Chat.Session is { State: Floppy.Core.Chat.ChatSessionState.Connected }, 10);
         demo.StartBots(DateTimeOffset.UtcNow);
@@ -575,6 +599,13 @@ public partial class Main : Control
 
         switch (scenario)
         {
+            case "chat-profile" or "chat-customize":
+                demo.Tom.SendText("@Mael, willst du gleich eine Runde Schach spielen?", DateTimeOffset.UtcNow);
+                await Seconds(0.3);
+                _s.Chat.Session!.SendText("Gern! Ich nehme Weiß.", DateTimeOffset.UtcNow);
+                await Seconds(0.3);
+                if (scenario == "chat-customize") ChatCustomizeDialog.Open(_main, () => { });
+                break;
             case "chat-proposal":
                 demo.Tom.ProposeLocal(DateTimeOffset.UtcNow);
                 await WaitUntil(() => _s.Chat.Session!.Proposal is not null, 5);

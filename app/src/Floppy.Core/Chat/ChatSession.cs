@@ -160,6 +160,7 @@ public sealed class ChatSession : IDisposable
     private readonly ConcurrentQueue<Action<DateTimeOffset>> _inbox = new();
     private readonly List<ChatLine> _lines = [];
     private readonly Dictionary<string, ChatMember> _members = new();
+    private readonly Dictionary<string, ChatMemberProfile> _profiles = new();
     private readonly HashSet<string> _seen = [];
     private readonly Queue<string> _seenOrder = new();
     private readonly Dictionary<string, Queue<DateTimeOffset>> _incoming = new();
@@ -224,6 +225,20 @@ public sealed class ChatSession : IDisposable
     public string? EndReason { get; private set; }
 
     public IReadOnlyList<ChatLine> Lines => _lines;
+
+    /// <summary>Eine Zeile ist dazugekommen (im UI-Thread, aus <see cref="Pump"/> bzw. beim eigenen Senden).</summary>
+    public event Action<ChatLine>? LineAdded;
+
+    /// <summary>Mein Anzeigename und meine Namensfarbe - gehen bei Beitritt, Lebenszeichen und Text mit.</summary>
+    public ChatMemberProfile MyProfile { get; private set; } = ChatMemberProfile.None;
+
+    /// <summary>
+    /// Anzeigename und Farbe eines Mitglieds (auch nachdem es gegangen ist, damit alte Zeilen ihren Namen behalten).
+    /// Kein Profil bekannt: <see cref="ChatMemberProfile.None"/>.
+    /// </summary>
+    public ChatMemberProfile ProfileOf(string? fingerprint) =>
+        fingerprint is not null && _profiles.TryGetValue(fingerprint, out var profile) ? profile : ChatMemberProfile.None;
+
     public IReadOnlyList<ChatMember> Members => _members.Values.OrderByDescending(m => m.IsSelf).ThenBy(m => m.Id, StringComparer.Ordinal).ToList();
     public ChatProposal? Proposal { get; private set; }
     public ChessGame? Chess { get; private set; }
@@ -282,6 +297,22 @@ public sealed class ChatSession : IDisposable
         if (!TrySend(now, new ChatPayload { Kind = ChatKinds.Text, Text = clean }, Mode)) return ChatResult.TooLong;
         AddLine(new ChatLine(now, ChatLineKind.Mine, clean, Me.Fingerprint, Me.Id));
         return ChatResult.Ok;
+    }
+
+    /// <summary>
+    /// Anzeigename und Namensfarbe aendern (auch schon vor <see cref="Start"/>). Ein Name, der nicht geht
+    /// (<see cref="ChatProfile.Check"/>), wird zu "keiner". Ist die Sitzung verbunden, erfahren es die anderen sofort.
+    /// </summary>
+    public void SetProfile(string? alias, int color, DateTimeOffset now)
+    {
+        var profile = new ChatMemberProfile(ChatProfile.Clean(alias, allowReserved: IsAdmin), ChatProfile.CleanColor(color));
+        if (profile == MyProfile) return;
+
+        MyProfile = profile;
+        _profiles[Me.Fingerprint] = profile;
+        Changed();
+        if (State == ChatSessionState.Connected && !IsBanned)
+            Send(now, new ChatPayload { Kind = ChatKinds.Here, Mode = Mode == ChatMode.Local ? "local" : "online" }, Mode);
     }
 
     /// <summary>Wechsel ins lokale Netzwerk vorschlagen.</summary>
@@ -842,6 +873,7 @@ public sealed class ChatSession : IDisposable
 
         var isNew = Touch(now, e, via);
         if (isNew is null) return;   // Raum voll
+        UpdateProfile(fp, p);
 
         switch (p.Kind)
         {
@@ -980,6 +1012,18 @@ public sealed class ChatSession : IDisposable
             Changed();
         }
         return false;
+    }
+
+    /// <summary>Anzeigename + Farbe aus Beitritt, Lebenszeichen oder Text uebernehmen (fremde Angaben werden gesaeubert).</summary>
+    private void UpdateProfile(string fingerprint, ChatPayload p)
+    {
+        if (p.Kind is not (ChatKinds.Join or ChatKinds.Here or ChatKinds.Text)) return;
+        var profile = new ChatMemberProfile(ChatProfile.Clean(p.Alias, allowReserved: _isAdmin(fingerprint)), ChatProfile.CleanColor(p.Color));
+        if (_profiles.TryGetValue(fingerprint, out var known) && known == profile) return;
+
+        if (_profiles.Count >= 4 * MaxMembers && !_profiles.ContainsKey(fingerprint)) _profiles.Remove(_profiles.Keys.First());   // Speicher begrenzen
+        _profiles[fingerprint] = profile;
+        Changed();
     }
 
     private void CompleteMySwitch(DateTimeOffset now, ChatProposal mine)
@@ -1256,6 +1300,8 @@ public sealed class ChatSession : IDisposable
         if (transport is null) return false;
         if (IsBanned && payload.Kind is not (ChatKinds.BanCheck or ChatKinds.Leave)) return false;   // gesperrt: nichts schicken ausser der stillen Nachfrage
         payload = payload with { Id = ChatFrame.NewId(), Time = now.ToUnixTimeMilliseconds() };
+        if (payload.Kind is ChatKinds.Join or ChatKinds.Here or ChatKinds.Text && MyProfile != ChatMemberProfile.None)
+            payload = payload with { Alias = MyProfile.Alias, Color = MyProfile.Color > 0 ? MyProfile.Color : null };
         byte[] frame;
         try { frame = ChatFrame.Seal(Room, Me, payload); }
         catch (ChatFrameTooLargeException) { return false; }
@@ -1308,6 +1354,7 @@ public sealed class ChatSession : IDisposable
         _lines.Add(line);
         if (_lines.Count > MaxLines) _lines.RemoveRange(0, _lines.Count - MaxLines);
         Changed();
+        LineAdded?.Invoke(line);
     }
 
     private void Notice(DateTimeOffset now, string key, string? fingerprint = null, string? memberId = null, params string[] args) =>
