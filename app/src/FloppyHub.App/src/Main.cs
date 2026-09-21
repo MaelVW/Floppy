@@ -403,9 +403,57 @@ public partial class Main : Control
     }
 
     /// <summary>Chat-Vorschau ohne Netzwerk: zwei Mitspieler im Speicher.</summary>
+    /// <summary>
+    /// Vorschau fuer Admin/Sperren im Offenen Chat: diese (Vorschau-)Installation ist Admin,
+    /// Tom und Lea sitzen mit im Raum. Gibt es nur fuer Bildschirmfotos - echte Admins stehen fest in ChatAdmins.
+    /// </summary>
+    private async Task RunAdminDemo(string scenario)
+    {
+        if (_main is null) return;
+        _main.ShowView("chat");
+        var me = _s.Chat.Identity.Fingerprint;
+        _s.Chat.AdminCheck = fp => fp == me;
+
+        var demo = new ChatDemo();
+        _chatDemo = demo;
+        demo.Attach(_s.Chat);
+        await demo.StartBotsAsync(open: true, isAdmin: fp => fp == me);
+        _s.Chat.ConnectOpen();
+        await WaitUntil(() => _s.Chat.Session is { State: Floppy.Core.Chat.ChatSessionState.Connected }, 10);
+        demo.StartBots(DateTimeOffset.UtcNow);
+        await WaitUntil(() => _s.Chat.Session!.Members.Count == 3, 10);
+        await Seconds(0.3);
+
+        var session = _s.Chat.Session!;
+        demo.Tom!.SendText("Hallo zusammen!", DateTimeOffset.UtcNow);
+        await Seconds(0.3);
+        session.SendText("Willkommen im Offenen Chat – bitte freundlich bleiben.", DateTimeOffset.UtcNow);
+        await Seconds(0.3);
+        demo.Lea!.SendText("Das hier ist eine Beispiel-Nachricht, die gleich ausgeblendet wird.", DateTimeOffset.UtcNow);
+        await Seconds(0.5);
+
+        if (scenario == "chat-ban-dialog")
+        {
+            _main.OpenChatBan(demo.Lea.Me.Fingerprint, demo.Lea.Me.Id);
+            return;
+        }
+        if (scenario is "chat-ban" or "chat-moderation")
+        {
+            session.BanMember(demo.Lea.Me.Fingerprint, "Regelverstoß", TimeSpan.FromDays(1), DateTimeOffset.UtcNow);
+            await WaitUntil(() => demo.Lea.State == Floppy.Core.Chat.ChatSessionState.Ended, 5);
+            await Seconds(0.3);
+        }
+        if (scenario == "chat-moderation") _main.OpenChatModeration();
+    }
+
     private async Task RunChatDemo(string scenario)
     {
         if (_main is null) return;
+        if (scenario is "chat-admin" or "chat-ban" or "chat-ban-dialog" or "chat-moderation")
+        {
+            await RunAdminDemo(scenario);
+            return;
+        }
         _main.ShowView("chat");
         if (scenario == "chat-prompt") return;
 

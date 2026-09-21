@@ -43,8 +43,34 @@ public static class ChatKinds
 
     public const string ChessResign = "chessresign";
 
+    /// <summary>Admin: jemanden aus dem offenen Chat sperren (nur mit Admin-Unterschrift gueltig).</summary>
+    public const string Ban = "ban";
+
+    /// <summary>Admin: eine Sperre wieder aufheben.</summary>
+    public const string Unban = "unban";
+
+    /// <summary>Admin: alle aktuellen Sperren - damit auch Neue im Raum sie kennen.</summary>
+    public const string BanList = "banlist";
+
     public static bool IsKnown(string kind) => kind is Join or Here or Leave or Text or Propose or Vote or Switched or Cancel or ScoreRequest or Scores
-        or ChessOffer or ChessAccept or ChessDecline or ChessMove or ChessResign;
+        or ChessOffer or ChessAccept or ChessDecline or ChessMove or ChessResign or Ban or Unban or BanList;
+}
+
+/// <summary>Eine Sperre (oder deren Aufhebung) im Chat-Protokoll.</summary>
+public sealed record ChatBanEntry
+{
+    /// <summary>Voller Fingerabdruck (SHA-256, 64 Hex-Zeichen) - nie die kurze ID: die laesst sich nachbauen.</summary>
+    [JsonPropertyName("f")] public string Fingerprint { get; init; } = "";
+
+    [JsonPropertyName("i")] public string MemberId { get; init; } = "";
+
+    /// <summary>Ende der Sperre (Unix-Millisekunden), 0 = dauerhaft.</summary>
+    [JsonPropertyName("u")] public long Until { get; init; }
+
+    /// <summary>Zeitpunkt der Entscheidung (Unix-Millisekunden) - bei Widerspruechen gewinnt die neueste.</summary>
+    [JsonPropertyName("t")] public long At { get; init; }
+
+    [JsonPropertyName("r")] public string? Reason { get; init; }
 }
 
 /// <summary>Ein Minispiel-Ergebnis fuer die Rangliste im Chatraum.</summary>
@@ -69,6 +95,11 @@ public sealed record ChatPayload
     public const int MaxTextLength = 500;
     public const int MaxEndpoints = 8;
     public const int MaxScores = 40;
+
+    /// <summary>Sperren pro Nachricht (die Nachricht muss unter 3072 Bytes bleiben).</summary>
+    public const int MaxBans = 6;
+
+    public const int MaxBanReasonLength = 60;
 
     [JsonPropertyName("k")] public string Kind { get; init; } = "";
 
@@ -111,6 +142,15 @@ public sealed record ChatPayload
     /// <summary>Zugnotation, z. B. <c>e2e4</c> oder <c>e7e8q</c> - nur bei <see cref="ChatKinds.ChessMove"/>.</summary>
     [JsonPropertyName("v")] public string? ChessMove { get; init; }
 
+    /// <summary>Sperren - nur bei <see cref="ChatKinds.Ban"/>, <see cref="ChatKinds.Unban"/> und <see cref="ChatKinds.BanList"/>.</summary>
+    [JsonPropertyName("b")] public ChatBanEntry[]? Bans { get; init; }
+
+    private static bool IsValidBan(ChatBanEntry? b) =>
+        b is { Fingerprint: { Length: 64 } fingerprint, MemberId: { Length: <= 16 } memberId } &&
+        fingerprint.All(char.IsAsciiHexDigit) && !memberId.Any(char.IsControl) &&
+        b.Until >= 0 && b.At > 0 &&
+        (b.Reason is null || (b.Reason.Length <= MaxBanReasonLength && !b.Reason.Any(char.IsControl)));
+
     /// <summary>Formal gueltig? (Fremde Nachrichten werden vor dem Anzeigen geprueft.)</summary>
     public bool IsWellFormed()
     {
@@ -122,6 +162,7 @@ public sealed record ChatPayload
         if (ChessMatch is { Length: > 32 } || ChessOpponent is { Length: > 16 } || ChessMove is { Length: > 8 }) return false;
         if (Endpoints is { Length: > MaxEndpoints } || Endpoints?.Any(e => e is null || e.Length > 64) == true) return false;
         if (Scores is { Length: > MaxScores }) return false;
+        if (Bans is { Length: > MaxBans } || Bans?.Any(b => !IsValidBan(b)) == true) return false;
         if (Scores?.Any(s => s is null || s.Game.Length > 24 || s.LevelId.Length > 24 || s.LevelName.Length > 40 ||
                              s.Moves < 0 || s.Pushes < 0 || s.Millis < 0 || s.Points < 0) == true) return false;
         return Kind switch
@@ -135,6 +176,8 @@ public sealed record ChatPayload
             ChatKinds.ChessOffer => ChessMatch is not null && ChessOpponent is not null,
             ChatKinds.ChessAccept or ChatKinds.ChessDecline or ChatKinds.ChessResign => ChessMatch is not null,
             ChatKinds.ChessMove => ChessMatch is not null && ChessMove is not null,
+            ChatKinds.Ban or ChatKinds.Unban => Bans is { Length: 1 },
+            ChatKinds.BanList => Bans is { Length: > 0 },
             _ => true,
         };
     }

@@ -493,6 +493,20 @@ public partial class MainWindow : PanelContainer, IAppHost
         LeaderboardDialog.Open(this);
     }
 
+    /// <summary>Moderations-Fenster (Vorschau/Bildschirmfotos).</summary>
+    public void OpenChatModeration()
+    {
+        ShowView("chat");
+        ((ChatView)_views["chat"]).OpenModeration();
+    }
+
+    /// <summary>Sperr-Fenster fuer ein Mitglied (Vorschau/Bildschirmfotos).</summary>
+    public void OpenChatBan(string fingerprint, string memberId)
+    {
+        ShowView("chat");
+        ((ChatView)_views["chat"]).OpenBanDialog(fingerprint, memberId);
+    }
+
     public void ApplyTheme(string theme) => _applyTheme(theme);
     public void ApplyScale(float scale) => _applyScale(scale);
     public void ApplyLanguage(string language) => _applyLanguage(language);

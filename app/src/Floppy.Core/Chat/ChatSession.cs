@@ -18,7 +18,7 @@ public enum ChatLineKind
     Theirs,
 }
 
-public enum ChatResult { Ok, Empty, TooLong, NotConnected, TooFast, Alone, NoNetwork, Busy, AlreadyLocal, NotFound, WrongTurn }
+public enum ChatResult { Ok, Empty, TooLong, NotConnected, TooFast, Alone, NoNetwork, Busy, AlreadyLocal, NotFound, WrongTurn, NotAllowed }
 
 /// <summary>Schluessel fuer Hinweise im Chatverlauf (die App uebersetzt sie).</summary>
 public static class ChatNotice
@@ -65,6 +65,13 @@ public static class ChatNotice
     public const string ChessYouResigned = "chess_you_resigned";
     public const string ChessOpponentResigned = "chess_opponent_resigned";
     public const string ChessOpponentLeft = "chess_opponent_left";
+
+    /// <summary>Text = Schluessel, Args[0] = Grund (bei <see cref="BannedReason"/>).</summary>
+    public const string Banned = "banned";
+    public const string BannedReason = "banned_reason";
+    public const string YouBanned = "you_banned";
+    public const string YouBannedReason = "you_banned_reason";
+    public const string Unbanned = "unbanned";
 }
 
 /// <param name="Text">Nachricht - oder bei Hinweisen der Schluessel aus <see cref="ChatNotice"/>.</param>
@@ -145,6 +152,8 @@ public sealed class ChatSession : IDisposable
 
     private readonly IChatNetwork _network;
     private readonly Func<IReadOnlyList<ChatScore>> _scores;
+    private readonly ChatBanList _bans;
+    private readonly Func<string, bool> _isAdmin;
     private readonly ConcurrentQueue<Action<DateTimeOffset>> _inbox = new();
     private readonly List<ChatLine> _lines = [];
     private readonly Dictionary<string, ChatMember> _members = new();
@@ -161,20 +170,36 @@ public sealed class ChatSession : IDisposable
     private DateTimeOffset _lastScoreRequest = DateTimeOffset.MinValue;
     private DateTimeOffset _lastLimitWarning = DateTimeOffset.MinValue;
     private bool _hereScheduled;
+    private bool _banSyncScheduled;
     private bool _hadLocalPeers;
     private int _version;
 
-    public ChatSession(ChatIdentity me, ChatRoomKey room, IChatNetwork network, Func<IReadOnlyList<ChatScore>>? scores = null)
+    /// <param name="bans">Gemerkte Sperren (null = nur fuer diese Sitzung).</param>
+    /// <param name="isAdmin">Wer Admin ist (Vorgabe: <see cref="ChatAdmins.IsAdmin"/>) - nur fuer Tests und die Vorschau anders.</param>
+    public ChatSession(ChatIdentity me, ChatRoomKey room, IChatNetwork network, Func<IReadOnlyList<ChatScore>>? scores = null,
+        ChatBanList? bans = null, Func<string, bool>? isAdmin = null)
     {
         Me = me;
         Room = room;
         _network = network;
         _scores = scores ?? (() => []);
+        _bans = bans ?? new ChatBanList();
+        _isAdmin = isAdmin ?? ChatAdmins.IsAdmin;
         _members[me.Fingerprint] = new ChatMember { Fingerprint = me.Fingerprint, Id = me.Id, IsSelf = true };
     }
 
     public ChatIdentity Me { get; }
     public ChatRoomKey Room { get; }
+
+    /// <summary>Diese Installation ist Admin (kann im offenen Chat sperren).</summary>
+    public bool IsAdmin => _isAdmin(Me.Fingerprint);
+
+    public bool IsAdminMember(string fingerprint) => _isAdmin(fingerprint);
+
+    /// <summary>Sperren gibt es nur im offenen Chat - private Raeume regeln ihre Mitglieder selbst.</summary>
+    public bool CanModerate => IsAdmin && Room.IsOpen;
+
+    public ChatBanList Bans => _bans;
     public string ServiceName => _network.ServiceName;
     public ChatSessionState State { get; private set; } = ChatSessionState.Connecting;
     public ChatMode Mode { get; private set; } = ChatMode.Online;
@@ -412,6 +437,54 @@ public sealed class ChatSession : IDisposable
         return ChatResult.Ok;
     }
 
+    // ------------------------------------------------------------------
+    // Moderation (nur Admin, nur offener Chat)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Jemanden aus dem offenen Chat sperren. Wirkt bei allen, die diese Version haben: ihre
+    /// Nachrichten werden nicht mehr angezeigt, bisherige ausgeblendet. <paramref name="duration"/> null = dauerhaft.
+    /// </summary>
+    public ChatResult BanMember(string fingerprint, string? reason, TimeSpan? duration, DateTimeOffset now)
+    {
+        if (!CanModerate || fingerprint == Me.Fingerprint || _isAdmin(fingerprint)) return ChatResult.NotAllowed;
+        if (State != ChatSessionState.Connected || Mode != ChatMode.Online) return ChatResult.NotConnected;
+
+        var known = _members.GetValueOrDefault(fingerprint)?.Id ?? (_bans.IsBanned(fingerprint, now, out var old) ? old!.MemberId : "");
+        var entry = new ChatBanEntry
+        {
+            Fingerprint = fingerprint.ToUpperInvariant(),
+            MemberId = known,
+            Until = duration is { } d ? now.Add(d).ToUnixTimeMilliseconds() : 0,
+            At = now.ToUnixTimeMilliseconds(),
+            Reason = CleanReason(reason),
+        };
+        if (!TrySend(now, new ChatPayload { Kind = ChatKinds.Ban, Bans = [entry] }, ChatMode.Online)) return ChatResult.TooLong;
+        ApplyBan(now, entry, announce: true);
+        return ChatResult.Ok;
+    }
+
+    /// <summary>Eine Sperre wieder aufheben.</summary>
+    public ChatResult UnbanMember(string fingerprint, DateTimeOffset now)
+    {
+        if (!CanModerate) return ChatResult.NotAllowed;
+        if (State != ChatSessionState.Connected || Mode != ChatMode.Online) return ChatResult.NotConnected;
+
+        var memberId = _bans.IsBanned(fingerprint, now, out var ban) ? ban!.MemberId : "";
+        var entry = new ChatBanEntry { Fingerprint = fingerprint.ToUpperInvariant(), MemberId = memberId, At = now.ToUnixTimeMilliseconds() };
+        if (!TrySend(now, new ChatPayload { Kind = ChatKinds.Unban, Bans = [entry] }, ChatMode.Online)) return ChatResult.TooLong;
+        ApplyUnban(now, entry, announce: true);
+        return ChatResult.Ok;
+    }
+
+    private static string? CleanReason(string? reason)
+    {
+        var clean = CleanText(reason);
+        if (clean.Length > ChatPayload.MaxBanReasonLength) clean = clean[..ChatPayload.MaxBanReasonLength].TrimEnd();
+        if (clean.Length > 0 && char.IsHighSurrogate(clean[^1])) clean = clean[..^1];   // kein halbes Emoji (JSON lehnt es ab)
+        return clean.Length == 0 ? null : clean;
+    }
+
     /// <summary>Raum verlassen (sagt den anderen tschuess).</summary>
     /// <param name="wait">true = kurz warten, bis die letzte Nachricht raus ist (beim Beenden der App).</param>
     public void Leave(DateTimeOffset now, bool wait = false) => End(now, ChatNotice.Left, wait);
@@ -603,6 +676,7 @@ public sealed class ChatSession : IDisposable
                     Mode = ChatMode.Online;
                     Notice(now, ChatNotice.Online, null, null, ServiceName);
                     Send(now, new ChatPayload { Kind = ChatKinds.Join, Mode = "online" }, ChatMode.Online);
+                    ScheduleBanSync(now);
                 }
                 else if (wasReconnecting)
                 {
@@ -688,6 +762,7 @@ public sealed class ChatSession : IDisposable
         var p = envelope.Payload;
         if (!Remember(p.Id)) return;                                       // schon gesehen
         if (Math.Abs(now.ToUnixTimeMilliseconds() - p.Time) > MaxClockSkew.TotalMilliseconds) return;
+        if (IsBlocked(envelope.SenderFingerprint, now)) return;            // gesperrt: nicht anzeigen, nicht weiterreichen
         if (via == ChatMode.Local) _local?.Relay(frame, origin);           // an die anderen weiterreichen
         if (envelope.SenderFingerprint == Me.Fingerprint) return;          // eigenes Echo
         if (IsFlooding(envelope.SenderFingerprint, now)) return;
@@ -699,6 +774,12 @@ public sealed class ChatSession : IDisposable
     {
         var p = e.Payload;
         var fp = e.SenderFingerprint;
+
+        if (p.Kind is ChatKinds.Ban or ChatKinds.Unban or ChatKinds.BanList)
+        {
+            HandleModeration(now, e);
+            return;
+        }
 
         if (p.Kind == ChatKinds.Leave)
         {
@@ -732,6 +813,7 @@ public sealed class ChatSession : IDisposable
             case ChatKinds.Join:
                 if (isNew == true) Notice(now, ChatNotice.Joined, fp, e.SenderId);
                 ScheduleHere(now, via);
+                if (isNew == true) ScheduleBanSync(now);
                 if (via == ChatMode.Local && Proposal is { IsMine: true, Stage: ProposalStage.Waiting } mine && p.Proposal == mine.Id)
                 {
                     mine.Yes.Add(fp);
@@ -931,6 +1013,101 @@ public sealed class ChatSession : IDisposable
     {
         try { return _scores().Where(ChatLeaderboard.IsValid).ToList(); }
         catch { return []; }
+    }
+
+    // ==================================================================
+    // Sperren
+    // ==================================================================
+
+    private bool IsBlocked(string fingerprint, DateTimeOffset now) =>
+        Room.IsOpen && fingerprint != Me.Fingerprint && !_isAdmin(fingerprint) && _bans.IsBanned(fingerprint, now, out _);
+
+    /// <summary>Nur Nachrichten von Admins zaehlen - alles andere wird stillschweigend ignoriert.</summary>
+    private void HandleModeration(DateTimeOffset now, ChatEnvelope e)
+    {
+        if (!Room.IsOpen || !_isAdmin(e.SenderFingerprint)) return;
+        foreach (var entry in e.Payload.Bans ?? [])
+        {
+            switch (e.Payload.Kind)
+            {
+                case ChatKinds.Ban: ApplyBan(now, entry, announce: true); break;
+                case ChatKinds.BanList: ApplyBan(now, entry, announce: false); break;
+                case ChatKinds.Unban: ApplyUnban(now, entry, announce: true); break;
+            }
+        }
+    }
+
+    private void ApplyBan(DateTimeOffset now, ChatBanEntry entry, bool announce)
+    {
+        var fp = entry.Fingerprint;
+        if (_isAdmin(fp)) return;                                                   // Admins kann man nicht sperren
+        if (entry.Until != 0 && entry.Until <= now.ToUnixTimeMilliseconds()) return; // schon abgelaufen
+        var reason = entry.Reason ?? "";
+        if (!_bans.Apply(new ChatBan(fp, entry.MemberId, entry.Until, entry.At, reason, false))) return;
+
+        if (string.Equals(fp, Me.Fingerprint, StringComparison.OrdinalIgnoreCase))
+        {
+            if (State == ChatSessionState.Ended) return;
+            if (reason.Length > 0) Warning(now, ChatNotice.YouBannedReason, null, null, reason);
+            else Warning(now, ChatNotice.YouBanned);
+            End(now, ChatNotice.YouBanned, wait: false);
+            return;
+        }
+
+        var wasMember = _members.Remove(fp);
+        var hidden = _lines.RemoveAll(l => l.Kind == ChatLineKind.Theirs && string.Equals(l.Fingerprint, fp, StringComparison.OrdinalIgnoreCase));
+        Leaderboard.Remove(fp);
+        if (Chess is { Stage: ChessGameStage.Active or ChessGameStage.Offering } game && string.Equals(game.OpponentFingerprint, fp, StringComparison.OrdinalIgnoreCase))
+        {
+            game.Stage = ChessGameStage.Ended;
+            game.EndReason = ChatNotice.ChessOpponentLeft;
+        }
+        if (Proposal is { IsMine: false, Stage: ProposalStage.Asking or ProposalStage.Declined } open &&
+            string.Equals(open.ProposerFingerprint, fp, StringComparison.OrdinalIgnoreCase))
+            Proposal = null;
+
+        if (announce && (wasMember || hidden > 0))   // wer gar nicht hier war, braucht keine Meldung
+        {
+            if (reason.Length > 0) Notice(now, ChatNotice.BannedReason, fp, entry.MemberId, reason);
+            else Notice(now, ChatNotice.Banned, fp, entry.MemberId);
+        }
+        Changed();
+    }
+
+    private void ApplyUnban(DateTimeOffset now, ChatBanEntry entry, bool announce)
+    {
+        if (!_bans.Lift(entry.Fingerprint, entry.MemberId, entry.At)) return;
+        if (announce) Notice(now, ChatNotice.Unbanned, entry.Fingerprint, entry.MemberId);
+        Changed();
+    }
+
+    /// <summary>
+    /// Der Admin schickt seine Sperrliste, wenn jemand den Raum betritt (gebuendelt, mit kleiner
+    /// Verzoegerung): Chatnachrichten werden nirgends aufbewahrt, ein Neuer haette sonst nie von
+    /// einer frueheren Sperre erfahren. Nur online - im lokalen Netz gibt es keinen offenen Chat.
+    /// </summary>
+    private void ScheduleBanSync(DateTimeOffset now)
+    {
+        if (_banSyncScheduled || !CanModerate || Mode != ChatMode.Online) return;
+        _banSyncScheduled = true;
+        After(now, RandomDelay(1500, 4000), at =>
+        {
+            _banSyncScheduled = false;
+            SendBanList(at);
+        });
+    }
+
+    private void SendBanList(DateTimeOffset now)
+    {
+        if (State != ChatSessionState.Connected || Mode != ChatMode.Online || !CanModerate) return;
+        var active = _bans.Active(now).OrderByDescending(b => b.At).Take(4 * ChatPayload.MaxBans).ToList();   // die neuesten zuerst
+        for (var i = 0; i < active.Count; i += ChatPayload.MaxBans)
+        {
+            var entries = active.Skip(i).Take(ChatPayload.MaxBans)
+                .Select(b => new ChatBanEntry { Fingerprint = b.Fingerprint, MemberId = b.MemberId, Until = b.Until, At = b.At, Reason = b.Reason.Length > 0 ? b.Reason : null })
+                .ToArray();
+            TrySend(now, new ChatPayload { Kind = ChatKinds.BanList, Bans = entries }, ChatMode.Online);
+        }
     }
 
     // ==================================================================
