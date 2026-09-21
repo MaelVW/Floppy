@@ -192,6 +192,11 @@ public static class SkinBuilder
         t.SetConstant("inner_item_margin_left", "Tree", 3);
         t.SetConstant("inner_item_margin_right", "Tree", 3);
         t.SetConstant("icon_max_width", "Tree", 16);
+        // Haken in Listen (z. B. "Steam durchsuchen"): sonst zeichnet Godot weisse Standard-Kaestchen, die auf hellem Grund verschwinden
+        t.SetIcon("checked", "Tree", Icons.Get("check_on", 1f));
+        t.SetIcon("unchecked", "Tree", Icons.Get("check_off", 1f));
+        t.SetIcon("checked_disabled", "Tree", Icons.Get("check_on", 1f));
+        t.SetIcon("unchecked_disabled", "Tree", Icons.Get("check_off", 1f));
 
         t.SetStylebox("panel", "ItemList", panel);
         t.SetStylebox("focus", "ItemList", new StyleBoxEmpty());

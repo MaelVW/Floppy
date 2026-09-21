@@ -34,6 +34,8 @@ public partial class LibraryView : ViewBase
         };
         _count = Ui.Dim("");
         var reload = Ui.Button(Loc.T("BTN_REFRESH"), "refresh", () => { Host.ReloadLibrary(); Fill(); });
+        var steam = Ui.Button(Loc.T("BTN_STEAM_SCAN"), "kind_steam", () => SteamScanDialog.Open(Host, Fill));
+        steam.TooltipText = Loc.T("TIP_STEAM_SCAN");
 
         _tree = new Tree
         {
@@ -59,7 +61,7 @@ public partial class LibraryView : ViewBase
         _tree.ItemSelected += OnSelected;
         _tree.ItemActivated += Start;
 
-        var list = Ui.VBox(6, Ui.HBox(6, _search, reload), _tree, _count).Expand(vertical: true);
+        var list = Ui.VBox(6, Ui.HBox(6, _search, reload, steam), _tree, _count).Expand(vertical: true);
 
         // Details
         _cover = new TextureRect
@@ -98,18 +100,19 @@ public partial class LibraryView : ViewBase
     private void Fill()
     {
         var filter = _search.Text.Trim();
-        var entries = Host.Library
-            .Where(e => filter.Length == 0 ||
-                        e.Label.Contains(filter, StringComparison.CurrentCultureIgnoreCase) ||
-                        e.Value.Contains(filter, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+        var library = Host.Library;
 
         _tree.Clear();
         var root = _tree.CreateItem();
         TreeItem? reselect = null;
-        for (var i = 0; i < entries.Length; i++)
+        var shown = 0;
+        for (var index = 0; index < library.Count; index++)   // mit Index statt IndexOf: bei ein paar hundert Steam-Spielen sonst spuerbar
         {
-            var e = entries[i];
+            var e = library[index];
+            if (filter.Length > 0 &&
+                !e.Label.Contains(filter, StringComparison.CurrentCultureIgnoreCase) &&
+                !e.Value.Contains(filter, StringComparison.OrdinalIgnoreCase)) continue;
+
             var item = _tree.CreateItem(root);
             item.SetIcon(0, Icons.Get(KindIcon(e.Kind)));
             item.SetText(0, e.Label);
@@ -117,10 +120,11 @@ public partial class LibraryView : ViewBase
             item.SetText(2, e.Value);
             item.SetTooltipText(2, e.Value);
             item.SetText(3, e.Added);
-            item.SetMetadata(0, Array.IndexOf(Host.Library.ToArray(), e));
+            item.SetMetadata(0, index);
             if (_selected is not null && e == _selected) reselect = item;
+            shown++;
         }
-        _count.Text = Loc.T("LIB_COUNT", entries.Length, Host.Library.Count);
+        _count.Text = Loc.T("LIB_COUNT", shown, library.Count);
 
         if (reselect is not null) reselect.Select(0);
         else ShowDetails(null);

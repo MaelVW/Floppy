@@ -19,6 +19,13 @@ public sealed class AppSettings
     public float Scale { get; set; }
 
     public bool LoadCovers { get; set; } = true;
+
+    /// <summary>
+    /// Selbst gewaehlter Steam-Ordner fuer "Steam durchsuchen" (dort, wo steam.exe liegt). Leer = Steam selbst
+    /// suchen (Registrierung, Standardordner). Ein Ordner, der nicht (mehr) stimmt, wird uebergangen.
+    /// </summary>
+    public string SteamPath { get; set; } = "";
+
     public bool FirstRunDone { get; set; }
 
     /// <summary>Name fuer Rekorde im Minispiel.</summary>
@@ -72,6 +79,7 @@ public sealed class AppSettings
             s.Scale = float.TryParse(ini.Get("ui", "scale", "0"), NumberStyles.Float, CultureInfo.InvariantCulture, out var f)
                 ? Math.Clamp(f, 0f, 3f) : 0f;
             s.LoadCovers = ini.GetBool("library", "load_covers", true);
+            s.SteamPath = PathRules.StripQuotes(ini.Get("library", "steam_path", ""));
             s.FirstRunDone = ini.GetBool("app", "first_run_done", false);
             s.PlayerName = Floppy.Core.Minigame.ScoreBoard.CleanName(ini.Get("game", "player", ""));
             s.ChatServer = (ini.Get("chat", "server", "") ?? "").Trim();
@@ -102,6 +110,8 @@ public sealed class AppSettings
             .AppendLine(string.Create(CultureInfo.InvariantCulture, $"scale = {Scale}"))
             .AppendLine("[library]")
             .AppendLine($"load_covers = {(LoadCovers ? "true" : "false")}")
+            .AppendLine("; Steam durchsuchen: leer = Steam selbst finden, sonst der Ordner mit steam.exe")
+            .AppendLine($"steam_path = {SteamPath}")
             .AppendLine("[app]")
             .AppendLine($"first_run_done = {(FirstRunDone ? "true" : "false")}")
             .AppendLine("; Sofort beenden: z. B. Ctrl+F12 (nie Alt+F4). Leer = nicht festgelegt.")

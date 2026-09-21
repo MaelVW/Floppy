@@ -480,6 +480,59 @@ public partial class Main : Control
                 foreach (var node in _main.FindChildren("*", "ScrollContainer", true, false))
                     if (node is ScrollContainer scroll && scroll.IsVisibleInTree()) scroll.ScrollVertical = 100000;
                 break;
+            case "steam-scan" or "steam-scan-none" when _main is not null:
+                // Steam durchsuchen: echte Suche in den Steam-Dateien dieses PCs ("-none": so, als waere Steam nicht da)
+                _main.ShowView("library");
+                Func<string?>? noSteam = view == "steam-scan-none" ? () => null : null;
+                SteamScanDialog.Open(_main, () => { }, noSteam);
+                await ToSignal(GetTree().CreateTimer(0.8), SceneTreeTimer.SignalName.Timeout);
+                break;
+            case "steam-scan-demo" when _main is not null:
+                // Steam durchsuchen mit einem erfundenen Steam-Ordner, in dem jeder Zustand einmal vorkommt
+                var demoRoot = MakeSteamDemo();
+                _main.ShowView("library");
+                SteamScanDialog.Open(_main, () => { }, () => demoRoot);
+                await ToSignal(GetTree().CreateTimer(0.8), SceneTreeTimer.SignalName.Timeout);   // die Suche ist fertig, die Liste steht im Fenster
+                try { System.IO.Directory.Delete(demoRoot, true); } catch { /* Temp-Ordner, egal */ }
+                break;
+            case "steam-scan-click" when _main is not null:
+                // Test: Haken per simulierter Maus setzen, dann "Keine" und "Alle" - die Zaehler im Fenster muessen mitgehen (Vorschau-Ordner, geschrieben wird nichts)
+                MainWindow win = _main;
+                var clickRoot = MakeSteamDemo();
+                win.ShowView("library");
+                SteamScanDialog.Open(win, () => { }, () => clickRoot);
+                await ToSignal(GetTree().CreateTimer(1.0), SceneTreeTimer.SignalName.Timeout);
+                try { System.IO.Directory.Delete(clickRoot, true); } catch { /* Temp-Ordner, egal */ }
+
+                var addPrefix = Loc.T("STEAM_ADD", 0)[..^2];   // "Hinzufuegen ("
+                string AddText() => win.DialogLayer.FindChildren("*", "Button", true, false).OfType<Button>()
+                    .FirstOrDefault(x => x.Text.StartsWith(addPrefix, StringComparison.Ordinal))?.Text ?? "?";
+                void PressButton(string text) => win.DialogLayer.FindChildren("*", "Button", true, false).OfType<Button>()
+                    .FirstOrDefault(x => x.Text == text)?.EmitSignal(BaseButton.SignalName.Pressed);
+
+                var clickTree = win.DialogLayer.FindChildren("*", "Tree", true, false).OfType<Tree>().First();
+                var clickStart = AddText();
+                var area = clickTree.GetItemAreaRect(clickTree.GetRoot().GetChild(0), 0);
+                var at = clickTree.GlobalPosition + area.Position + new Vector2(12, area.Size.Y / 2);   // mitten auf dem Kaestchen der ersten Zeile
+                Input.ParseInputEvent(new InputEventMouseMotion { Position = at, GlobalPosition = at });
+                Input.ParseInputEvent(new InputEventMouseButton { Position = at, GlobalPosition = at, ButtonIndex = MouseButton.Left, ButtonMask = MouseButtonMask.Left, Pressed = true });
+                Input.ParseInputEvent(new InputEventMouseButton { Position = at, GlobalPosition = at, ButtonIndex = MouseButton.Left, Pressed = false });
+                await ToSignal(GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
+                var clickAfter = AddText();
+                PressButton(Loc.T("BTN_NONE"));
+                var clickNone = AddText();
+                PressButton(Loc.T("BTN_ALL"));
+                GD.Print($"STEAM CLICK start=[{clickStart}] click=[{clickAfter}] none=[{clickNone}] all=[{AddText()}]");
+                break;
+            case "steam-import":
+                // Test ohne Fenster: echte Steam-Dateien lesen und in die Bibliothek des Testordners eintragen - ein zweiter Durchgang darf nichts Neues finden
+                var found = SteamScanner.Scan(SteamScanner.FindSteamRoot(_s.Settings.SteamPath));
+                var first = SteamScanner.AddToLibraryFile(_s.Paths.LibraryFile, found.Games, "2026-01-01");
+                var second = SteamScanner.AddToLibraryFile(_s.Paths.LibraryFile, found.Games, "2026-01-01");
+                GD.Print($"STEAM IMPORT OK found={found.Games.Count} libraries={found.Libraries.Count} tools={found.Tools} damaged={found.Damaged} first={first} second={second} file={_s.Paths.LibraryFile}");
+                _quitting = true;
+                GetTree().Quit();
+                return;
             case "quit-hotkey":
                 // Test: Sofort beenden per simulierter Tastatur. Klappt es, beendet sich die App vor dem Bildschirmfoto.
                 _s.Settings.QuitHotkey = KeyChord.Create(true, false, false, false, "F12");
@@ -506,6 +559,32 @@ public partial class Main : Control
         _s.Chat.Shutdown();
         _quitting = true;
         GetTree().Quit();
+    }
+
+    /// <summary>
+    /// Erfundener Steam-Ordner fuer die Vorschau "steam-scan-demo": fertige und noch ladende Spiele, ein Update-Wartender,
+    /// ein Steam-Laufzeit-Eintrag, eine kaputte Datei und ein nicht angeschlossenes Laufwerk.
+    /// </summary>
+    private static string MakeSteamDemo()
+    {
+        var root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "floppy-steam-demo-" + Guid.NewGuid().ToString("N"));
+        var apps = System.IO.Path.Combine(root, "steamapps");
+        System.IO.Directory.CreateDirectory(apps);
+
+        void Manifest(string id, string name, int flags, long size) => System.IO.File.WriteAllText(
+            System.IO.Path.Combine(apps, $"appmanifest_{id}.acf"),
+            $"\"AppState\"\n{{\n\t\"appid\"\t\t\"{id}\"\n\t\"name\"\t\t\"{name}\"\n\t\"StateFlags\"\t\t\"{flags}\"\n\t\"installdir\"\t\t\"{name}\"\n\t\"SizeOnDisk\"\t\t\"{size}\"\n}}\n");
+
+        Manifest("220", "Half-Life 2", 4, 6_400_000_000);
+        Manifest("400", "Portal", 4, 980_000_000);
+        Manifest("620", "Portal 2", 1026, 1_100_000_000);          // Download laeuft noch
+        Manifest("730", "Counter-Strike 2", 6, 36_000_000_000);    // installiert, ein Update wartet
+        Manifest("105600", "Terraria", 4, 260_000_000);
+        Manifest("228980", "Steamworks Common Redistributables", 4, 417_000_000);
+        System.IO.File.WriteAllText(System.IO.Path.Combine(apps, "appmanifest_999.acf"), "\"AppState\" {\n\t\"appid\"\t\t\"999\"\n\t\"name\"");   // halb geschrieben
+        System.IO.File.WriteAllText(System.IO.Path.Combine(apps, "libraryfolders.vdf"),
+            $"\"libraryfolders\"\n{{\n\t\"0\"\n\t{{\n\t\t\"path\"\t\t\"{root.Replace("\\", "\\\\")}\"\n\t}}\n\t\"1\"\n\t{{\n\t\t\"path\"\t\t\"Q:\\\\SteamLibrary\"\n\t}}\n}}\n");
+        return root;
     }
 
     /// <summary>Chat-Vorschau ohne Netzwerk: zwei Mitspieler im Speicher.</summary>
