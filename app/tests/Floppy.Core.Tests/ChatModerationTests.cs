@@ -148,7 +148,7 @@ public class ChatModerationTests
     private static bool HasNotice(ChatSession s, string key) => s.Lines.Any(l => l.Kind is ChatLineKind.Notice or ChatLineKind.Warning && l.Text == key);
 
     [Fact]
-    public void Admin_ban_removes_the_member_hides_their_lines_and_ends_their_session()
+    public void Admin_ban_removes_the_member_hides_their_lines_and_mutes_their_session()
     {
         var admin = Join(_admin);
         var b = Join();
@@ -158,9 +158,10 @@ public class ChatModerationTests
         Settle(() => b.Lines.Any(l => l.Kind == ChatLineKind.Theirs) && admin.Lines.Any(l => l.Kind == ChatLineKind.Theirs));
 
         Assert.Equal(ChatResult.Ok, admin.BanMember(c.Me.Fingerprint, "  Regel\nverstoss ", null, _now));
-        Settle(() => c.State == ChatSessionState.Ended && !b.Members.Any(m => m.Fingerprint == c.Me.Fingerprint));
+        Settle(() => c.IsBanned && !b.Members.Any(m => m.Fingerprint == c.Me.Fingerprint));
 
-        Assert.Equal(ChatNotice.YouBanned, c.EndReason);
+        Assert.Equal(ChatSessionState.Connected, c.State);   // bleibt verbunden - nur so erfaehrt sie von einer Aufhebung
+        Assert.Equal(ChatResult.Banned, c.SendText("noch da?", _now));
         Assert.True(HasNotice(c, ChatNotice.YouBannedReason));
         Assert.True(b.Bans.IsBanned(c.Me.Fingerprint, _now, out var ban));
         Assert.Equal("Regel verstoss", ban!.Reason);
@@ -179,7 +180,7 @@ public class ChatModerationTests
         var c = Join(badId);
         Advance(3);
         admin.BanMember(c.Me.Fingerprint, null, null, _now);
-        Settle(() => c.State == ChatSessionState.Ended && b.Bans.IsBanned(badId.Fingerprint, _now, out _));
+        Settle(() => c.IsBanned && b.Bans.IsBanned(badId.Fingerprint, _now, out _));
 
         // ein veraenderter Client versucht es trotzdem
         Inject(badId, new ChatPayload { Kind = ChatKinds.Join, Mode = "online" });
@@ -250,8 +251,9 @@ public class ChatModerationTests
 
         Advance(30);
         Assert.Equal(ChatResult.Ok, admin.UnbanMember(id.Fingerprint, _now));
-        Settle(() => !b.Bans.IsBanned(id.Fingerprint, _now, out _));
+        Settle(() => !b.Bans.IsBanned(id.Fingerprint, _now, out _) && !c.IsBanned);   // auch bei der Betroffenen sofort aufgehoben
         Assert.True(HasNotice(b, ChatNotice.Unbanned));
+        Assert.True(HasNotice(c, ChatNotice.YouUnbanned));
 
         // dieselbe alte Sperre wird noch einmal abgeschickt (z. B. mitgeschnitten und wiederholt)
         Inject(_admin, new ChatPayload { Kind = ChatKinds.Ban, Bans = [new ChatBanEntry { Fingerprint = id.Fingerprint, MemberId = id.Id, At = banTime }] });
@@ -263,6 +265,104 @@ public class ChatModerationTests
         Assert.Contains(b.Lines, l => l.Kind == ChatLineKind.Theirs && l.Text == "wieder da");
     }
 
+    // ---- Issue #5: "Sperrungen koennen nicht fruehzeitig aufgehoben werden" ----
+
+    [Fact]
+    public void A_ban_lifted_while_the_person_was_away_reaches_them_when_they_come_back()
+    {
+        var admin = Join(_admin);
+        var b = Join();
+        var id = ChatIdentity.CreateNew();
+        var savedBans = new ChatBanList();              // was auf der Platte steht: bleibt ueber Neustarts
+        var c = Join(id, bans: savedBans);
+        Advance(3);
+        admin.BanMember(id.Fingerprint, "Test", TimeSpan.FromDays(1), _now);
+        Settle(() => c.IsBanned);
+
+        c.Leave(_now);                                   // App wird geschlossen
+        Settle(() => c.State == ChatSessionState.Ended);
+        Advance(30);
+        Assert.Equal(ChatResult.Ok, admin.UnbanMember(id.Fingerprint, _now));   // Aufhebung, waehrend sie nicht da ist
+        Settle(() => !b.Bans.IsBanned(id.Fingerprint, _now, out _));
+        Assert.True(savedBans.IsBanned(id.Fingerprint, _now, out _));           // ihre gemerkte Liste weiss davon noch nichts
+
+        // App wird wieder gestartet, gleiche gemerkte Liste: erst gesperrt, dann fragt sie still nach und wird freigegeben
+        var c2 = Join(id, bans: savedBans);
+        Settle(() => !c2.IsBanned);
+        Assert.True(HasNotice(c2, ChatNotice.YouBannedReason));   // stand beim Start noch als gesperrt da
+        Assert.True(HasNotice(c2, ChatNotice.YouUnbanned));
+        Assert.False(savedBans.IsBanned(id.Fingerprint, _now, out _));
+
+        // ... und ist wirklich wieder dabei
+        Advance(3);
+        Assert.Contains(b.Members, m => m.Fingerprint == id.Fingerprint);
+        Assert.Equal(ChatResult.Ok, c2.SendText("da bin ich wieder", _now));
+    }
+
+    [Fact]
+    public void A_banned_member_can_neither_see_nor_write_but_keeps_listening()
+    {
+        var admin = Join(_admin);
+        var b = Join();
+        var c = Join();
+        Advance(3);
+        admin.BanMember(c.Me.Fingerprint, null, null, _now);
+        Settle(() => c.IsBanned);
+
+        b.SendText("hallo zusammen", _now);
+        Advance(1);
+        Assert.Contains(b.Lines, l => l.Kind == ChatLineKind.Mine && l.Text == "hallo zusammen");   // b selbst sieht es
+        Assert.DoesNotContain(c.Lines, l => l.Kind == ChatLineKind.Theirs);                                      // c sieht nichts
+        Assert.Single(c.Members);                                                                                // und kennt niemanden
+        Assert.Equal(ChatResult.Banned, c.RequestScores(_now));
+        Assert.Equal(ChatSessionState.Connected, c.State);
+    }
+
+    [Fact]
+    public void A_temporary_ban_runs_out_on_its_own_and_the_person_is_back()
+    {
+        var admin = Join(_admin);
+        var b = Join();
+        var c = Join();
+        Advance(3);
+        admin.BanMember(c.Me.Fingerprint, null, TimeSpan.FromHours(1), _now);
+        Settle(() => c.IsBanned);
+
+        Advance(30 * 60);
+        Assert.True(c.IsBanned);
+        Assert.DoesNotContain(b.Members, m => m.Fingerprint == c.Me.Fingerprint);
+
+        Advance(31 * 60);                                 // eine Stunde ist um
+        Settle(() => !c.IsBanned && b.Members.Any(m => m.Fingerprint == c.Me.Fingerprint));
+        Assert.True(HasNotice(c, ChatNotice.YouUnbanned));
+    }
+
+    [Fact]
+    public void Only_the_admin_answers_a_ban_check_and_not_more_than_twice_a_minute()
+    {
+        var admin = Join(_admin);
+        var b = Join();
+        var id = ChatIdentity.CreateNew();
+        var stranger = ChatIdentity.CreateNew();
+        var c = Join(id);
+        Advance(3);
+        admin.BanMember(id.Fingerprint, null, null, _now);
+        Settle(() => c.IsBanned);
+        c.Leave(_now);
+        Settle(() => c.State == ChatSessionState.Ended);
+        Advance(31);   // die erste, automatische Nachfrage beim Sperren wurde schon beantwortet - jetzt ist die Bremse (30 s) vorbei
+
+        var before = _hub.OnlineFrames;
+        Inject(id, new ChatPayload { Kind = ChatKinds.BanCheck });
+        Assert.Equal(before + 1, _hub.OnlineFrames);                        // Antwort: Sperre nochmal geschickt
+        Inject(id, new ChatPayload { Kind = ChatKinds.BanCheck });          // gleich nochmal
+        Assert.Equal(before + 1, _hub.OnlineFrames);                        // ... nicht mehr als eine Antwort pro halber Minute
+
+        Inject(stranger, new ChatPayload { Kind = ChatKinds.BanCheck });    // Fremde ohne Eintrag: keine Antwort
+        Assert.Equal(before + 1, _hub.OnlineFrames);
+        Assert.DoesNotContain(b.Members, m => m.Fingerprint == stranger.Fingerprint);
+    }
+
     [Fact]
     public void Newcomers_get_the_ban_list_from_the_admin()
     {
@@ -270,7 +370,7 @@ public class ChatModerationTests
         var c = Join();
         Advance(3);
         admin.BanMember(c.Me.Fingerprint, "Regelverstoss", TimeSpan.FromDays(7), _now);
-        Settle(() => c.State == ChatSessionState.Ended);
+        Settle(() => c.IsBanned);
 
         var newcomer = Join();                    // eigene, leere Sperrliste - sie kennt die Sperre nicht
         Assert.False(newcomer.Bans.IsBanned(c.Me.Fingerprint, _now, out _));
@@ -286,6 +386,7 @@ public class ChatModerationTests
         var fp = new string('A', 64);
         var good = new ChatBanEntry { Fingerprint = fp, MemberId = "1234-5678-9012", At = 5 };
         Assert.True(new ChatPayload { Kind = ChatKinds.Ban, Id = "0011223344556677", Bans = [good] }.IsWellFormed());
+        Assert.True(new ChatPayload { Kind = ChatKinds.BanCheck, Id = "0011223344556677" }.IsWellFormed());
         Assert.False(new ChatPayload { Kind = ChatKinds.Ban, Id = "0011223344556677" }.IsWellFormed());
         Assert.False(new ChatPayload { Kind = ChatKinds.Ban, Id = "0011223344556677", Bans = [good, good] }.IsWellFormed());
         Assert.False(new ChatPayload { Kind = ChatKinds.Ban, Id = "0011223344556677", Bans = [good with { Fingerprint = "1234-5678-9012" }] }.IsWellFormed());

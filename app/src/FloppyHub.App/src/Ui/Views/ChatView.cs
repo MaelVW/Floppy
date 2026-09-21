@@ -116,7 +116,7 @@ public partial class ChatView : ViewBase
         _send.CustomMinimumSize = new Vector2(100, 0);
         _inputHint = Ui.Dim("", wrap: true);
 
-        var open = Ui.Button(Loc.T("CHAT_BTN_OPEN"), "warn", () => ShowBanned(Chat.ConnectOpen()));
+        var open = Ui.Button(Loc.T("CHAT_BTN_OPEN"), "warn", () => Chat.ConnectOpen());
         open.TooltipText = Loc.T("CHAT_OPEN_HINT");
         open.Visible = ChatRoomKey.OpenRoomAvailable;
         _keyTools = Ui.HBox(6,
@@ -242,13 +242,16 @@ public partial class ChatView : ViewBase
         _input.Secret = asking && !_showSecret.ButtonPressed;
         _input.MaxLength = asking ? ChatRoomKey.MaxSecretLength : ChatPayload.MaxTextLength;
         _input.PlaceholderText = Loc.T(asking ? "CHAT_PLACEHOLDER_SECRET" : "CHAT_PLACEHOLDER_MESSAGE");
-        _input.Editable = asking || connected;
+        var banned = inRoom && session!.IsBanned;
+        _input.Editable = asking || (connected && !banned);
         _showSecret.Visible = asking;
         _keyTools.Visible = asking;
         _send.Text = Loc.T(asking ? "CHAT_BTN_CONNECT" : "CHAT_BTN_SEND");
         _send.Icon = Icons.Get(asking ? "key" : "send");
-        _send.Disabled = !(asking || connected);
-        SetHint(asking ? Loc.T("CHAT_PROMPT_HINT") : Chat.IsOpenRoom ? Loc.T("CHAT_OPEN_HINT") : "", warn: Chat.IsOpenRoom && !asking);
+        _send.Disabled = !(asking || (connected && !banned));
+        SetHint(asking ? Loc.T("CHAT_PROMPT_HINT")
+            : banned && session!.SelfBan is { } selfBan ? BannedHint(selfBan)
+            : Chat.IsOpenRoom ? Loc.T("CHAT_OPEN_HINT") : "", warn: (Chat.IsOpenRoom && !asking) || banned);
 
         _myId.Text = Chat.IAmAdmin ? $"{Loc.T("CHAT_ADMIN_TAG")} {Chat.Identity.Id}" : Chat.Identity.Id;
         _adminRow.Visible = Chat.IAmAdmin;
@@ -637,21 +640,17 @@ public partial class ChatView : ViewBase
     {
         if (ChatRoomKey.IsWeak(secret)) Host.SetStatusMessage(Loc.T("CHAT_WEAK_KEY"), "warn");
         _input.Text = "";
-        ShowBanned(Chat.Connect(secret, label ?? LabelFor(secret)));
+        Chat.Connect(secret, label ?? LabelFor(secret));
         _input.CallDeferred(Control.MethodName.GrabFocus);
     }
 
-    /// <summary>Du bist aus dem offenen Chat gesperrt - Grund und Ende zeigen (bei null passiert nichts).</summary>
-    private void ShowBanned(ChatBan? ban)
+    /// <summary>Hinweis unter dem Eingabefeld, solange man im Offenen Chat gesperrt ist.</summary>
+    private static string BannedHint(ChatBan ban)
     {
-        if (ban is null) return;
         var until = ban.Until == 0
             ? Loc.T("CHAT_BAN_PERMANENT")
             : DateTimeOffset.FromUnixTimeMilliseconds(ban.Until).ToLocalTime().ToString("yyyy-MM-dd HH:mm");
-        var text = ban.Reason.Length > 0
-            ? Loc.T("CHAT_BANNED_TEXT_REASON", ban.Reason, until)
-            : Loc.T("CHAT_BANNED_TEXT", until);
-        RetroDialog.Message(Host.DialogLayer, Loc.T("CHAT_BANNED_TITLE"), text, "warn");
+        return ban.Reason.Length > 0 ? Loc.T("CHAT_BANNED_HINT_REASON", ban.Reason, until) : Loc.T("CHAT_BANNED_HINT", until);
     }
 
     /// <summary>Gehoert die Verschluesselung zu einem Kontakt? Dann dessen Name als Raumname.</summary>
@@ -673,6 +672,7 @@ public partial class ChatView : ViewBase
             ChatResult.NotFound => Loc.T("CHAT_RESULT_NOTFOUND"),
             ChatResult.WrongTurn => Loc.T("CHAT_RESULT_WRONGTURN"),
             ChatResult.NotAllowed => Loc.T("CHAT_RESULT_NOTALLOWED"),
+            ChatResult.Banned => Loc.T("CHAT_RESULT_BANNED"),
             _ => Loc.T("CHAT_RESULT_NOTCONNECTED"),
         };
         Host.SetStatusMessage(text, "warn");

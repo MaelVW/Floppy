@@ -79,16 +79,13 @@ public sealed class ChatService : IDisposable
     // ------------------------------------------------------------------
 
     /// <param name="label">Anzeigename; null = Pruefzahl des Raums.</param>
-    /// <returns>Die Sperre, wenn man aus dem offenen Chat gesperrt ist und deshalb nicht hinein darf - sonst null.</returns>
-    public ChatBan? Connect(string secret, string? label = null)
+    public void Connect(string secret, string? label = null)
     {
-        if (ChatRoomKey.Problem(secret) != SecretProblem.None) return null;
+        if (ChatRoomKey.Problem(secret) != SecretProblem.None) return;
+        LeaveCurrent(wait: false);
 
         var normalized = ChatRoomKey.Normalize(secret);
         var open = normalized == ChatRoomKey.OpenSecret;
-        if (open && !IAmAdmin && Bans.IsBanned(Identity.Fingerprint, DateTimeOffset.UtcNow, out var ban)) return ban;
-
-        LeaveCurrent(wait: false);
         var ticket = ++_connectTicket;
         IsDeriving = true;
         RoomLabel = open ? Loc.T("CHAT_OPEN_ROOM") : label ?? "";
@@ -114,11 +111,16 @@ public sealed class ChatService : IDisposable
                 Raise();
             });
         });
-        return null;
     }
 
-    /// <returns>Die Sperre, wenn man gesperrt ist (siehe <see cref="Connect"/>).</returns>
-    public ChatBan? ConnectOpen() => ChatRoomKey.OpenRoomAvailable ? Connect(ChatRoomKey.OpenSecret) : null;
+    /// <summary>
+    /// Auch wer im Offenen Chat gesperrt ist, wird verbunden (still, siehe <see cref="ChatSession.IsBanned"/>) -
+    /// sonst koennte er nie erfahren, dass die Sperre aufgehoben wurde.
+    /// </summary>
+    public void ConnectOpen()
+    {
+        if (ChatRoomKey.OpenRoomAvailable) Connect(ChatRoomKey.OpenSecret);
+    }
 
     private void StartSession(ChatRoomKey key)
     {
