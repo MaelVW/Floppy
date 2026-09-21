@@ -18,6 +18,8 @@ public partial class SettingsView : ViewBase
     private Label _motorText = null!;
     private OptionButton _extraDrive1 = null!;
     private OptionButton _extraDrive2 = null!;
+    private Label _panicKeys = null!;
+    private Button _panicClear = null!;
     private readonly List<string> _extraDrive1Options = [];
     private readonly List<string> _extraDrive2Options = [];
 
@@ -116,6 +118,26 @@ public partial class SettingsView : ViewBase
             extraGrid,
             Ui.Dim(Loc.T("SET_EXTRA_DRIVES_RESTART"), wrap: true))));
 
+        // ---- Sofort beenden ----
+        _panicKeys = Ui.Label("");
+        var panicSet = Ui.Button(Loc.T("BTN_PANIC_SET"), null, () => HotkeyDialog.Capture(Host.DialogLayer, chord =>
+        {
+            s.Settings.QuitHotkey = chord;
+            s.SaveSettings();
+            UpdatePanic();
+            Host.SetStatusMessage(Loc.T("PANIC_SAVED", HotkeyInput.Display(chord)), "ok");
+        }));
+        _panicClear = Ui.Button(Loc.T("BTN_PANIC_CLEAR"), "remove", () =>
+        {
+            s.Settings.QuitHotkey = null;
+            s.SaveSettings();
+            UpdatePanic();
+        });
+        UpdatePanic();
+        column.AddChild(new GroupBox(Loc.T("SET_PANIC"), Ui.VBox(6,
+            Ui.IconLine("warn", Loc.T("SET_PANIC_HINT"), "DimLabel"),
+            Ui.HBox(8, Ui.Label(Loc.T("SET_PANIC_KEYS")), _panicKeys.Expand(), panicSet, _panicClear))));
+
         // ---- Motor ----
         _motorLed = Icons.Rect("led_off");
         _motorText = Ui.Label("");
@@ -168,6 +190,7 @@ public partial class SettingsView : ViewBase
         FillTrust();
         UpdateCoverSize();
         UpdateMotor();
+        UpdatePanic();
     }
 
     public override void OnTick()
@@ -230,6 +253,13 @@ public partial class SettingsView : ViewBase
         RefreshExtraDrives(selected);
         if (!Host.Services.ReadOnlyMode)
             IniDocument.SetValue(Host.Services.Paths.ConfigFile, "drive", "extra_letters", string.Join(",", selected));
+    }
+
+    private void UpdatePanic()
+    {
+        var hotkey = Host.Services.Settings.QuitHotkey;
+        _panicKeys.Text = hotkey is null ? Loc.T("SET_PANIC_NONE") : HotkeyInput.Display(hotkey);
+        _panicClear.Disabled = hotkey is null;
     }
 
     private void UpdateCoverSize() =>
