@@ -1,4 +1,4 @@
-# Floppy Hub App – Plan
+# Floppy HubApp – Plan
 
 Lebendes Dokument für die grafische Variante. Stand: 2026-09-21, Version **3.2.0** (nach dem ersten richtigen Release 3.0.0 und den Betas 2.0.0-beta.1 bis beta.6).
 Die Anleitung für Nutzer und die Entwickler-Doku stehen im [Wiki](https://github.com/MaelVW/Floppy/wiki); dieses Dokument hält die Planungs- und Entscheidungsgeschichte fest.
